@@ -66,7 +66,7 @@
   cursor: pointer;
 }
 
-.signup button[type="submit"] {
+/* .signup button[type="submit"] {
   width: 100%;
   padding: 0.75rem;
   background: #f8f3b7;
@@ -92,7 +92,7 @@
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
-}
+} */
 
 .signup div[style*="color: red"] {
   background: #fee;

@@ -209,7 +209,7 @@ const SpotHoldManagement = ({ restaurant }) => {
             </div>
             <div className="capacity-progress">
               <div
-                className="capacity-fill"
+                className="hold-capacity-fill"
                 style={{
                   width: `${(capacityInfo.current / capacityInfo.max) * 100}%`,
                   backgroundColor:

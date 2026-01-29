@@ -432,6 +432,8 @@ function RestaurantOwnerDashboard({ user }) {
         return (
           <OwnerOverviewTab
             restaurant={restaurant}
+            tier={tier} // Add this prop
+            handleUpgrade={handleUpgrade}
             onEdit={() => {
               setFormData({
                 name: restaurant.name,
@@ -559,23 +561,20 @@ function RestaurantOwnerDashboard({ user }) {
             ) : (
               <div className="restaurant-banner-placeholder">
                 <div className="banner-placeholder-content">
-                  <div className="banner-placeholder-text">
-                    No banner image yet
-                  </div>
                   <button
                     className="add-banner-btn"
                     onClick={() => setEditingImageType("banner")}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      height="20px"
+                      height="13px"
                       viewBox="0 -960 960 960"
-                      width="20px"
+                      width="13px"
                       fill="currentColor"
                     >
                       <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z" />
                     </svg>
-                    Add Banner Image
+                    Add Banner
                   </button>
                 </div>
               </div>
@@ -865,28 +864,6 @@ function RestaurantOwnerDashboard({ user }) {
 
             {/* Tab Content */}
             <div className="owner-tab-content">{renderTabContent()}</div>
-            {/* Tier Section */}
-            <div className="tier-info">
-              {tier === "basic" ? (
-                <div className="basic-tier">
-                  <span className="tier-badge basic">Free Tier</span>
-                  <p className="tier-description">
-                    • Manual updates only
-                    <br />
-                    • Cannot apply for featured status
-                    <br />• No customer analytics
-                    <br />• Not eligible to be advertised
-                  </p>
-                  <button className="upgrade-btn" onClick={handleUpgrade}>
-                    Upgrade to Premium
-                  </button>
-                </div>
-              ) : (
-                <div className="premium-tier">
-                  <span className="tier-badge premium">Premium</span>
-                </div>
-              )}
-            </div>
             {/* Feature CTA - Conditional based on tier */}
             {!restaurant.is_featured && (
               <div className="owner-feature-cta">

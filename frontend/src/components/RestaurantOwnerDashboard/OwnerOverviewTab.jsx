@@ -1,12 +1,23 @@
 import React, { useState } from "react";
 import "./OwnerOverviewTab.css";
 
-const OwnerOverviewTab = ({ restaurant, onEdit, onUpdateOccupancy }) => {
+const OwnerOverviewTab = ({
+  restaurant,
+  onEdit,
+  onUpdateOccupancy,
+  tier,
+  handleUpgrade,
+}) => {
   const [isEditingOccupancy, setIsEditingOccupancy] = useState(false);
   const [newOccupancy, setNewOccupancy] = useState(
     restaurant.current_occupancy,
   );
   const [loading, setLoading] = useState(false);
+
+  // const handleUpgrade = () => {
+  //   // You'll need to pass this from parent or handle differently
+  //   window.alert("Please use the upgrade button in the main dashboard");
+  // };
 
   const handleUpdateOccupancy = async () => {
     if (newOccupancy < 0 || newOccupancy > restaurant.max_capacity) {
@@ -94,6 +105,32 @@ const OwnerOverviewTab = ({ restaurant, onEdit, onUpdateOccupancy }) => {
   return (
     <div className="owner-overview-tab">
       <div className="tab-section">
+        <div className="section-header">
+          <h3>Tier Level</h3>
+        </div>
+        <div className="tier-display">
+          {tier === "basic" ? (
+            <div className="basic-tier-display">
+              <div className="tier-info-row">
+                <span className="tier-badge basic">Free Tier</span>
+                <p className="tier-description">
+                  • Manual updates only
+                  <br />
+                  • Cannot apply for featured status
+                  <br />• No customer analytics
+                  <br />• Not eligible to be advertised
+                </p>
+              </div>
+              <button className="tier-upgrade-btn" onClick={handleUpgrade}>
+                Upgrade to Premium
+              </button>
+            </div>
+          ) : (
+            <div className="premium-tier-display">
+              <span className="tier-badge premium">Premium</span>
+            </div>
+          )}
+        </div>
         <div className="section-header">
           <h3>Location & Contact</h3>
           <button className="section-edit-btn" onClick={onEdit}>

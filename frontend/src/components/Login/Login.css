@@ -79,7 +79,7 @@ button[type="submit"] {
   transition: all 0.2s ease;
 }
 
-button[type="submit"]:hover {
+/* button[type="submit"]:hover {
   background: #f5ef9e;
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -91,7 +91,7 @@ button[type="submit"]:disabled {
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
-}
+} */
 
 .error-message {
   background: #fee;
