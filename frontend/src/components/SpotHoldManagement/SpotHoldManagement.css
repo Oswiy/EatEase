@@ -300,11 +300,6 @@
   border: 1px solid black;
 }
 
-.btn-accept:hover:not(:disabled) {
-  background: #40a057;
-  transform: translateY(-1px);
-}
-
 .btn-accept:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -313,11 +308,6 @@
 .btn-reject {
   background: black;
   color: white;
-}
-
-.btn-reject:hover {
-  background: #ff5252;
-  transform: translateY(-1px);
 }
 
 .expired-label {
