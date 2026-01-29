@@ -98,19 +98,14 @@
 
 .cancel-btn {
   margin-top: 15px;
-  background: #fff5f5;
-  color: #dc3545;
-  border: 1px solid #dc3545;
+  background: #000000;
+  color: #fffbfc;
+  border: none;
   padding: 10px 20px;
   border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
   width: 100%;
-}
-
-.cancel-btn:hover {
-  background: #dc3545;
-  color: white;
 }
 
 .back-button {
@@ -167,21 +162,6 @@
   background: #f5f5f5;
   padding: 2px 6px;
   border-radius: 4px;
-}
-
-.cancel-btn {
-  background-color: #dc3545;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: background-color 0.2s;
-}
-
-.cancel-btn:hover {
-  background-color: #c82333;
 }
 
 .empty-state {
@@ -340,7 +320,7 @@
 .detail-item {
   display: flex;
   align-items: flex-start;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   gap: 10px;
 }
 

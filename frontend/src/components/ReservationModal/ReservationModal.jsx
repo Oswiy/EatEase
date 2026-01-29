@@ -228,7 +228,7 @@ const ReservationModal = ({
     <div className="reservation-modal-overlay">
       <div className="reservation-modal">
         <div className="modal-header">
-          <h2>Hold My Spot at {restaurant?.name}</h2>
+          <h2>Reserve at {restaurant?.name}</h2>
           <button className="close-btn" onClick={onClose}>
             ✕
           </button>

@@ -475,7 +475,7 @@ function NotificationsPage({ user, onBack }) {
                         {/* "Book Now" button - show for crowd alerts */}
                         {isCrowdAlert && (
                           <button
-                            className="action-btn book-now-btn"
+                            className="hold-action-btn hold-book-now-btn"
                             onClick={() => {
                               // You'll need to implement handleBookNow
                               handleBookNow(notification);

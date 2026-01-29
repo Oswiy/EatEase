@@ -163,8 +163,9 @@
   border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
-  text-align: start;
-  max-width: 17%;
+  max-width: 30%;
+  align-items: center;
+  justify-content: space-around;
 }
 
 /* Arrow Button (Bottom Right) */
@@ -246,6 +247,7 @@
   background: #f8f9fa;
   border-radius: 12px;
   border: 2px dashed #dee2e6;
+  margin: 20px 0;
 }
 
 .empty-icon {
@@ -259,12 +261,12 @@
 .empty-carousel h4 {
   margin: 0 0 10px 0;
   color: #333;
-  font-size: 18px;
+  font-size: 14px;
 }
 
 .empty-carousel p {
   color: #666;
-  font-size: 14px;
+  font-size: 12px;
   max-width: 400px;
   margin: 0 auto;
   line-height: 1.5;

@@ -320,7 +320,7 @@ function RestaurantCard({
           {isUpdating && (
             <div className="update-indicator">
               <div className="updating-dot"></div>
-              <span>Updating...</span>
+              <span>Updating</span>
             </div>
           )}
 

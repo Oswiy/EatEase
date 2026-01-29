@@ -219,10 +219,10 @@
 .notification-option {
   display: flex;
   flex-direction: row;
-  align-items: flex-start;
+  align-items: center;
   padding: 1rem;
   border-radius: 10px;
-  border: 2px solid #f0f0f0;
+  border: 2px solid #d4d4d4;
   background: white;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -259,7 +259,7 @@
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  margin-bottom: 0.5rem;
+  margin-right: 5px;
 }
 
 .notification-option .status-indicator.green {
@@ -375,10 +375,10 @@
 
 .selected-check {
   position: absolute;
-  top: 0px;
-  right: -342px;
+  top: -1px;
+  right: -315px;
   background: #51cf66;
-  color: white;
+  color: #51cf66;
   width: 20px;
   height: 20px;
   border-radius: 50%;
@@ -391,7 +391,6 @@
 
 .status-indicator-wrapper {
   position: relative;
-  margin-bottom: 0.5rem;
 }
 
 .remove-all-btn {
@@ -790,28 +789,37 @@ button.bookmark-btn-icon.active.loading,
 .updating-dot {
   width: 6px;
   height: 6px;
-  background: #4CAF50;
+  background: #4caf50;
   border-radius: 50%;
   animation: pulse 1s infinite;
 }
 
 .status-badge.updating::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, 
-    transparent, 
-    rgba(255, 255, 255, 0.3), 
-    transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
 }
 
-
 @keyframes fadeInOut {
-  0% { opacity: 0; }
-  20% { opacity: 1; }
-  80% { opacity: 1; }
-  100% { opacity: 0; }
+  0% {
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }

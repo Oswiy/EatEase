@@ -61,10 +61,12 @@
   border: 1px solid #f0f0f0;
   border-radius: 12px;
   transition: all 0.2s ease;
+  background-color: #efedde;
+  box-shadow: 0 2px 8px rgba(0.1, 0.1, 0.1, 0.4);
 }
 
 .notification-item:hover {
-  border-color: #f8f3b7;
+  border-color: #00000086;
   background: rgba(248, 243, 183, 0.05);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -76,9 +78,10 @@
 
 .notification-info h3 {
   margin: 0 0 0.5rem 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #333;
+  font-size: 16px;
+  font-weight: 700;
+  color: #000000;
+  display: flex;
 }
 
 .notification-setting {
@@ -220,11 +223,11 @@
   margin-top: 10px;
 }
 
-.action-btn {
-  padding: 8px 16px;
+.hold-action-btn {
+  padding: 7px 16px;
   border: none;
   border-radius: 6px;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   display: flex;
@@ -234,9 +237,9 @@
   width: 100%;
   background-color: black;
   color: white;
-  margin-top: 5px;
+  margin-top: 15px;
+  justify-content: center;
 }
-
 
 /* Make notification item responsive */
 .notification-item {
@@ -273,6 +276,7 @@
 .notification-message p {
   margin: 0;
   color: #333;
+  font-size: 12px;
 }
 
 .notification-details {
@@ -280,24 +284,25 @@
   gap: 10px;
   align-items: center;
   margin-top: 8px;
-  font-size: 14px;
+  font-size: 11px;
+  justify-content: space-evenly;
 }
 
 .notification-type {
   color: #666;
-  font-size: 13px;
+  font-size: 11px;
 }
 
 .notification-time {
   color: #888;
-  font-size: 13px;
+  font-size: 11px;
 }
 
 .notifications-status-badge {
   padding: 5px 10px;
   border-radius: 12px;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 700;
   color: rgba(255, 255, 255, 0.318);
 }
 
@@ -357,19 +362,19 @@
 
 /* Unread counter */
 .unread-counter {
-  background-color: #007bff;
-  color: white;
-  padding: 2px 8px;
+  background-color: #000000;
+  color: rgb(255, 255, 255);
+  padding: 2px 12px;
   border-radius: 12px;
-  font-size: 14px;
+  font-size: 12px;
   margin-left: 10px;
   vertical-align: middle;
 }
 
 /* Delete button in notification actions */
 .delete-btn {
-  background: #ff6b6b;
-  color: white;
+  background: none;
+  color: rgb(4, 4, 4);
   border: none;
   width: 30px;
   height: 30px;

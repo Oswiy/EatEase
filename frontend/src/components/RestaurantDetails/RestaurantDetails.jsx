@@ -283,14 +283,6 @@ function RestaurantDetails({ restaurantId, onBack }) {
 
   return (
     <div className="restaurant-details-page">
-      {/* ✅ ADD LIVE INDICATOR */}
-      {isUpdating && (
-        <div className="live-update-indicator">
-          <div className="updating-dot"></div>
-          <span>Live updating...</span>
-        </div>
-      )}
-
       {/* Restaurant Banner */}
       {bannerImageUrl && (
         <div className="restaurant-details-banner">
