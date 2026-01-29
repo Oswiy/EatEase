@@ -143,7 +143,7 @@
 }
 
 .bar-fill {
-  width: 70%;
+  width: 30%;
   background: #1a6bdd;
   border-radius: 4px 4px 0 0;
   transition: height 0.3s ease;
@@ -193,6 +193,7 @@
   padding: 8px 15px;
   border: none;
   border-radius: 12px;
+  font-size: 11px;
 }
 
 .peak-hour-bar {
