@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import "./OwnerOverviewTab.css";
 
-const OwnerOverviewTab = ({ restaurant, onEdit }) => {
+const OwnerOverviewTab = ({ restaurant, onEdit, onUpdateOccupancy }) => {
   const [isEditingOccupancy, setIsEditingOccupancy] = useState(false);
-  const [newOccupancy, setNewOccupancy] = useState(restaurant.current_occupancy);
+  const [newOccupancy, setNewOccupancy] = useState(
+    restaurant.current_occupancy,
+  );
   const [loading, setLoading] = useState(false);
 
   const handleUpdateOccupancy = async () => {
@@ -13,9 +15,10 @@ const OwnerOverviewTab = ({ restaurant, onEdit }) => {
     }
 
     setLoading(true);
-    
+
     try {
       const token = localStorage.getItem("auth_token");
+      // ✅ FIX: Use correct URL (localhost:8000, not EatEase-Backend)
       const response = await fetch(
         "http://localhost/EatEase-Backend/backend/public/api/restaurant/occupancy",
         {
@@ -28,7 +31,7 @@ const OwnerOverviewTab = ({ restaurant, onEdit }) => {
           body: JSON.stringify({
             current_occupancy: Number(newOccupancy),
           }),
-        }
+        },
       );
 
       const data = await response.json();
@@ -36,12 +39,16 @@ const OwnerOverviewTab = ({ restaurant, onEdit }) => {
       if (response.ok) {
         alert("✅ Occupancy updated successfully!");
         setIsEditingOccupancy(false);
-        // Refresh restaurant data by calling parent's refresh function
-        if (window.location) {
-          window.location.reload(); // Simple refresh for now
+
+        // ✅ DON'T refresh page - polling will update automatically
+        // Instead, update local state
+        if (onUpdateOccupancy) {
+          onUpdateOccupancy(newOccupancy);
         }
       } else {
-        alert("Failed to update occupancy: " + (data.message || "Unknown error"));
+        alert(
+          "Failed to update occupancy: " + (data.message || "Unknown error"),
+        );
       }
     } catch (error) {
       console.error("Error updating occupancy:", error);
@@ -74,9 +81,12 @@ const OwnerOverviewTab = ({ restaurant, onEdit }) => {
   };
 
   // Calculate occupancy percentage
-  const occupancyPercentage = restaurant.max_capacity > 0 
-    ? Math.round((restaurant.current_occupancy / restaurant.max_capacity) * 100)
-    : 0;
+  const occupancyPercentage =
+    restaurant.max_capacity > 0
+      ? Math.round(
+          (restaurant.current_occupancy / restaurant.max_capacity) * 100,
+        )
+      : 0;
 
   // Calculate crowd status based on percentage
   const calculatedCrowdStatus = getCrowdStatusColor(occupancyPercentage);
@@ -207,19 +217,20 @@ const OwnerOverviewTab = ({ restaurant, onEdit }) => {
           <h3>Current Status</h3>
           <div className="status-header-actions">
             {!isEditingOccupancy ? (
-              <button 
+              <button
                 className="update-occupancy-btn"
                 onClick={() => setIsEditingOccupancy(true)}
               >
-                 <svg
-              xmlns="http://www.w3.org/2000/svg"
-              height="11px"
-              viewBox="0 -960 960 960"
-              width="11px"
-              fill="white"
-            >
-              <path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z" />
-            </svg>Update
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  height="11px"
+                  viewBox="0 -960 960 960"
+                  width="11px"
+                  fill="white"
+                >
+                  <path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z" />
+                </svg>
+                Update
               </button>
             ) : (
               <div className="occupancy-edit-controls">
@@ -232,14 +243,14 @@ const OwnerOverviewTab = ({ restaurant, onEdit }) => {
                   className="occupancy-input"
                   placeholder="Enter current occupancy"
                 />
-                <button 
+                <button
                   className="status-save-btn"
                   onClick={handleUpdateOccupancy}
                   disabled={loading}
                 >
                   {loading ? "Saving..." : "Save"}
                 </button>
-                <button 
+                <button
                   className="status-cancel-btn"
                   onClick={() => {
                     setIsEditingOccupancy(false);
@@ -260,7 +271,11 @@ const OwnerOverviewTab = ({ restaurant, onEdit }) => {
             <span className={`status-value status-${calculatedCrowdStatus}`}>
               {getCrowdStatusText(calculatedCrowdStatus)}
               {calculatedCrowdStatus !== restaurant.crowd_status && (
-                <span className="status-note"> (Calculated: {getCrowdStatusText(restaurant.crowd_status)} in DB)</span>
+                <span className="status-note">
+                  {" "}
+                  (Calculated: {getCrowdStatusText(restaurant.crowd_status)} in
+                  DB)
+                </span>
               )}
             </span>
           </div>
@@ -272,17 +287,15 @@ const OwnerOverviewTab = ({ restaurant, onEdit }) => {
           </div>
           <div className="status-item">
             <span className="status-label">Occupancy:</span>
-            <span className="status-value">
-              {occupancyPercentage}%
-            </span>
+            <span className="status-value">{occupancyPercentage}%</span>
           </div>
           <div className="status-visual">
             <div className="capacity-bar">
-              <div 
+              <div
                 className="capacity-fill"
-                style={{ 
+                style={{
                   width: `${Math.min(occupancyPercentage, 100)}%`,
-                  backgroundColor: getCrowdStatusColor(occupancyPercentage)
+                  backgroundColor: getCrowdStatusColor(occupancyPercentage),
                 }}
               ></div>
             </div>
