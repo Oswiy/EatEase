@@ -349,7 +349,11 @@ function RestaurantDetails({ restaurantId, onBack }) {
       case "overview":
         return (
           <>
-            <OverviewTab restaurant={restaurant} stats={stats} />
+            <OverviewTab
+              restaurant={restaurant}
+              stats={stats}
+              reviewsData={reviewsData}
+            />
             {/* Premium Recommendations - Only in overview tab */}
             <PremiumRecommendations
               currentRestaurantId={restaurantId}
@@ -373,7 +377,11 @@ function RestaurantDetails({ restaurantId, onBack }) {
       default:
         return (
           <>
-            <OverviewTab restaurant={restaurant} stats={stats} />
+            <OverviewTab
+              restaurant={restaurant}
+              stats={stats}
+              reviewsData={reviewsData}
+            />
             <PremiumRecommendations
               currentRestaurantId={restaurantId}
               limit={1}
@@ -387,8 +395,7 @@ function RestaurantDetails({ restaurantId, onBack }) {
     return (
       <div className="restaurant-details-page">
         <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>Loading</p>
+          <div className="page-loading-spinner"></div>
         </div>
       </div>
     );
@@ -461,19 +468,11 @@ function RestaurantDetails({ restaurantId, onBack }) {
               {bookmarkLoading ? (
                 <div className="loading-spinner-small"></div>
               ) : isBookmarked ? (
-                <svg
-                  className="bookmark-icon"
-                  viewBox="0 0 24 24"
-                  fill="black"
-                >
+                <svg className="bookmark-icon" viewBox="0 0 24 24" fill="black">
                   <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z" />
                 </svg>
               ) : (
-                <svg
-                  className="bookmark-icon"
-                  viewBox="0 0 24 24"
-                  fill="black"
-                >
+                <svg className="bookmark-icon" viewBox="0 0 24 24" fill="black">
                   <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z" />
                 </svg>
               )}
@@ -509,6 +508,7 @@ function RestaurantDetails({ restaurantId, onBack }) {
               )}
             </button>
           </div>
+          <div className="banner-background"></div>
         </div>
       )}
 
@@ -536,54 +536,7 @@ function RestaurantDetails({ restaurantId, onBack }) {
 
             {/* Restaurant Name and Meta */}
             <div className="restaurant-header-info">
-              <h1 className="restaurant-name">{restaurant.name}</h1>
-
-              {/* UPDATED RESTAURANT META SECTION */}
-              <div className="restaurant-meta-details">
-                {/* Cuisine Type */}
-                <span className="restaurant-cuisine">
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 -960 960 960"
-                    fill="#667eea"
-                  >
-                    <path d="m175-120-56-56 410-410q-18-42-5-95t57-95q53-53 118-62t106 32q41 41 32 106t-62 118q-42 44-95 57t-95-5l-50 50 304 304-56 56-304-302-304 302Zm118-342L173-582q-54-54-54-129t54-129l248 250-128 128Z" />
-                  </svg>
-                  {restaurant.cuisine_type || "Not specified"}
-                </span>
-
-                {/* Rating Display */}
-                <div className="restaurant-rating-display">
-                  <svg
-                    className="star-icon"
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="#FFD700"
-                  >
-                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                  </svg>
-                  <span className="average-rating">
-                    {Number(
-                      reviewsData.average_rating ||
-                        stats?.average_rating ||
-                        restaurant?.average_rating ||
-                        0,
-                    ).toFixed(1)}
-                  </span>
-                  <span className="total-reviews">
-                    ({reviewsData.total_reviews || stats?.total_reviews || 0})
-                  </span>
-                </div>
-
-                {/* Crowd Status */}
-                <span
-                  className={`crowd-status-badge ${restaurant.crowd_status}`}
-                >
-                  {getCrowdStatusText(restaurant.crowd_status)}
-                </span>
-              </div>
+              <h1 className="details-restaurant-name">{restaurant.name}</h1>
             </div>
           </div>
         </div>
@@ -595,9 +548,8 @@ function RestaurantDetails({ restaurantId, onBack }) {
           <span className="stat-value">
             {restaurant.current_occupancy}/{restaurant.max_capacity}
           </span>
-          <span className="stat-label">Capacity</span>
+          <span className="stat-label">Current Capacity</span>
         </div>
-        <div className="stat-divider"></div>
         <div className="stat-item">
           <span className="stat-value">
             {restaurant.crowd_status === "green" && (
@@ -635,7 +587,6 @@ function RestaurantDetails({ restaurantId, onBack }) {
             {restaurant.crowd_status === "red" && "Full"}
           </span>
         </div>
-        <div className="stat-divider"></div>
       </div>
 
       {/* Reservation Action Bar */}
@@ -644,7 +595,7 @@ function RestaurantDetails({ restaurantId, onBack }) {
           className="reservation-btn"
           onClick={() => setShowReservationModal(true)}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="white">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
           </svg>
           Make Reservation
