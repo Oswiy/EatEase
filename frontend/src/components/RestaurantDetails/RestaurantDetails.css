@@ -5,15 +5,78 @@
    ============================================ */
 
 /* ===== BASE STYLES ===== */
-.restaurant-details-page {
-  min-height: 100vh;
-  background: #f8f9fa03;
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
-    sans-serif;
-  overflow-x: hidden; /* PREVENT HORIZONTAL SCROLLING */
-  width: 100%;
-  box-sizing: border-box;
+.restaurant-details-page .mobile-back-btn,
+.restaurant-list:has(.restaurant-details-page) .mobile-back-btn {
+  display: none; /* Hidden by default on desktop */
+  position: fixed;
+  top: 16px;
+  left: 0px;
+  z-index: 1000;
+  background: rgb(0, 0, 0);
+  border: none;
+  border-top-right-radius: 50%;
+  border-bottom-right-radius: 50%;
+  width: 35px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.restaurant-details-page .mobile-back-btn svg,
+.restaurant-list:has(.restaurant-details-page) .mobile-back-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.restaurant-details-page .mobile-back-btn:hover,
+.restaurant-list:has(.restaurant-details-page) .mobile-back-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
+  transform: scale(1.05);
+}
+
+/* Remove the old back button from RestaurantDetails header */
+.back-button-detail-view {
+  display: none !important;
+}
+
+/* Remove refresh button from RestaurantDetails header */
+.refresh-button-detail-view {
+  display: none !important;
+}
+
+/* Mobile-only styles */
+@media (max-width: 768px) {
+  .restaurant-details-page .mobile-back-btn,
+  .restaurant-list:has(.restaurant-details-page) .mobile-back-btn {
+    display: flex; /* Show on mobile */
+  }
+
+  /* Hide the entire restaurant-list-header when in detail view */
+  .restaurant-list-header {
+    display: none;
+  }
+
+  /* But show it when NOT in detail view */
+  .restaurant-list:not(:has(.restaurant-details-page)) .restaurant-list-header {
+    display: flex;
+  }
+}
+
+/* Desktop styles */
+@media (min-width: 769px) {
+  .restaurant-details-page .mobile-back-btn,
+  .restaurant-list:has(.restaurant-details-page) .mobile-back-btn {
+    display: none; /* Hide on desktop */
+  }
+
+  /* On desktop, show the header even in detail view */
+  .restaurant-list-header {
+    display: flex;
+  }
 }
 
 /* ADD TO YOUR EXISTING RestaurantDetails.css file */
@@ -35,7 +98,7 @@
 
 /* Profile Image Update */
 .restaurant-profile-image {
-  width: 30px;  /* Smaller like in cards */
+  width: 30px; /* Smaller like in cards */
   height: 30px; /* Smaller like in cards */
   border-radius: 50%;
   object-fit: cover;
@@ -44,7 +107,7 @@
 }
 
 .restaurant-profile-placeholder {
-  width: 30px;  /* Smaller like in cards */
+  width: 30px; /* Smaller like in cards */
   height: 30px;
   border-radius: 50%;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -78,8 +141,7 @@
 .restaurant-header {
   background: rgb(255, 255, 255);
   padding: 20px 16px 20px 16px; /* Reduced horizontal padding */
-  border-bottom-left-radius: 24px;
-  border-bottom-right-radius: 24px;
+  border-radius: 24px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   width: 100%;
   box-sizing: border-box;
@@ -1553,25 +1615,21 @@
 }
 
 .bookmark-btn {
-  background: white;
-  color: #6b5b95;
-  border: 2px solid #6b5b95;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
   display: flex;
   align-items: center;
-  gap: 8px;
-  transition: all 0.3s;
-  flex: 1;
   justify-content: center;
+  cursor: pointer;
+  background: rgb(255, 255, 255);
+  box-shadow: 0 2px 8px rgba(0.2, 0.2, 0.2, 0.2);
+  filter: drop-shadow(1px 3px 6px rgba(0.4, 0.4, 0.4, 0.4));
 }
 
 .bookmark-btn:hover {
   background: #f9f7ff;
-  transform: translateY(-2px);
 }
 
 .review-content {
@@ -1845,8 +1903,8 @@ body {
   .action-btn,
   .tab-btn,
   .back-btn {
-    min-height: 44px;
-    min-width: 44px;
+    min-height: 38px;
+    min-width: 38px;
   }
 
   .action-bar {
@@ -1927,7 +1985,7 @@ body {
 
 .live-indicator {
   font-size: 0.7rem;
-  background: linear-gradient(90deg, #4CAF50, #8BC34A);
+  background: linear-gradient(90deg, #4caf50, #8bc34a);
   color: white;
   padding: 2px 8px;
   border-radius: 12px;
@@ -1941,12 +1999,17 @@ body {
 }
 
 @keyframes colorPulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 .quick-stats-bar.updating::before {
-  content: '🔄 Updating...';
+  content: "🔄 Updating...";
   position: absolute;
   top: -20px;
   left: 0;
@@ -1955,4 +2018,327 @@ body {
   font-size: 0.8rem;
   color: #666;
   animation: fadeInOut 1.5s ease-in-out;
+}
+
+/* ===== MOBILE BACK BUTTON ===== */
+
+.mobile-back-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* ===== BANNER ACTION BUTTONS ===== */
+.banner-action-buttons {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+}
+
+.banner-action-buttons .action-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.banner-action-buttons .action-btn:hover {
+  background: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.banner-action-buttons .action-btn.active {
+  background: var(--primary-yellow, #f8f3b7);
+}
+
+.bookmark-icon,
+.notification-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.loading-spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* ===== UPDATED RESTAURANT HEADER LAYOUT ===== */
+.restaurant-header-profile {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.restaurant-profile-image-container {
+  flex-shrink: 0;
+}
+
+.restaurant-profile-image {
+  width: 80px;
+  height: 80px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 3px solid white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.profile-image-placeholder {
+  width: 80px;
+  height: 80px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 28px;
+  font-weight: bold;
+  border: 3px solid white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.restaurant-header-info {
+  flex: 1;
+}
+
+.restaurant-name {
+  font-size: 28px;
+  font-weight: 800;
+  color: #222;
+  margin: 0 0 12px 0;
+  line-height: 1.2;
+  font-family: Inter;
+}
+
+/* ===== UPDATED RESTAURANT META DETAILS ===== */
+.restaurant-meta-details {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.restaurant-cuisine {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #667eea;
+  font-weight: 600;
+  background: rgba(102, 126, 234, 0.1);
+  padding: 6px 12px;
+  border-radius: 20px;
+}
+
+.restaurant-rating-display {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.restaurant-rating-display .star-icon {
+  width: 14px;
+  height: 14px;
+  margin-right: 2px;
+}
+
+.average-rating {
+  color: #ff9800;
+  font-weight: 700;
+}
+
+.total-reviews {
+  color: #666;
+  font-weight: 500;
+}
+
+.crowd-status-badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.crowd-status-badge.green {
+  background: rgba(76, 175, 80, 0.15);
+  color: #2e7d32;
+}
+
+.crowd-status-badge.yellow {
+  background: rgba(255, 193, 7, 0.15);
+  color: #f57c00;
+}
+
+.crowd-status-badge.orange {
+  background: rgba(255, 152, 0, 0.15);
+  color: #ef6c00;
+}
+
+.crowd-status-badge.red {
+  background: rgba(244, 67, 54, 0.15);
+  color: #d32f2f;
+}
+
+/* ===== REMOVE OLD STYLES ===== */
+/* Remove or comment out these old styles */
+/*
+.restaurant-meta {
+  display: none; /* Hide old meta layout 
+}
+
+.cuisine-type {
+  display: none; /* Hide old cuisine type 
+}
+
+.rating-summary {
+  display: none; /* Hide old rating summary 
+}
+*/
+
+/* ===== RESPONSIVE DESIGN ===== */
+/* Mobile-only styles (show mobile back button) */
+@media (max-width: 768px) {
+  .mobile-back-btn {
+    display: flex; /* Show on mobile */
+  }
+
+  .restaurant-header-profile {
+    flex-direction: row;
+    gap: 12px;
+  }
+
+  .restaurant-profile-image {
+    width: 70px;
+    height: 70px;
+  }
+
+  .profile-image-placeholder {
+    width: 70px;
+    height: 70px;
+    font-size: 24px;
+  }
+
+  .restaurant-name {
+    font-size: 24px;
+  }
+
+  .restaurant-meta-details {
+    gap: 12px;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .restaurant-cuisine,
+  .restaurant-rating-display,
+  .crowd-status-badge {
+    font-size: 12px;
+  }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+  .restaurant-header-profile {
+    flex-direction: row;
+    gap: 10px;
+  }
+
+  .restaurant-profile-image {
+    width: 60px;
+    height: 60px;
+  }
+
+  .profile-image-placeholder {
+    width: 60px;
+    height: 60px;
+    font-size: 20px;
+  }
+
+  .restaurant-name {
+    font-size: 20px;
+  }
+
+  .restaurant-meta-details {
+    gap: 8px;
+  }
+
+  .restaurant-cuisine {
+    padding: 4px 10px;
+  }
+
+  .crowd-status-badge {
+    padding: 4px 10px;
+  }
+
+  .banner-action-buttons {
+    top: 12px;
+    right: 12px;
+  }
+
+  .banner-action-buttons .action-btn {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* Desktop styles (hide mobile back button) */
+@media (min-width: 769px) {
+  .mobile-back-btn {
+    display: none; /* Hide on desktop */
+  }
+}
+
+/* ===== UPDATE QUICK STATS BAR ===== */
+/* Adjust to accommodate new layout */
+.quick-stats-bar {
+  margin-top: 20px;
+}
+
+/* ===== RESERVATION BUTTON UPDATE ===== */
+.reservation-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.reservation-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Add this to RestaurantDetails.css */
+.overview-tab + .premium-recommendations {
+  margin-top: 20px;
+  margin-bottom: 30px;
+}
+
+/* Ensure it's visible when in overview tab */
+.restaurant-details-page .premium-recommendations {
+  display: block;
+}
+
+/* If you want to hide it when not in overview tab */
+.restaurant-details-page:not(:has(.overview-tab)) .premium-recommendations {
+  display: none;
 }

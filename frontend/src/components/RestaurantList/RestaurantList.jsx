@@ -307,74 +307,19 @@ function RestaurantList({
 
   // ========== RENDER LOGIC ==========
   return (
-    <div className="restaurant-list">
-      {/* HEADER - Always visible in both list and detail views */}
-      <div className="restaurant-list-header">
-        {/* Back button - Only shown in detail view */}
-        {selectedRestaurant && (
-          <button
-            className="back-button-detail-view"
-            onClick={handleBackToList}
-            aria-label="Back to restaurant list"
-          >
-            <svg
-              className="back-icon"
-              width="24"
-              height="24"
-              viewBox="0 -960 960 960"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path d="m313-440 224 224-57 56-320-320 320-320 57 56-224 224h487v80H313Z" />
-            </svg>
-          </button>
-        )}
-
-        {/* Search Bar */}
-        {!selectedRestaurant && (
+    <div
+      className={`restaurant-list ${selectedRestaurant ? "detail-view" : ""}`}
+    >
+      {/* HEADER - Only shown in LIST view, NOT in detail view */}
+      {!selectedRestaurant && (
+        <div className="restaurant-list-header">
+          {/* Search Bar */}
           <SearchBar
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
           />
-        )}
 
-        {/* RIGHT SIDE: Refresh button - Only shown in detail view */}
-        {selectedRestaurant && (
-          <button
-            className="refresh-button-detail-view"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            aria-label="Refresh restaurant details"
-            title="Refresh restaurant details"
-          >
-            {isRefreshing ? (
-              <svg
-                className="refresh-spinner spinning"
-                width="24"
-                height="24"
-                viewBox="0 -960 960 960"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-32-56-87.5-88T480-720q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z" />
-              </svg>
-            ) : (
-              <svg
-                className="refresh-icon"
-                width="24"
-                height="24"
-                viewBox="0 -960 960 960"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-32-56-87.5-88T480-720q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z" />
-              </svg>
-            )}
-          </button>
-        )}
-
-        {/* Filters Toggle */}
-        {!selectedRestaurant && (
+          {/* Filters Toggle */}
           <Filters
             filters={filters}
             setFilters={setFilters}
@@ -382,10 +327,8 @@ function RestaurantList({
             setShowFilters={setShowFilters}
             onApplyFilters={fetchRestaurants} // Pass the fetch function
           />
-        )}
 
-        {/* Hamburger Menu with Dropdown */}
-        {!selectedRestaurant && (
+          {/* Hamburger Menu with Dropdown */}
           <div className="menu-container" ref={menuRef}>
             <button
               className="menu-button"
@@ -489,8 +432,8 @@ function RestaurantList({
               </div>
             )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* LOADING STATE */}
       {loading && (

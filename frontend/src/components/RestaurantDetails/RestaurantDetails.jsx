@@ -40,6 +40,133 @@ function RestaurantDetails({ restaurantId, onBack }) {
     average_rating: 0,
     total_reviews: 0,
   });
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [isNotifying, setIsNotifying] = useState(false);
+  const [bookmarkLoading, setBookmarkLoading] = useState(false);
+  const [notificationLoading, setNotificationLoading] = useState(false);
+
+  // ADD THESE FUNCTIONS
+  const handleBookmark = async () => {
+    if (!restaurant || bookmarkLoading) return;
+
+    setBookmarkLoading(true);
+    try {
+      const token = localStorage.getItem("auth_token");
+      const endpoint = isBookmarked ? "remove-bookmark" : "add-bookmark";
+
+      const response = await fetch(
+        `http://localhost/EatEase/backend/public/api/bookmarks/${restaurantId}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        },
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        setIsBookmarked(!isBookmarked);
+        alert(isBookmarked ? "Removed from bookmarks" : "Added to bookmarks!");
+      }
+    } catch (error) {
+      console.error("Bookmark error:", error);
+    } finally {
+      setBookmarkLoading(false);
+    }
+  };
+
+  const handleNotification = async () => {
+    if (!restaurant || notificationLoading) return;
+
+    setNotificationLoading(true);
+    try {
+      const token = localStorage.getItem("auth_token");
+      const endpoint = isNotifying ? "remove-notification" : "add-notification";
+
+      const response = await fetch(
+        `http://localhost/EatEase/backend/public/api/notifications/${restaurantId}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({ notify_when_status: "green" }),
+        },
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        setIsNotifying(!isNotifying);
+        alert(
+          isNotifying
+            ? "Notification removed"
+            : "You'll be notified when crowd status changes!",
+        );
+      }
+    } catch (error) {
+      console.error("Notification error:", error);
+    } finally {
+      setNotificationLoading(false);
+    }
+  };
+
+  // ADD THIS EFFECT TO CHECK INITIAL BOOKMARK/NOTIFICATION STATUS
+  useEffect(() => {
+    if (!restaurantId) return;
+
+    const checkStatus = async () => {
+      const token = localStorage.getItem("auth_token");
+      if (!token) return;
+
+      try {
+        // Check bookmark status
+        const bookmarkResponse = await fetch(
+          `http://localhost/EatEase/backend/public/api/bookmarks`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+        if (bookmarkResponse.ok) {
+          const data = await bookmarkResponse.json();
+          if (data.success && data.bookmarks) {
+            const bookmarked = data.bookmarks.some(
+              (b) => b.restaurant_id === parseInt(restaurantId),
+            );
+            setIsBookmarked(bookmarked);
+          }
+        }
+
+        // Check notification status
+        const notificationResponse = await fetch(
+          `http://localhost/EatEase/backend/public/api/notifications`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+        if (notificationResponse.ok) {
+          const data = await notificationResponse.json();
+          if (data.success && data.notifications) {
+            const notifying = data.notifications.some(
+              (n) => n.restaurant_id === parseInt(restaurantId),
+            );
+            setIsNotifying(notifying);
+          }
+        }
+      } catch (error) {
+        console.error("Error checking status:", error);
+      }
+    };
+
+    checkStatus();
+  }, [restaurantId]);
 
   // ========== POLLING FOR REAL-TIME UPDATES ==========
   useEffect(() => {
@@ -220,7 +347,16 @@ function RestaurantDetails({ restaurantId, onBack }) {
 
     switch (activeTab) {
       case "overview":
-        return <OverviewTab restaurant={restaurant} stats={stats} />;
+        return (
+          <>
+            <OverviewTab restaurant={restaurant} stats={stats} />
+            {/* Premium Recommendations - Only in overview tab */}
+            <PremiumRecommendations
+              currentRestaurantId={restaurantId}
+              limit={1}
+            />
+          </>
+        );
       case "menu":
         return <MenuTab restaurantId={restaurantId} />;
       case "reviews":
@@ -235,7 +371,15 @@ function RestaurantDetails({ restaurantId, onBack }) {
       case "photos":
         return <PhotosTab restaurantId={restaurantId} />;
       default:
-        return <OverviewTab restaurant={restaurant} stats={stats} />;
+        return (
+          <>
+            <OverviewTab restaurant={restaurant} stats={stats} />
+            <PremiumRecommendations
+              currentRestaurantId={restaurantId}
+              limit={1}
+            />
+          </>
+        );
     }
   };
 
@@ -283,6 +427,13 @@ function RestaurantDetails({ restaurantId, onBack }) {
 
   return (
     <div className="restaurant-details-page">
+      {/* ADD FLOATING BACK BUTTON FOR MOBILE */}
+      <button className="mobile-back-btn" onClick={onBack} aria-label="Go back">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+          <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+        </svg>
+      </button>
+
       {/* Restaurant Banner */}
       {bannerImageUrl && (
         <div className="restaurant-details-banner">
@@ -295,75 +446,144 @@ function RestaurantDetails({ restaurantId, onBack }) {
               e.target.parentElement.style.display = "none";
             }}
           />
+
+          {/* ADD BANNER ACTION BUTTONS */}
+          <div className="banner-action-buttons">
+            {/* Bookmark Button */}
+            <button
+              className={`action-btn bookmark-btn ${isBookmarked ? "active" : ""}`}
+              onClick={handleBookmark}
+              disabled={bookmarkLoading}
+              aria-label={
+                isBookmarked ? "Remove bookmark" : "Bookmark restaurant"
+              }
+            >
+              {bookmarkLoading ? (
+                <div className="loading-spinner-small"></div>
+              ) : isBookmarked ? (
+                <svg
+                  className="bookmark-icon"
+                  viewBox="0 0 24 24"
+                  fill="black"
+                >
+                  <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z" />
+                </svg>
+              ) : (
+                <svg
+                  className="bookmark-icon"
+                  viewBox="0 0 24 24"
+                  fill="black"
+                >
+                  <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z" />
+                </svg>
+              )}
+            </button>
+
+            {/* Notification Button */}
+            <button
+              className={`action-btn notification-btn ${isNotifying ? "active" : ""}`}
+              onClick={handleNotification}
+              disabled={notificationLoading}
+              aria-label={
+                isNotifying ? "Stop notifications" : "Get notifications"
+              }
+            >
+              {notificationLoading ? (
+                <div className="loading-spinner-small"></div>
+              ) : isNotifying ? (
+                <svg
+                  className="notification-icon"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
+                </svg>
+              ) : (
+                <svg
+                  className="notification-icon"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
       )}
 
       <div className="restaurant-header">
         <div className="restaurant-basic-info">
-          <h1 className="restaurant-name">
-            {" "}
-            <div className="restaurant-image-container">
+          {/* UPDATED RESTAURANT HEADER LAYOUT */}
+          <div className="restaurant-header-profile">
+            {/* Profile Image */}
+            <div className="restaurant-profile-image-container">
               {profileImageUrl ? (
                 <img
                   src={profileImageUrl}
                   alt={`${restaurant.name} profile`}
                   className="restaurant-profile-image"
                   onError={(e) => {
-                    e.target.src = profileImage; // Fallback to imported image
+                    e.target.style.display = "none";
                   }}
                 />
               ) : (
-                <img src={profileImage} alt="Restaurant Profile" />
+                <div className="profile-image-placeholder">
+                  {restaurant.name.charAt(0)}
+                </div>
               )}
-              {/* <div className="restaurant-image-placeholder">
-            /* {restaurant.is_verified && (
-              <span className="verified-badge">✅ Verified</span>
-          </div> */}
             </div>
-            {restaurant.name}
-          </h1>
-          <div className="restaurant-meta">
-            <span className={`crowd-status ${restaurant.crowd_status}`}>
-              {getCrowdStatusText(restaurant.crowd_status)}
-            </span>
-            <span className="occupancy-rate">
-              {restaurant.occupancy_percentage}% occupied
-            </span>
-          </div>
-          <p className="cuisine-type">{restaurant.cuisine_type}</p>
 
-          {/* Rating Summary */}
-          <div className="rating-summary">
-            <div className="rating-stars">
-              {[1, 2, 3, 4, 5].map((star) => {
-                const rating =
-                  reviewsData.average_rating ||
-                  stats?.average_rating ||
-                  restaurant?.average_rating ||
-                  0;
-                return (
-                  <span
-                    key={star}
-                    style={{
-                      color: star <= Math.round(rating) ? "#FFD700" : "#ddd",
-                      fontSize: "18px",
-                      margin: "0 2px",
-                    }}
+            {/* Restaurant Name and Meta */}
+            <div className="restaurant-header-info">
+              <h1 className="restaurant-name">{restaurant.name}</h1>
+
+              {/* UPDATED RESTAURANT META SECTION */}
+              <div className="restaurant-meta-details">
+                {/* Cuisine Type */}
+                <span className="restaurant-cuisine">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 -960 960 960"
+                    fill="#667eea"
                   >
-                    {star <= Math.round(rating) ? "★" : "☆"}
+                    <path d="m175-120-56-56 410-410q-18-42-5-95t57-95q53-53 118-62t106 32q41 41 32 106t-62 118q-42 44-95 57t-95-5l-50 50 304 304-56 56-304-302-304 302Zm118-342L173-582q-54-54-54-129t54-129l248 250-128 128Z" />
+                  </svg>
+                  {restaurant.cuisine_type || "Not specified"}
+                </span>
+
+                {/* Rating Display */}
+                <div className="restaurant-rating-display">
+                  <svg
+                    className="star-icon"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="#FFD700"
+                  >
+                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                  </svg>
+                  <span className="average-rating">
+                    {Number(
+                      reviewsData.average_rating ||
+                        stats?.average_rating ||
+                        restaurant?.average_rating ||
+                        0,
+                    ).toFixed(1)}
                   </span>
-                );
-              })}
-            </div>
-            <div className="restaurant-details-rating-numbers">
-              <span className="average-rating">
-                {Number(
-                  reviewsData.average_rating ||
-                    stats?.average_rating ||
-                    restaurant?.average_rating ||
-                    0,
-                ).toFixed(1)}
-              </span>
+                  <span className="total-reviews">
+                    ({reviewsData.total_reviews || stats?.total_reviews || 0})
+                  </span>
+                </div>
+
+                {/* Crowd Status */}
+                <span
+                  className={`crowd-status-badge ${restaurant.crowd_status}`}
+                >
+                  {getCrowdStatusText(restaurant.crowd_status)}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -418,12 +638,16 @@ function RestaurantDetails({ restaurantId, onBack }) {
         <div className="stat-divider"></div>
       </div>
 
+      {/* Reservation Action Bar */}
       <div className="reservation-action-bar">
         <button
           className="reservation-btn"
           onClick={() => setShowReservationModal(true)}
         >
-          <span role="img" aria-label="plate"></span> Make Reservation
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+          </svg>
+          Make Reservation
         </button>
       </div>
 
@@ -461,8 +685,8 @@ function RestaurantDetails({ restaurantId, onBack }) {
       {/* Tab Content */}
       <div className="tab-content">{renderTabContent()}</div>
 
-      {/* Premium Recommendations */}
-      <PremiumRecommendations currentRestaurantId={restaurantId} limit={1} />
+      {/* Premium Recommendations
+      <PremiumRecommendations currentRestaurantId={restaurantId} limit={1} /> */}
       {/* ADD THIS - Reservation Modal */}
       {showReservationModal && restaurant && (
         <ReservationModal

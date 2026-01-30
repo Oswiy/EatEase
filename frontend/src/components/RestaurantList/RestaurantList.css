@@ -1,10 +1,32 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&display=swap");
+
+/* Add this at the top of your RestaurantList.css */
+.restaurant-list.detail-view {
+  padding: 0 !important;
+  margin: 0 !important;
+  background: #efedde !important; /* Optional: Change background in detail view */
+}
+
+.restaurant-list.detail-view .restaurant-details-page {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
 
 .restaurant-list {
-  padding: .8rem;
+  padding: 0.8rem;
   min-height: 100vh;
   background: #efedde;
   font-family: Inter;
+  transition: padding 0.3s ease; /* Smooth transition */
+}
+
+/* If you want to also remove the background color in detail view */
+
+/* Ensure the restaurant-details-page takes full width in detail view */
+.restaurant-list.detail-view .restaurant-details-page {
+  width: 100%;
+  max-width: 100%;
 }
 
 .refresh-button-detail-view {
@@ -12,7 +34,6 @@
   border: none;
   background-color: inherit;
 }
-
 
 .back-button-detail-view {
   position: absolute; /* Keep this */
@@ -32,9 +53,8 @@
   background: inherit; /* Add background so it's visible */
 }
 
-
 .menu-button {
-  padding: 0.5rem .6rem;
+  padding: 0.5rem 0.6rem;
   background: black;
   border: none;
   border-radius: 8px;
@@ -51,6 +71,16 @@
   color: #666;
   margin-bottom: 1rem;
   font-size: 0.9rem;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  margin: 20px 0;
+}
+
+.empty-state p {
+  font-size: 14px;
 }
 
 /* Hamburger Menu */
@@ -248,4 +278,17 @@
 
 .loading-state {
   margin-top: 20px;
+}
+
+/* Ensure the restaurant-list-header is hidden when in detail view on mobile */
+@media (max-width: 768px) {
+  .restaurant-list:has(.restaurant-details-page) .restaurant-list-header {
+    display: none !important;
+  }
+}
+
+/* Hide any existing mobile back buttons in the header */
+.restaurant-list-header .mobile-back-btn,
+.restaurant-list-header .back-button-detail-view {
+  display: none !important;
 }
