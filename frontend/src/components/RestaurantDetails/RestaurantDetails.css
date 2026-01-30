@@ -1898,24 +1898,6 @@ body {
   }
 }
 
-/* ===== TOUCH OPTIMIZATIONS ===== */
-@media (hover: none) and (pointer: coarse) {
-  .action-btn,
-  .tab-btn,
-  .back-btn {
-    min-height: 38px;
-    min-width: 38px;
-  }
-
-  .action-bar {
-    padding: 8px;
-  }
-
-  .tab-btn {
-    padding: 20px 8px;
-  }
-}
-
 /* ===== ANIMATIONS ===== */
 @keyframes fadeIn {
   from {
