@@ -386,3 +386,25 @@
   border-radius: 8px;
   text-align: center;
 }
+
+.premium-locked-content h3 {
+  font-size: 16px;
+  margin: 20px 0;
+}
+
+.premium-locked-content p {
+  font-size: 13px;
+}
+
+.features-list {
+  font-size: 13px;
+  margin: 20px 20px;
+  display: flex;
+  justify-self: center;
+}
+
+.features-list ul {
+  display: flex;
+  text-align: start;
+  flex-direction: column;
+}

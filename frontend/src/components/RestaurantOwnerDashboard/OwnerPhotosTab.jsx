@@ -420,7 +420,7 @@ const OwnerPhotosTab = ({ restaurant }) => {
       {showUploadModal && (
         <div className="upload-modal-overlay">
           <div className="upload-modal">
-            <div className="modal-header">
+            <div className="photos-modal-header">
               <h3>Upload Photos ({selectedFiles.length} selected)</h3>
               <button
                 className="close-btn"
@@ -440,7 +440,7 @@ const OwnerPhotosTab = ({ restaurant }) => {
                     <img
                       src={URL.createObjectURL(file)}
                       alt={`Preview ${index + 1}`}
-                      className="preview-image"
+                      className="photos-tab-preview-image"
                     />
                     <div className="file-info">
                       <p className="file-name">{file.name}</p>
@@ -470,7 +470,7 @@ const OwnerPhotosTab = ({ restaurant }) => {
                 >
                   {uploading ? (
                     <>
-                      <span className="spinner"></span>
+                      <span className="photos-spinner"></span>
                       Uploading...
                     </>
                   ) : (
