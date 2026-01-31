@@ -141,7 +141,7 @@
 .restaurant-header {
   background: rgb(255, 255, 255);
   padding: 10px; /* Reduced horizontal padding */
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0.1, 0.1, 0.1, 0.4);
   width: 100%;
   box-sizing: border-box;
   border-bottom-left-radius: 18px;
@@ -275,10 +275,12 @@
   width: fit-content;
 }
 
-.average-rating {
+.menu-average-rating {
   font-size: 12px;
   font-weight: 700;
   color: #ff9800;
+  font-weight: 700;
+  margin-bottom: 0px;
 }
 
 .review-count {
@@ -317,6 +319,7 @@
   text-align: center;
   flex-direction: column;
   gap: 6px;
+  box-shadow: 1px 1px 8px rgba(0.4, 0.4, 0.4, 0.4);
 }
 
 .stat-value {
@@ -418,7 +421,7 @@
   border-radius: 16px;
   padding: 20px;
   margin-bottom: 20px;
-  box-shadow: 0 2px 8px rgba(0.08, 0.08, 0.08, 0.08);
+  box-shadow: 0 2px 8px rgba(0.1, 0.1, 0.1, 0.4);
   background-clip: padding-box;
   box-sizing: border-box;
   background-color: #ffffff;
@@ -649,20 +652,16 @@
 
 /* ===== REVIEWS TAB ===== */
 .reviews-tab {
-  background: white;
+  background: none;
   border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  padding: 10px;
 }
 
-.average-rating-large {
+.menu-average-rating-large {
   font-size: 48px;
   font-weight: 700;
   line-height: 1;
   margin-bottom: 8px;
-}
-
-.rating-number {
-  font-size: 48px;
 }
 
 .rating-max {
@@ -716,6 +715,7 @@
 
 .review-card:last-child {
   margin-bottom: 5px;
+  min-height: 100px;
 }
 
 .reviewer-avatar {
@@ -795,13 +795,13 @@
   flex-shrink: 0;
 }
 
-.review-rating .star {
-  font-size: 8px;
+.review-rating .stars {
+  font-size: 5px;
   color: #ddd;
   align-self: flex-start;
 }
 
-.review-rating .star.filled {
+.review-rating .stars.filled {
   color: #ffd700;
 }
 
@@ -878,13 +878,12 @@
 }
 
 .review-comment {
-  font-size: 14px;
+  font-size: 12px;
   color: #333;
   line-height: 1.5;
-  margin: 0 0 12px 0;
+  margin: 0;
   display: flex;
   justify-content: flex-start;
-  padding-left: 20px;
 }
 
 .review-images {
@@ -1035,9 +1034,16 @@
   background: white;
   border-radius: 16px;
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px rgba(0.1, 0.1, 0.1, 0.4);
   font-family: Inter;
   min-height: 300px;
+}
+
+.menu-tab h2 {
+  display: flex;
+  margin: 10px 0 30px 0;
+  font-size: 20px;
+  font-weight: 700;
 }
 
 .menu-tab.loading {
@@ -1144,6 +1150,9 @@
   font-size: 11.5px;
   color: #5c4700;
   text-align: center;
+  display: flex;
+  justify-self: flex-end;
+  justify-content: center;
 }
 
 /* Owner Menu Tab */
@@ -1167,20 +1176,19 @@
   color: #666;
 }
 
-.menu-textarea {
+textarea {
   width: 100%;
   padding: 20px;
   border: 2px solid #e0e0e0;
   border-radius: 12px;
-  font-size: 16px;
-  line-height: 1.6;
+  font-size: 13px;
+  line-height: 1.5;
   resize: vertical;
-  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace, sans-serif;
   min-height: 200px;
   max-height: 300px;
 }
 
-.menu-textarea:focus {
+.menu-form-group textarea:focus {
   outline: none;
   border-color: #f8f3b7;
   box-shadow: 0 0 0 3px rgba(248, 243, 183, 0.3);
@@ -1289,7 +1297,7 @@
   background: white;
   border-radius: 16px;
   padding: 8px;
-  margin-bottom: 8px;
+  margin: 10px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   display: flex;
   gap: 20px;
@@ -1301,18 +1309,14 @@
   min-width: 150px;
 }
 
-.average-rating {
-  margin-bottom: 0px;
-}
-
 .rating-number {
-  font-size: 48px;
+  font-size: 40px;
   font-weight: 700;
   color: #333;
 }
 
 .rating-max {
-  font-size: 20px;
+  font-size: 15px;
   color: #666;
 }
 
@@ -1389,23 +1393,24 @@
   background: white;
   border-radius: 16px;
   padding: 15px;
-  margin-bottom: 8px;
+  margin: 10px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
 .review-form-card h3 {
   margin-bottom: 20px;
-  color: #333;
+  color: #000000;
+  font-size: 16px;
 }
 
-.form-group {
+.menu-form-group {
   margin-bottom: 20px;
 }
 
-.form-group label {
+.menu-form-group label {
   display: block;
   margin-bottom: 8px;
-  color: #666;
+  color: #000000;
   font-weight: 500;
 }
 
@@ -1420,17 +1425,8 @@
   font-size: 14px;
 }
 
-.form-group textarea {
-  width: 100%;
-  padding: 15px;
-  border: 2px solid #e0e0e0;
-  border-radius: 12px;
-  font-size: 16px;
-  line-height: 1.5;
-  resize: vertical;
-}
 
-.form-group textarea:focus {
+.menu-form-group textarea:focus {
   outline: none;
   border-color: #f8f3b7;
 }
@@ -1446,27 +1442,26 @@
   display: flex;
   gap: 15px;
   margin-top: 20px;
+  justify-content: center;
 }
 
 .submit-btn {
-  background: #f8f3b7;
+  background: #000000;
   color: white;
   border: none;
-  padding: 14px 32px;
+  padding: 10px 20px;
   border-radius: 50px;
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
+  display: flex;
+  justify-content: center;
+  width: 100%;
 }
 
 .submit-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-}
-
-.submit-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 
 .delete-btn {
@@ -1490,6 +1485,7 @@
   background: white;
   border-radius: 16px;
   padding: 10px;
+  margin: 10px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
@@ -1573,7 +1569,7 @@
 }
 
 .review-date {
-  font-size: 14px;
+  font-size: 11px;
   color: #666;
 }
 
@@ -1588,6 +1584,8 @@
   transition: all 0.2s;
   white-space: nowrap;
   margin-left: 10px;
+  display: flex;
+  align-self: flex-start;
 }
 
 .review-delete-btn:hover {
@@ -1642,13 +1640,14 @@
 
 .review-content {
   margin-left: 52px; /* Align with name */
+  min-height: 50px;
 }
 
 .review-comment {
   line-height: 1.6;
-  color: #333;
+  color: #000000;
   margin: 0;
-  font-size: 14px;
+  font-size: 13px;
   white-space: pre-line; /* Preserve line breaks */
 }
 
@@ -1667,11 +1666,6 @@
 
   .reviewer-info {
     min-width: unset;
-  }
-
-  .review-delete-btn {
-    align-self: flex-end;
-    margin-top: -40px; /* Position over avatar */
   }
 
   .review-content-wrapper {
@@ -1731,6 +1725,7 @@
     margin-top: 0;
     padding: 5px 10px;
     font-size: 11px;
+    margin-left: 35px;
   }
 }
 
@@ -2149,11 +2144,6 @@ body {
   width: 14px;
   height: 14px;
   margin-right: 2px;
-}
-
-.average-rating {
-  color: #ff9800;
-  font-weight: 700;
 }
 
 .total-reviews {

@@ -1,5 +1,10 @@
 .empty-menu {
     font-size: 15px;
+    min-height: 150px;
+    display: flex;
+    align-content: center;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
 .owner-reviews-tab.loading {

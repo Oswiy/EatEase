@@ -37,7 +37,7 @@ const ReviewsTab = ({ restaurantId, restaurantName }) => {
 
     try {
       const response = await fetch(
-        `http://localhost:8000/api/restaurants/${restaurantId}/reviews`
+        `http://localhost:8000/api/restaurants/${restaurantId}/reviews`,
       );
 
       console.log("Response status:", response.status);
@@ -103,7 +103,7 @@ const ReviewsTab = ({ restaurantId, restaurantName }) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(newReview),
-        }
+        },
       );
 
       const data = await response.json();
@@ -136,7 +136,7 @@ const ReviewsTab = ({ restaurantId, restaurantName }) => {
             Authorization: `Bearer ${token}`,
             Accept: "application/json",
           },
-        }
+        },
       );
 
       const data = await response.json();
@@ -162,7 +162,7 @@ const ReviewsTab = ({ restaurantId, restaurantName }) => {
             onClick={() => interactive && onClick && onClick(star)}
             style={{
               cursor: interactive ? "pointer" : "default",
-              fontSize: "24px",
+              fontSize: "18px",
               margin: "0 2px",
               color: star <= rating ? "#FFD700" : "#ddd",
             }}
@@ -262,7 +262,7 @@ const ReviewsTab = ({ restaurantId, restaurantName }) => {
       {/* Rating Summary */}
       <div className="rating-summary-card">
         <div className="rating-overview">
-          <div className="average-rating">
+          <div className="menu-average-rating">
             <span className="rating-number">{averageRating.toFixed(1)}</span>
             <span className="rating-max">/5</span>
           </div>
@@ -282,7 +282,7 @@ const ReviewsTab = ({ restaurantId, restaurantName }) => {
             <label>Rate:</label>
             <div className="star-rating-input">
               {renderStars(newReview.rating, true, (rating) =>
-                setNewReview({ ...newReview, rating })
+                setNewReview({ ...newReview, rating }),
               )}
               <span className="selected-rating">
                 {newReview.rating} out of 5
@@ -290,7 +290,7 @@ const ReviewsTab = ({ restaurantId, restaurantName }) => {
             </div>
           </div>
 
-          <div className="form-group">
+          <div className="menu-form-group">
             <label>Review:</label>
             <textarea
               value={newReview.comment}
@@ -312,8 +312,8 @@ const ReviewsTab = ({ restaurantId, restaurantName }) => {
               {submitting
                 ? "Submitting..."
                 : userReview
-                ? "Update Review"
-                : "Submit"}
+                  ? "Update Review"
+                  : "Submit"}
             </button>
 
             {userReview && (
@@ -361,18 +361,17 @@ const ReviewsTab = ({ restaurantId, restaurantName }) => {
                     <div className="review-rating">
                       {renderStars(review.rating)}
                     </div>
+                    {/* Right: Delete Button (if user's review) */}
+                    {user && review.user_id === user.id && (
+                      <button
+                        onClick={() => deleteReview(review.id)}
+                        className="review-delete-btn"
+                        title="Delete your review"
+                      >
+                        Delete
+                      </button>
+                    )}
                   </div>
-
-                  {/* Right: Delete Button (if user's review) */}
-                  {user && review.user_id === user.id && (
-                    <button
-                      onClick={() => deleteReview(review.id)}
-                      className="review-delete-btn"
-                      title="Delete your review"
-                    >
-                      Delete
-                    </button>
-                  )}
                 </div>
                 {/* Bottom: Review Comment */}
                 {review.comment && (
