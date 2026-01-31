@@ -179,6 +179,10 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  background: linear-gradient(135deg, #fdfdfd -62%, #000000 100%);
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.571);
 }
 
 .tier-info-row {
@@ -203,6 +207,8 @@
 .tier-badge.basic {
   background-color: var(--basic-gray, #6c757d);
   color: white;
+  font-size: 8px;
+  border: 1px solid rgb(93, 93, 93);
 }
 
 .tier-badge.premium {
@@ -212,9 +218,9 @@
 }
 
 .tier-description {
-  margin: 10px 0;
-  color: #6c757d;
-  font-size: 12px;
+  margin: 5px 0;
+  color: #ffffff;
+  font-size: 11px;
   line-height: 1.5;
   display: flex;
   justify-content: center;
@@ -234,7 +240,7 @@
   color: white;
   flex-wrap: wrap;
   border: none;
-  padding: 7px 10px;
+  padding: 6px 8px;
   border-radius: 10px;
   font-weight: 600;
   cursor: pointer;
@@ -243,9 +249,8 @@
   align-self: center;
   align-content: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: 10px;
 }
-
 
 .tier-upgrade-btn:hover {
   background-color: #000000b0;

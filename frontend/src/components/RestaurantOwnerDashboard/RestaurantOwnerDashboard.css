@@ -142,7 +142,8 @@
   align-items: center;
   justify-content: center;
   border: none;
-  border-radius: 12px;
+  border-radius: 19px;
+  border-bottom: 1px solid black;
 }
 
 .banner-placeholder-content {

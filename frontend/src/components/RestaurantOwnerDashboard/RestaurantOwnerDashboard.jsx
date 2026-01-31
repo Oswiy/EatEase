@@ -578,6 +578,7 @@ function RestaurantOwnerDashboard({ user }) {
                     Add Banner
                   </button>
                 </div>
+                <div className="banner-background"></div>
               </div>
             )}
           </div>
