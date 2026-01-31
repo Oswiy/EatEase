@@ -167,7 +167,7 @@ function Login({ onLogin, onSwitchToSignup }) {
 
         <form onSubmit={handleSubmit} className="secure-form">
           <div className="form-group">
-            <label htmlFor="business-email">Business Email</label>
+            <label htmlFor="business-email">Email</label>
             <input
               type="email"
               id="business-email"

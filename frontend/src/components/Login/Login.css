@@ -65,34 +65,6 @@
   box-shadow: 0 0 0 3px rgba(248, 243, 183, 0.2);
 }
 
-button[type="submit"] {
-  width: 100%;
-  padding: 0.75rem;
-  background: #F8F3B7;
-  color: #333;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  margin-bottom: 1.5rem;
-  transition: all 0.2s ease;
-}
-
-/* button[type="submit"]:hover {
-  background: #f5ef9e;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-button[type="submit"]:disabled {
-  background: #f8f8f8;
-  color: #999;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-} */
-
 .error-message {
   background: #fee;
   color: #c33;
