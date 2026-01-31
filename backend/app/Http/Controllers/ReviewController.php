@@ -6,6 +6,7 @@ use App\Models\Review;
 use App\Models\Restaurant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Rules\NoBadWords;
 
 class ReviewController extends Controller
 {
@@ -58,7 +59,12 @@ class ReviewController extends Controller
 
         $request->validate([
             'rating' => 'required|integer|min:1|max:5',
-            'comment' => 'nullable|string|max:1000'
+            'comment' => [
+                'nullable',
+                'string',
+                'max:1000',
+                new NoBadWords('review comment')
+            ]
         ]);
 
         // Check if user already reviewed (you have unique constraint but let's check)

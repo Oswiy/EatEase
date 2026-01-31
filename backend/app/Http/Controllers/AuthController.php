@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Facades\Log;
+use App\Rules\NoBadWords;
 
 class AuthController extends Controller
 {
@@ -73,16 +74,21 @@ class AuthController extends Controller
     {
         // Validate with industry-standard password rules
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                new NoBadWords('name')
+            ],
             'email' => 'required|email|unique:users',
             'password' => [
                 'required',
                 'confirmed',
-                Password::min(8) // Minimum 8 characters
-                    ->mixedCase()   // Must have uppercase and lowercase
-                    ->numbers()     // Must include numbers
-                    ->symbols()     // Must include symbols
-                    ->uncompromised() // Check against breached passwords (requires guzzlehttp/guzzle)
+                Password::min(8)
+                    ->mixedCase()
+                    ->numbers()
+                    ->symbols()
+                    ->uncompromised()
             ],
             'user_type' => 'required|string|in:diner,restaurant_owner,admin'
         ], [
@@ -99,14 +105,14 @@ class AuthController extends Controller
 
         // Additional security: Check if user_type matches the app they're signing up from
         $requestedApp = $request->header('X-Requested-App');
-        
+
         if ($requestedApp === 'diner-app' && $request->user_type !== 'diner') {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid user type for this application.'
             ], 422);
         }
-        
+
         if ($requestedApp === 'restaurant-app' && $request->user_type !== 'restaurant_owner') {
             return response()->json([
                 'success' => false,
@@ -116,10 +122,19 @@ class AuthController extends Controller
 
         // Check for common weak passwords manually
         $commonPasswords = [
-            'password', 'password123', '123456', '12345678', 'qwerty',
-            'abc123', 'letmein', 'monkey', 'admin', 'welcome', 'test123'
+            'password',
+            'password123',
+            '123456',
+            '12345678',
+            'qwerty',
+            'abc123',
+            'letmein',
+            'monkey',
+            'admin',
+            'welcome',
+            'test123'
         ];
-        
+
         if (in_array(strtolower($request->password), $commonPasswords)) {
             return response()->json([
                 'success' => false,
@@ -158,10 +173,9 @@ class AuthController extends Controller
                 'token' => $token,
                 'token_expires_at' => now()->addDays(7)->toISOString()
             ], 201);
-
         } catch (\Exception $e) {
             Log::error('Signup error: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Registration failed. Please try again.'
@@ -174,7 +188,7 @@ class AuthController extends Controller
     {
         try {
             $request->user()->currentAccessToken()->delete();
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Logged out successfully'

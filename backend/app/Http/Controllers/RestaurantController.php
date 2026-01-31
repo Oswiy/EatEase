@@ -15,6 +15,7 @@ use App\Models\UserNotification;
 // use App\Models\NotificationLog;
 use Illuminate\Support\Facades\Schema;
 use Exception; // ← ADD THIS
+use App\Rules\NoBadWords;
 
 
 class RestaurantController extends Controller
@@ -421,9 +422,23 @@ class RestaurantController extends Controller
         }
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'cuisine_type' => 'required|string|max:100',
-            'address' => 'required|string',
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                new NoBadWords('restaurant name')
+            ],
+            'cuisine_type' => [
+                'required',
+                'string',
+                'max:100',
+                new NoBadWords('cuisine type')
+            ],
+            'address' => [
+                'required',
+                'string',
+                new NoBadWords('address')
+            ],
             'phone' => 'required|string|max:20',
             'hours' => 'required|string|max:100',
             'max_capacity' => 'required|integer|min:1',
@@ -432,6 +447,7 @@ class RestaurantController extends Controller
             'features.*' => 'string',
             'is_featured' => 'boolean'
         ]);
+
 
         $restaurant = Restaurant::updateOrCreate(
             ['owner_id' => $user->id],

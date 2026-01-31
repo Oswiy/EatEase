@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Restaurant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Rules\NoBadWords;
 
 class MenuController extends Controller
 {
@@ -38,7 +39,11 @@ class MenuController extends Controller
         }
 
         $request->validate([
-            'menu_description' => 'nullable|string'  // Field name should match
+            'menu_description' => [
+                'nullable',
+                'string',
+                new NoBadWords('menu content')
+            ]
         ]);
 
         $restaurant->menu_description = $request->menu_description;

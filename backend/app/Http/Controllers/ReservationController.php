@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use App\Rules\NoBadWords;
 
 class ReservationController extends Controller
 {
@@ -63,7 +64,12 @@ class ReservationController extends Controller
             'party_size' => 'required|integer|min:1|max:30',
             'reservation_date' => 'required|date|after_or_equal:today',
             'reservation_time' => 'required|date_format:H:i',
-            'special_requests' => 'nullable|string|max:500'
+            'special_requests' => [
+                'nullable',
+                'string',
+                'max:500',
+                new NoBadWords('special requests')
+            ]
         ]);
 
         if ($validator->fails()) {
