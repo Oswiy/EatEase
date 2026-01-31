@@ -394,7 +394,7 @@ function RestaurantDetails({ restaurantId, onBack }) {
   if (loading) {
     return (
       <div className="restaurant-details-page">
-        <div className="loading-container">
+        <div className="page-loading-container">
           <div className="page-loading-spinner"></div>
         </div>
       </div>

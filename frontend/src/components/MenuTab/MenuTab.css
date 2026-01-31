@@ -7,7 +7,12 @@
   justify-content: center;
 }
 
-.empty-menu
+.empty-menu-message h3 {
+  font-size: 16px;
+}
+.empty-menu-message p {
+  font-size: 14px;
+}
 
 .owner-reviews-tab.loading {
   display: flex;
