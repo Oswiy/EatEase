@@ -236,7 +236,7 @@ const ReviewsTab = ({ restaurantId, restaurantName }) => {
 
   if (loading) {
     return (
-      <div className="reviews-tab loading">
+      <div className="owner-reviews-tab loading">
         <div className="loading-spinner"></div>
       </div>
     );

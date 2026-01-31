@@ -1,38 +1,64 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import "./MenuTab.css";
 
 const MenuTab = ({ restaurantId }) => {
-  const [menuDescription, setMenuDescription] = useState('');
+  const [menuItems, setMenuItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [restaurantName, setRestaurantName] = useState('');
+  const [restaurantName, setRestaurantName] = useState("");
 
   useEffect(() => {
-    console.log('MenuTab: Loading menu for restaurant', restaurantId);
+    console.log("MenuTab: Loading menu for restaurant", restaurantId);
     fetchMenu();
   }, [restaurantId]);
+
+  const parseMenuText = (text) => {
+    const items = [];
+    const lines = text.split("\n").filter((line) => line.trim());
+
+    lines.forEach((line) => {
+      const trimmed = line.trim();
+      // Parse format: Item Name - ₱Price (expecting peso format)
+      if (trimmed.includes(" - ")) {
+        const parts = trimmed.split(" - ");
+        if (parts.length === 2) {
+          // Remove any currency symbol and use peso
+          const price = parts[1].trim().replace(/^[₱$\s]+/, "");
+          items.push({
+            name: parts[0].trim(),
+            price: `₱${price}`, // Always prefix with peso
+            id: Date.now() + Math.random(),
+          });
+        }
+      }
+    });
+
+    return items;
+  };
 
   const fetchMenu = async () => {
     setLoading(true);
     try {
-      // FIX: Change from /menu to /menu-text
-      const response = await fetch(`http://localhost:8000/api/restaurants/${restaurantId}/menu-text`);
+      const response = await fetch(
+        `http://localhost:8000/api/restaurants/${restaurantId}/menu-text`,
+      );
       const data = await response.json();
-      console.log('MenuTab API response:', data);
-      
+      console.log("MenuTab API response:", data);
+
       if (data.success) {
-        // FIX: Change from data.menu.description to data.menu_description
-        setMenuDescription(data.menu_description || '');
-        setRestaurantName(data.restaurant_name || '');
-        
-        if (!data.menu_description) {
-          setMenuDescription('This restaurant hasn\'t added a menu yet.');
+        const menuText = data.menu_description || "";
+        if (menuText) {
+          const parsedItems = parseMenuText(menuText);
+          setMenuItems(parsedItems);
+        } else {
+          setMenuItems([]);
         }
+        setRestaurantName(data.restaurant_name || "");
       } else {
-        setMenuDescription('Error loading menu: ' + (data.error || 'Unknown error'));
+        setMenuItems([]);
       }
     } catch (error) {
-      console.error('Error fetching menu:', error);
-      setMenuDescription('Unable to load menu. Please try again later.');
+      console.error("Error fetching menu:", error);
+      setMenuItems([]);
     } finally {
       setLoading(false);
     }
@@ -46,69 +72,59 @@ const MenuTab = ({ restaurantId }) => {
     );
   }
 
-  // Parse the menu text with formatting
-  const renderMenuContent = () => {
-    if (!menuDescription || menuDescription.includes('hasn\'t added') || menuDescription.includes('Error') || menuDescription.includes('Unable')) {
-      return <p className="empty-menu">{menuDescription}</p>;
-    }
-    
-    const lines = menuDescription.split('\n');
-    return lines.map((line, index) => {
-      const trimmedLine = line.trim();
-      
-      // Check for headers (ends with colon)
-      if (trimmedLine.endsWith(':')) {
-        return <h4 key={index} className="menu-header">{trimmedLine}</h4>;
-      }
-      
-      // Check for bullet points
-      else if (trimmedLine.startsWith('•') || trimmedLine.startsWith('-')) {
-        return (
-          <div key={index} className="menu-item">
-            <span className="bullet">•</span>
-            <span>{trimmedLine.substring(1).trim()}</span>
-          </div>
-        );
-      }
-      
-      // Check for price items (contains $)
-      else if (trimmedLine.includes('$')) {
-        // Try to split by dash for price
-        if (trimmedLine.includes(' - ')) {
-          const parts = trimmedLine.split(' - ');
-          if (parts.length === 2) {
-            return (
-              <div key={index} className="menu-item-with-price">
-                <span className="item-name">{parts[0].trim()}</span>
-                <span className="item-price">{parts[1].trim()}</span>
-              </div>
-            );
-          }
-        }
-        return <p key={index} className="menu-line">{trimmedLine}</p>;
-      }
-      
-      // Regular paragraph
-      else if (trimmedLine) {
-        return <p key={index} className="menu-line">{trimmedLine}</p>;
-      }
-      
-      // Empty line (preserve spacing)
-      return <br key={index} />;
-    });
-  };
-
   return (
     <div className="menu-tab">
-        <h2>{restaurantName ? `Menu: ` : 'Menu & Pricing'}</h2>
-      
-      <div className="menu-content">
-        {renderMenuContent()}
+      <div className="menu-header-section">
+        <h2>{restaurantName ? `${restaurantName} Menu` : "Menu"}</h2>
+        {menuItems.length > 0}
       </div>
-      
-      <div className="menu-footer">
-        <p><strong>Note:</strong> Menu items and prices are subject to change.</p>
-      </div>
+
+      {menuItems.length > 0 ? (
+        <div className="menu-content structured">
+          <div className="menu-table">
+            <div className="menu-table-header">
+              <div className="header-column name-header">Menu Item</div>
+              <div className="header-column price-header">Price</div>
+            </div>
+            {menuItems.map((item, index) => (
+              <div key={item.id || index} className="menu-table-row">
+                <div className="menu-item-name">{item.name}</div>
+                <div className="menu-item-price">{item.price}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="menu-content empty">
+          <div className="empty-menu-message">
+            <svg
+              width="48"
+              height="48"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#ccc"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.5"
+                d="M3 3h18v18H3zM8 7v10m4-10v10m4-10v10"
+              />
+            </svg>
+            <h3>No Menu Available</h3>
+            <p>This restaurant hasn't added their menu yet.</p>
+          </div>
+        </div>
+      )}
+
+      {menuItems.length > 0 && (
+        <div className="menu-footer">
+          <p>
+            <strong>Note:</strong> Prices are in PHP. Menu items and prices are
+            subject to change.
+          </p>
+        </div>
+      )}
     </div>
   );
 };

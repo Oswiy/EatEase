@@ -9,6 +9,7 @@ function Filters({
   onApplyFilters 
 }) {
   const [availableCuisines, setAvailableCuisines] = useState([]);
+  const [showAllCuisines, setShowAllCuisines] = useState(false);
   const [localFilters, setLocalFilters] = useState({
     cuisine: 'all',
     crowd_status: [],
@@ -133,6 +134,17 @@ function Filters({
     );
   };
 
+  // Determine which cuisines to display
+  const getDisplayCuisines = () => {
+    if (showAllCuisines || availableCuisines.length <= 3) {
+      return availableCuisines;
+    }
+    return availableCuisines.slice(0, 3);
+  };
+
+  // Check if we need to show the "Show More" button
+  const shouldShowMoreButton = availableCuisines.length > 3;
+
   return (
     <div className="filters-container">
       <button
@@ -184,7 +196,7 @@ function Filters({
                   />
                   <span>All</span>
                 </label>
-                {availableCuisines.map((cuisine) => (
+                {getDisplayCuisines().map((cuisine) => (
                   <label key={cuisine} className="cuisine-option">
                     <input
                       type="radio"
@@ -196,6 +208,28 @@ function Filters({
                     <span>{cuisine}</span>
                   </label>
                 ))}
+                
+                {/* Show More/Less Button */}
+                {shouldShowMoreButton && (
+                  <button 
+                    className="cuisine-show-more-btn"
+                    onClick={() => setShowAllCuisines(!showAllCuisines)}
+                  >
+                    <span className="cuisine-show-more-text">
+                      {showAllCuisines ? 'Show Less' : `+${availableCuisines.length - 3} More`}
+                    </span>
+                    <svg 
+                      className={`cuisine-show-more-icon ${showAllCuisines ? 'rotated' : ''}`}
+                      width="11" 
+                      height="11" 
+                      viewBox="0 0 24 24" 
+                      fill="white" 
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                )}
               </div>
             </div>
 

@@ -1001,7 +1001,6 @@
 }
 
 /* ===== LOADING & ERROR STATES ===== */
-.loading-container,
 .error-container {
   display: flex;
   flex-direction: column;
@@ -1012,14 +1011,10 @@
   padding: 40px 20px;
 }
 
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #ecedf3;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 20px;
+.owner-reviews-tab.loading {
+  display: flex;
+  justify-content: center;
+  align-content: center;
 }
 
 /* MenuTab CSs */
@@ -1929,10 +1924,11 @@ body {
   width: 30px;
   height: 30px;
   border: 3px solid black;
-  border-top: 3px solid white;
+  border-top: 3px solid #efedde;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
+
 .page-loading-spinner {
   width: 30px;
   height: 30px;
@@ -2056,8 +2052,8 @@ body {
 .loading-spinner-small {
   width: 16px;
   height: 16px;
-  border: 2px solid #f3f3f3;
-  border-top: 2px solid #667eea;
+  border: 2px solid #efedde;
+  border-top: 2px solid #efedde;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
