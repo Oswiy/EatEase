@@ -316,13 +316,7 @@ function RestaurantCard({
             <div className="banner-placeholder">{currentRestaurant.name}</div>
           )}
 
-          {/* ✅ UPDATE INDICATOR */}
-          {isUpdating && (
-            <div className="update-indicator">
-              <div className="updating-dot"></div>
-              <span>Updating</span>
-            </div>
-          )}
+
 
           {/* Rating Display */}
           <div className="banner-rating-display">

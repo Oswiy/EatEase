@@ -163,7 +163,7 @@
   border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
-  max-width: 30%;
+  width: fit-content;
   align-items: center;
   justify-content: space-around;
 }

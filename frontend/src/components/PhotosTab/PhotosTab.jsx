@@ -5,7 +5,7 @@ const PhotosTab = ({ restaurantId }) => {
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
-  const [viewMode, setViewMode] = useState("grid"); // 'grid' or 'list'
+  const [viewMode, setViewMode] = useState("grid");
 
   useEffect(() => {
     fetchPhotos();
@@ -17,7 +17,20 @@ const PhotosTab = ({ restaurantId }) => {
         `http://localhost:8000/api/restaurants/${restaurantId}/photos`
       );
       const data = await response.json();
-      setPhotos(data);
+      
+      // Use full_image_url instead of image_url
+      const processedPhotos = Array.isArray(data) 
+        ? data.map(photo => ({
+            ...photo,
+            // Use full_image_url if available, otherwise construct from image_url
+            display_url: photo.full_image_url || 
+                        `http://localhost/EatEase/backend/public/storage/${photo.image_url}`,
+            caption: photo.caption || '',
+            is_primary: photo.is_primary || false
+          }))
+        : [];
+      
+      setPhotos(processedPhotos);
       setLoading(false);
     } catch (error) {
       console.error("Error fetching photos:", error);
@@ -79,26 +92,7 @@ const PhotosTab = ({ restaurantId }) => {
     <div className="photos-tab">
       {/* Photo Gallery Header */}
       <div className="photos-header">
-        <h3 className="photos-title">📸 Photo Gallery</h3>
-        <div className="photos-controls">
-          <span className="photos-count">{photos.length} photos</span>
-          <div className="view-toggle">
-            <button
-              className={`view-btn ${viewMode === "grid" ? "active" : ""}`}
-              onClick={() => setViewMode("grid")}
-              title="Grid View"
-            >
-              ⏹️
-            </button>
-            <button
-              className={`view-btn ${viewMode === "list" ? "active" : ""}`}
-              onClick={() => setViewMode("list")}
-              title="List View"
-            >
-              📋
-            </button>
-          </div>
-        </div>
+        <h3 className="photos-title">Photo Gallery</h3>
       </div>
 
       {/* Primary Photo (if exists) */}
@@ -110,8 +104,13 @@ const PhotosTab = ({ restaurantId }) => {
             onClick={() => openPhotoViewer(photos.find((p) => p.is_primary))}
           >
             <img
-              src={photos.find((p) => p.is_primary).image_url}
+              src={photos.find((p) => p.is_primary).display_url}
               alt={photos.find((p) => p.is_primary).caption || "Featured photo"}
+              onError={(e) => {
+                console.error('Primary photo failed to load:', e.target.src);
+                e.target.src = 'https://via.placeholder.com/600x400?text=Featured+Photo+Not+Found';
+                e.target.onerror = null; // Prevent infinite loop
+              }}
             />
             <div className="primary-badge">Featured</div>
             {photos.find((p) => p.is_primary).caption && (
@@ -135,9 +134,14 @@ const PhotosTab = ({ restaurantId }) => {
               >
                 <div className="photo-thumbnail">
                   <img
-                    src={photo.image_url}
+                    src={photo.display_url}
                     alt={photo.caption || `Restaurant photo ${photo.id}`}
                     loading="lazy"
+                    onError={(e) => {
+                      console.error('Grid photo failed to load:', e.target.src);
+                      e.target.src = 'https://via.placeholder.com/300x200?text=Photo+Error';
+                      e.target.onerror = null;
+                    }}
                   />
                   {photo.is_primary && (
                     <span className="primary-indicator">⭐</span>
@@ -146,11 +150,6 @@ const PhotosTab = ({ restaurantId }) => {
                 {photo.caption && (
                   <p className="photo-caption-small">{photo.caption}</p>
                 )}
-                <div className="photo-meta">
-                  <span className="upload-date">
-                    {new Date(photo.created_at).toLocaleDateString()}
-                  </span>
-                </div>
               </div>
             ))}
           </div>
@@ -164,100 +163,20 @@ const PhotosTab = ({ restaurantId }) => {
               >
                 <div className="list-photo-thumb">
                   <img
-                    src={photo.image_url}
+                    src={photo.display_url}
                     alt={photo.caption || `Restaurant photo ${photo.id}`}
+                    onError={(e) => {
+                      console.error('List photo failed to load:', e.target.src);
+                      e.target.src = 'https://via.placeholder.com/100x100?text=Error';
+                      e.target.onerror = null;
+                    }}
                   />
-                </div>
-                <div className="list-photo-info">
-                  <div className="list-photo-header">
-                    {photo.is_primary && (
-                      <span className="list-primary-badge">Featured</span>
-                    )}
-                    <span className="list-upload-date">
-                      {new Date(photo.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                  {photo.caption && (
-                    <p className="list-photo-caption">{photo.caption}</p>
-                  )}
-                  <div className="list-photo-actions">
-                    <button className="action-like-btn">❤️ Like</button>
-                    <button className="action-share-btn">↗️ Share</button>
-                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
-
-      {/* Upload Button */}
-      <div className="upload-section">
-        <button className="upload-photo-btn">📤 Add Photos</button>
-        <p className="upload-note">Share your dining experience with others</p>
-      </div>
-
-      {/* Photo Viewer Modal */}
-      {selectedPhoto && (
-        <div className="photo-viewer-modal" onClick={closePhotoViewer}>
-          <div
-            className="photo-viewer-content"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button className="close-viewer-btn" onClick={closePhotoViewer}>
-              ✕
-            </button>
-
-            <div className="viewer-photo-container">
-              <img
-                src={selectedPhoto.image_url}
-                alt={selectedPhoto.caption || "Selected photo"}
-                className="viewer-photo"
-              />
-
-              <button
-                className="nav-btn prev-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigatePhoto("prev");
-                }}
-              >
-                ←
-              </button>
-
-              <button
-                className="nav-btn next-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigatePhoto("next");
-                }}
-              >
-                →
-              </button>
-            </div>
-
-            <div className="viewer-info">
-              {selectedPhoto.caption && (
-                <p className="viewer-caption">{selectedPhoto.caption}</p>
-              )}
-              <div className="viewer-meta">
-                <span className="viewer-date">
-                  Uploaded:{" "}
-                  {new Date(selectedPhoto.created_at).toLocaleDateString()}
-                </span>
-                {selectedPhoto.is_primary && (
-                  <span className="viewer-featured">⭐ Featured Photo</span>
-                )}
-              </div>
-              <div className="viewer-actions">
-                <button className="viewer-like-btn">❤️ Like</button>
-                <button className="viewer-download-btn">⬇️ Download</button>
-                <button className="viewer-share-btn">↗️ Share</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

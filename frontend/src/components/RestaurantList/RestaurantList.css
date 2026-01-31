@@ -19,7 +19,17 @@
   min-height: 100vh;
   background: #efedde;
   font-family: Inter;
-  transition: padding 0.3s ease; /* Smooth transition */
+}
+
+.error-state {
+  margin: 20px 10px;
+}
+.error-state p{
+  font-size: 13px;
+}
+
+.error-state button{
+  font-size: 12px;
 }
 
 /* If you want to also remove the background color in detail view */
