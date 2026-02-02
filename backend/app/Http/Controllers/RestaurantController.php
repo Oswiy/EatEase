@@ -16,6 +16,7 @@ use App\Models\UserNotification;
 use Illuminate\Support\Facades\Schema;
 use Exception; // ← ADD THIS
 use App\Rules\NoBadWords;
+use Illuminate\Support\Carbon;
 
 
 class RestaurantController extends Controller
@@ -62,6 +63,59 @@ class RestaurantController extends Controller
             ], 500);
         }
     }
+
+    public function renewPremium(Request $request)
+    {
+        try {
+            $user = auth()->user();
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Not authenticated'
+                ], 401);
+            }
+
+            $restaurant = Restaurant::where('owner_id', $user->id)->first();
+
+            if (!$restaurant) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Restaurant not found'
+                ], 404);
+            }
+
+            // Determine expiry date (30 days from now or extend existing)
+            $currentExpiry = $restaurant->subscription_ends_at;
+            $newExpiry = $currentExpiry && $currentExpiry->isFuture()
+                ? $currentExpiry->copy()->addDays(30)
+                : Carbon::now()->addDays(30);
+
+            // Update restaurant
+            $restaurant->update([
+                'subscription_tier' => 'premium',
+                'subscription_ends_at' => $newExpiry,
+                'can_be_featured' => true,
+                'can_run_ads' => true,
+                'has_analytics_access' => true,
+                'has_api_access' => true,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Premium subscription renewed for 30 days!',
+                'restaurant' => $restaurant,
+                'expires_at' => $newExpiry->toDateTimeString(),
+                'remaining_days' => Carbon::now()->diffInDays($newExpiry, false)
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Renew premium error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to renew subscription'
+            ], 500);
+        }
+    }
+
 
     public function updatePromoText(Request $request)
     {

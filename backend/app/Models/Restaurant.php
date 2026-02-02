@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
 use App\Models\User; // ADD THIS LINE
+use Illuminate\Support\Carbon;
 
 
 class Restaurant extends Model
@@ -97,7 +98,7 @@ class Restaurant extends Model
         });
     }
 
-      public function shouldShowPromo()
+    public function shouldShowPromo()
     {
         return $this->is_featured && $this->show_promo && !empty($this->promo_text);
     }
@@ -137,6 +138,82 @@ class Restaurant extends Model
         return $this->subscription_tier === 'premium' &&
             ($this->subscription_ends_at === null ||
                 $this->subscription_ends_at->isFuture());
+    }
+
+    /**
+     * Get formatted expiry date for display
+     */
+    public function getExpiryDateFormatted(): ?string
+    {
+        if (!$this->subscription_ends_at) {
+            return null;
+        }
+
+        return $this->subscription_ends_at->format('M d, Y'); // "Jan 15, 2024"
+    }
+
+    /**
+     * Get expiry status for styling
+     * Returns: null (no expiry), 'active', 'warning' (7 days), 'danger' (expired)
+     */
+    public function getExpiryStatus(): ?string
+    {
+        if (!$this->subscription_ends_at) {
+            return null;
+        }
+
+        $now = Carbon::now();
+
+        if ($this->subscription_ends_at->isPast()) {
+            return 'expired'; // Already expired
+        }
+
+        $daysLeft = $now->diffInDays($this->subscription_ends_at, false);
+
+        if ($daysLeft <= 7) {
+            return 'warning'; // 7 days or less
+        }
+
+        return 'active'; // More than 7 days
+    }
+
+    /**
+     * Get remaining days (positive number)
+     */
+    public function getRemainingDays(): ?int
+    {
+        if (!$this->subscription_ends_at) {
+            return null;
+        }
+
+        $now = Carbon::now();
+        $daysLeft = $now->diffInDays($this->subscription_ends_at, false);
+
+        return max(0, $daysLeft); // Return 0 if negative
+    }
+
+    /**
+     * Auto-downgrade if expired (called by scheduled command)
+     */
+    public function autoDowngradeIfExpired(): void
+    {
+        if (
+            $this->subscription_tier === 'premium' &&
+            $this->subscription_ends_at &&
+            $this->subscription_ends_at->isPast()
+        ) {
+
+            $this->update([
+                'subscription_tier' => 'basic',
+                'subscription_ends_at' => null,
+                'can_be_featured' => false,
+                'has_analytics_access' => false,
+                'is_featured' => false,
+                'show_promo' => false,
+            ]);
+
+            Log::info("Auto-downgraded restaurant {$this->id} from premium to basic (expired)");
+        }
     }
 
     public function isBasic(): bool
