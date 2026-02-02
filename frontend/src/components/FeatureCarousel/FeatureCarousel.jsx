@@ -11,7 +11,7 @@ function FeatureCarousel({ restaurants, onRestaurantClick }) {
       (restaurant) =>
         restaurant.is_featured === true || restaurant.isFeatured === true,
     );
-    console.log("🌟 Featured restaurants:", featured);
+    console.log("Featured restaurants:", featured);
     setFeaturedRestaurants(featured);
   }, [restaurants]);
 
@@ -124,9 +124,6 @@ function FeatureCarousel({ restaurants, onRestaurantClick }) {
               className="carousel-item"
               onClick={() => handleRestaurantClick(restaurant)}
             >
-              {/* Featured Badge */}
-              <div className="featured-badge">FEATURED</div>
-
               {/* Crowd Status Indicator */}
               <div className="crowd-status-indicator">
                 <div
@@ -159,6 +156,13 @@ function FeatureCarousel({ restaurants, onRestaurantClick }) {
                 {(hasLoaded === false || !imageUrl) && (
                   <div className="feature-banner-placeholder">
                     {restaurant.name}
+                  </div>
+                )}
+
+                {/* PROMO TEXT - POSITIONED ABOVE THE RESTAURANT NAME */}
+                {restaurant.promo_text && restaurant.show_promo && (
+                  <div className="carousel-promo-overlay">
+                    <span className="promo-text">{restaurant.promo_text}</span>
                   </div>
                 )}
 

@@ -8,7 +8,6 @@ import OverviewTab from "../OverviewTab/OverviewTab";
 import MenuTab from "../MenuTab/MenuTab";
 import ReviewsTab from "../ReviewsTab/ReviewsTab";
 import PhotosTab from "../PhotosTab/PhotosTab";
-import PremiumRecommendations from "../PremiumRecommendations/PremiumRecommendations";
 import ReservationModal from "../ReservationModal/ReservationModal";
 
 function RestaurantDetails({ restaurantId, onBack }) {
@@ -354,11 +353,6 @@ function RestaurantDetails({ restaurantId, onBack }) {
               stats={stats}
               reviewsData={reviewsData}
             />
-            {/* Premium Recommendations - Only in overview tab */}
-            <PremiumRecommendations
-              currentRestaurantId={restaurantId}
-              limit={1}
-            />
           </>
         );
       case "menu":
@@ -381,10 +375,6 @@ function RestaurantDetails({ restaurantId, onBack }) {
               restaurant={restaurant}
               stats={stats}
               reviewsData={reviewsData}
-            />
-            <PremiumRecommendations
-              currentRestaurantId={restaurantId}
-              limit={1}
             />
           </>
         );
@@ -635,9 +625,6 @@ function RestaurantDetails({ restaurantId, onBack }) {
 
       {/* Tab Content */}
       <div className="tab-content">{renderTabContent()}</div>
-
-      {/* Premium Recommendations
-      <PremiumRecommendations currentRestaurantId={restaurantId} limit={1} /> */}
       {/* ADD THIS - Reservation Modal */}
       {showReservationModal && restaurant && (
         <ReservationModal
