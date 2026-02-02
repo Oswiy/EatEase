@@ -45,10 +45,13 @@ class Restaurant extends Model
         'has_api_access',
         'profile_image',
         'banner_image',
-        'banner_position'
+        'banner_position',
+        'promo_text',
+        'show_promo',
     ];
 
     protected $casts = [
+        'show_promo' => 'boolean',
         'features' => 'array',
         'is_featured' => 'boolean',
         'is_verified' => 'boolean',
@@ -92,6 +95,11 @@ class Restaurant extends Model
                 }
             }
         });
+    }
+
+      public function shouldShowPromo()
+    {
+        return $this->is_featured && $this->show_promo && !empty($this->promo_text);
     }
 
     public function getProfileImageUrlAttribute()

@@ -12,7 +12,6 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\AnalyticsController;
-use App\Http\Controllers\RecommendationController;
 use App\Http\Controllers\RestaurantPhotoController;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\BadWordController;
@@ -57,7 +56,6 @@ Route::get('/restaurants/{id}/photos', [RestaurantController::class, 'getPhotos'
 Route::get('/restaurants/{id}/stats', [RestaurantController::class, 'getRestaurantStats']);
 Route::get('/restaurants/{id}/reviews', [ReviewController::class, 'index']);
 Route::get('/restaurants/{id}/menu-text', [MenuController::class, 'show']);
-Route::get('/restaurants/premium/recommendations', [RecommendationController::class, 'getPremiumRecommendations']);
 Route::get('/restaurants/{id}/menu', [MenuController::class, 'show']);
 
 // Status endpoints with higher rate limits
@@ -81,6 +79,8 @@ Route::middleware('auth:sanctum')->group(function () {
             'auth_working' => !is_null($user)
         ]);
     });
+    
+    Route::put('/restaurant/promo', [RestaurantController::class, 'updatePromoText']);
     
     Route::get('/debug-reservations-test', [ReservationController::class, 'index']);
     

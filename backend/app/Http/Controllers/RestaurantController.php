@@ -63,6 +63,60 @@ class RestaurantController extends Controller
         }
     }
 
+    public function updatePromoText(Request $request)
+    {
+        try {
+            $user = auth()->user();
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Not authenticated'
+                ], 401);
+            }
+
+            $restaurant = Restaurant::where('owner_id', $user->id)->first();
+
+            if (!$restaurant) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Restaurant not found'
+                ], 404);
+            }
+
+            // Check if restaurant is featured (only featured can have promo)
+            if (!$restaurant->is_featured) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Only featured restaurants can add promo text'
+                ], 403);
+            }
+
+            $validated = $request->validate([
+                'promo_text' => 'nullable|string|max:100',
+                'show_promo' => 'boolean'
+            ]);
+
+            // Apply bad word filter to promo text
+            if (!empty($validated['promo_text'])) {
+                $validated['promo_text'] = \App\Helpers\BadWordFilter::sanitize($validated['promo_text']);
+            }
+
+            $restaurant->update($validated);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Promo text updated successfully',
+                'restaurant' => $restaurant
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Update promo text error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update promo text'
+            ], 500);
+        }
+    }
+
 
     // RestaurantController.php
     public function uploadImage(Request $request, $type)
@@ -600,25 +654,30 @@ class RestaurantController extends Controller
                 ->orderBy('created_at', 'DESC')
                 ->get();
 
-            // Transform for frontend (your existing transformation code)
+            // Transform for frontend
             $transformedRestaurants = $restaurants->map(function ($restaurant) use ($request) {
-                // Keep your existing transformation logic...
-                // [YOUR EXISTING TRANSFORMATION CODE HERE]
-
                 return [
                     'id' => $restaurant->id,
                     'name' => $restaurant->name,
                     'cuisine' => $restaurant->cuisine_type,
-                    'cuisine_type' => $restaurant->cuisine_type, // Add this for consistency
+                    'cuisine_type' => $restaurant->cuisine_type,
                     'address' => $restaurant->address,
                     'phone' => $restaurant->phone,
                     'hours' => $restaurant->hours,
                     'max_capacity' => $restaurant->max_capacity,
                     'current_occupancy' => $restaurant->current_occupancy,
                     'status' => $restaurant->crowd_status,
+                    'crowd_status' => $restaurant->crowd_status, // Add this
                     'crowdLevel' => $this->getCrowdLevelText($restaurant->crowd_status),
                     'occupancy' => $restaurant->occupancy_percentage,
+                    'occupancy_percentage' => $restaurant->occupancy_percentage, // Add this
                     'waitTime' => $this->calculateWaitTime($restaurant->occupancy_percentage),
+
+                    // CRITICAL: Add promo fields
+                    'is_featured' => $restaurant->is_featured ?? false,
+                    'promo_text' => $restaurant->promo_text ?? null,
+                    'show_promo' => $restaurant->show_promo ?? false,
+
                     'isFeatured' => $restaurant->is_featured ?? false,
                     'isVerified' => $restaurant->is_verified ?? false,
                     'isPremium' => $restaurant->subscription_tier === 'premium',
