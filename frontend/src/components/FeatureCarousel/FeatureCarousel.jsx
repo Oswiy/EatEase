@@ -1,33 +1,47 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import "./FeatureCarousel.css";
-import pollingService from "../../services/pollingService"; // Add this import
+import pollingService from "../../services/pollingService";
 
 function FeatureCarousel({ restaurants, onRestaurantClick }) {
   const [featuredRestaurants, setFeaturedRestaurants] = useState([]);
   const [loadedImages, setLoadedImages] = useState({});
-
-  // Store real-time updated restaurant data
   const [updatedRestaurants, setUpdatedRestaurants] = useState({});
 
+  // Randomize ONCE when component mounts or restaurants change
   useEffect(() => {
+    if (!restaurants || restaurants.length === 0) return;
+    
     // Filter featured restaurants
     const featured = restaurants.filter(
       (restaurant) =>
         restaurant.is_featured === true || restaurant.isFeatured === true,
     );
-    console.log("Featured restaurants:", featured);
-    setFeaturedRestaurants(featured);
+    
+    // Randomize the order using Fisher-Yates shuffle
+    const shuffleArray = (array) => {
+      const shuffled = [...array];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    };
+    
+    const randomizedFeatured = shuffleArray(featured);
+    console.log("Randomized featured restaurants on load:", randomizedFeatured.map(r => r.name));
+    
+    setFeaturedRestaurants(randomizedFeatured);
     
     // Initialize updated restaurants with initial data
     const initialUpdates = {};
-    featured.forEach(restaurant => {
+    randomizedFeatured.forEach(restaurant => {
       initialUpdates[restaurant.id] = {
         crowd_status: restaurant.crowd_status || restaurant.status,
         occupancy_percentage: restaurant.occupancy_percentage || 0
       };
     });
     setUpdatedRestaurants(initialUpdates);
-  }, [restaurants]);
+  }, [restaurants]); // Only re-run when restaurants prop changes
 
   // Set up polling for all featured restaurants
   useEffect(() => {

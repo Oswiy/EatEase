@@ -149,7 +149,24 @@ function RestaurantList({
       }
 
       const data = await response.json();
-      setRestaurants(data.restaurants || []);
+
+      // ✅ ADD RANDOMIZATION LOGIC HERE
+      const randomizedRestaurants = randomizeRestaurants(
+        data.restaurants || [],
+      );
+      console.log(
+        "Randomized restaurants on fetch:",
+        "Premium count:",
+        randomizedRestaurants.filter(
+          (r) => r.subscription_tier === "premium" || r.isPremium,
+        ).length,
+        "Basic count:",
+        randomizedRestaurants.filter(
+          (r) => !(r.subscription_tier === "premium" || r.isPremium),
+        ).length,
+      );
+
+      setRestaurants(randomizedRestaurants);
 
       // Update active filters
       if (data.filters) {
@@ -158,30 +175,42 @@ function RestaurantList({
     } catch (err) {
       console.error("Failed to fetch restaurants:", err);
       setError("Failed to load restaurants. Please try again.");
-
-      // Fallback to sample data if API fails
-      setRestaurants([
-        {
-          id: 1,
-          name: "Chicken Unlimited",
-          cuisine: "Fast Food",
-          cuisine_type: "Fast Food",
-          status: "green",
-          crowdLevel: "Low",
-          occupancy: 45,
-          waitTime: 5,
-          isFeatured: true,
-          address: "123 Main St",
-          phone: "(555) 123-4567",
-          hours: "9AM-10PM",
-          isPremium: false,
-          subscription_tier: "basic",
-        },
-        // ... other sample restaurants
-      ]);
     } finally {
       setLoading(false);
     }
+  };
+
+  // ✅ ADD THIS HELPER FUNCTION (outside fetchRestaurants but inside RestaurantList component)
+  const randomizeRestaurants = (restaurantsList) => {
+    if (!restaurantsList || restaurantsList.length === 0) return [];
+
+    // Separate by tier
+    const premiumRestaurants = restaurantsList.filter(
+      (r) => r.subscription_tier === "premium" || r.isPremium === true,
+    );
+    const basicRestaurants = restaurantsList.filter(
+      (r) =>
+        r.subscription_tier === "basic" ||
+        !r.subscription_tier ||
+        (r.subscription_tier !== "premium" && r.isPremium !== true),
+    );
+
+    // Helper function to shuffle array
+    const shuffleArray = (array) => {
+      const shuffled = [...array];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    };
+
+    // Randomize within each tier
+    const randomizedPremium = shuffleArray(premiumRestaurants);
+    const randomizedBasic = shuffleArray(basicRestaurants);
+
+    // Combine: premium first, then basic
+    return [...randomizedPremium, ...randomizedBasic];
   };
 
   const filteredRestaurants = restaurants.filter((restaurant) => {
