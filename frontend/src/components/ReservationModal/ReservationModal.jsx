@@ -1,3 +1,4 @@
+// Add these imports if not already
 import React, { useState, useEffect } from "react";
 import "./ReservationModal.css";
 
@@ -9,7 +10,7 @@ const ReservationModal = ({
 }) => {
   const [formData, setFormData] = useState({
     party_size: 1,
-    hold_type: "quick_10min", // Default to 10 minutes
+    hold_type: "quick_10min",
     special_requests: "",
   });
 
@@ -17,6 +18,11 @@ const ReservationModal = ({
   const [error, setError] = useState("");
   const [expiryTime, setExpiryTime] = useState("");
   const [confirmation, setConfirmation] = useState(null);
+
+  // ✅ ADD FEE STATE
+  const [holdFee, setHoldFee] = useState(0);
+  const [minPartyForFee, setMinPartyForFee] = useState(1);
+  const [feeDescription, setFeeDescription] = useState("");
 
   // Calculate expiry times when hold_type changes
   useEffect(() => {
@@ -33,6 +39,31 @@ const ReservationModal = ({
     );
   }, [formData.hold_type]);
 
+  // ✅ FETCH FEE SETTINGS WHEN COMPONENT MOUNTS
+  useEffect(() => {
+    const fetchFeeSettings = async () => {
+      try {
+        const response = await fetch(
+          `http://localhost:8000/api/restaurants/${restaurant.id}/fee-settings`,
+        );
+        const data = await response.json();
+        if (data.success) {
+          setHoldFee(Number(data.hold_fee) || 0); // Ensure it's a number
+          setMinPartyForFee(Number(data.min_party_for_fee) || 1);
+          setFeeDescription(data.fee_description || "");
+        }
+      } catch (error) {
+        console.error("Error fetching fee settings:", error);
+        // Set defaults
+        setHoldFee(0);
+        setMinPartyForFee(1);
+        setFeeDescription("");
+      }
+    };
+
+    fetchFeeSettings();
+  }, [restaurant.id]);
+
   // Pre-fill from notification if available
   useEffect(() => {
     if (notificationData) {
@@ -42,6 +73,18 @@ const ReservationModal = ({
       }));
     }
   }, [notificationData]);
+
+  // ✅ CALCULATE FEE
+  const calculateFee = () => {
+    const holdFeeNum = Number(holdFee || 0);
+    const partySizeNum = Number(formData.party_size || 1);
+    const minPartyNum = Number(minPartyForFee || 1);
+
+    if (holdFeeNum <= 0) return 0;
+    return partySizeNum >= minPartyNum ? holdFeeNum : 0;
+  };
+
+  const feeAmount = calculateFee();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -53,6 +96,16 @@ const ReservationModal = ({
     ) {
       setError("Please select a valid party size (1-10 people)");
       return;
+    }
+
+    // ✅ ADD FEE CONFIRMATION
+    if (feeAmount > 0) {
+      const confirmFee = window.confirm(
+        `A hold fee of ₱${Number(feeAmount || 0).toFixed(2)} will apply for your party of ${formData.party_size}.\n\n` +
+          "This fee guarantees your spot and will be charged when the hold is accepted.\n\n" +
+          "Continue with reservation?",
+      );
+      if (!confirmFee) return;
     }
 
     setLoading(true);
@@ -81,6 +134,7 @@ const ReservationModal = ({
             party_size: formData.party_size,
             hold_type: formData.hold_type,
             special_requests: formData.special_requests,
+            hold_fee: feeAmount, // ✅ SEND FEE WITH REQUEST
           }),
         },
       );
@@ -110,7 +164,7 @@ const ReservationModal = ({
       ...formData,
       [name]: value,
     });
-    setError(""); // Clear errors on change
+    setError("");
   };
 
   const handlePartySizeChange = (change) => {
@@ -134,28 +188,36 @@ const ReservationModal = ({
           </div>
 
           <div className="confirmation-content">
-            <div className="confirmation-icon">
-              <span role="img" aria-label="check mark">
-                
-              </span>
-            </div>
-
             <div className="confirmation-details">
               <h3>Your spot is on hold!</h3>
 
               <div className="detail-item">
-                <span className="label">Restaurant:</span>
-                <span className="value">{restaurant.name}</span>
+                <span className="label">Restaurant Response Deadline:</span>
+                <span className="value highlight">
+                  {new Date(
+                    confirmation.restaurant_response_deadline,
+                  ).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: true,
+                  })}
+                </span>
               </div>
 
               <div className="detail-item">
-                <span className="label">Hold Duration:</span>
-                <span className="value">
-                  {confirmation.hold.hold_type === "quick_10min"
-                    ? "10 minutes"
-                    : "20 minutes"}
-                </span>
+                <span className="label">Hold Duration (after acceptance):</span>
+                <span className="value">{confirmation.hold_duration}</span>
               </div>
+
+              {/* ✅ SHOW FEE IN CONFIRMATION */}
+              {confirmation.hold_fee > 0 && (
+                <div className="detail-item fee-highlight">
+                  <span className="label">Hold Fee:</span>
+                  <span className="value fee-amount">
+                    ₱{Number(confirmation.hold_fee || 0).toFixed(2)}
+                  </span>
+                </div>
+              )}
 
               <div className="detail-item">
                 <span className="label">Expires at:</span>
@@ -195,6 +257,15 @@ const ReservationModal = ({
                 <li>If they're busy, you may still have a short wait</li>
               </ul>
 
+              {/* ✅ ADD FEE NOTE */}
+              {confirmation.hold_fee > 0 && (
+                <div className="note important">
+                  <strong>Fee Information:</strong> hold fee of ₱
+                  {Number(confirmation.hold_fee || 0).toFixed(2)}
+                  will be charged when your hold is accepted by the restaurant.
+                </div>
+              )}
+
               <div className="note important">
                 <strong>Important:</strong> Your spot will be released
                 automatically after{" "}
@@ -205,16 +276,7 @@ const ReservationModal = ({
 
             <div className="confirmation-actions">
               <button className="done-btn" onClick={onClose}>
-                Got it!
-              </button>
-              <button
-                className="view-holds-btn"
-                onClick={() => {
-                  // Navigate to "My Holds" page
-                  window.location.href = "/my-holds";
-                }}
-              >
-                View My Holds
+                Ok
               </button>
             </div>
           </div>
@@ -288,6 +350,21 @@ const ReservationModal = ({
                 +
               </button>
             </div>
+
+            {/* ✅ SHOW FEE INFORMATION */}
+            {feeAmount > 0 && (
+              <div className="fee-notice-small">
+                <span className="fee-label">Hold fee applies:</span>
+                <span className="fee-amount">
+                  ₱{Number(feeAmount || 0).toFixed(2)}
+                </span>
+                {formData.party_size < minPartyForFee && (
+                  <span className="fee-note">
+                    (Free for parties under {minPartyForFee})
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="form-group">
@@ -338,6 +415,31 @@ const ReservationModal = ({
             </div>
           </div>
 
+          {/* ✅ SHOW FEE SUMMARY */}
+          {feeAmount > 0 && (
+            <div className="fee-summary">
+              <div className="fee-summary-header">
+                <span>Hold Fee Summary</span>
+                <span className="fee-total">
+                  ₱{Number(feeAmount || 0).toFixed(2)}
+                </span>
+              </div>
+              <div className="fee-breakdown">
+                <div className="breakdown-item">
+                  <span>Party of {formData.party_size}</span>
+                  <span>₱{Number(holdFee || 0).toFixed(2)}</span>
+                </div>
+                {feeDescription && (
+                  <div className="fee-description">{feeDescription}</div>
+                )}
+                <div className="fee-disclaimer">
+                  This fee will be charged when your hold is accepted by the
+                  restaurant.
+                </div>
+              </div>
+            </div>
+          )}
+
           {error && <div className="error-message">{error}</div>}
 
           <div className="modal-actions">
@@ -355,8 +457,10 @@ const ReservationModal = ({
                   <span className="spinner"></span>
                   Loading...
                 </>
+              ) : feeAmount > 0 ? (
+                `Confirm & Pay ₱${Number(feeAmount || 0).toFixed(2)}`
               ) : (
-                "Confirm"
+                "Confirm Free Hold"
               )}
             </button>
           </div>

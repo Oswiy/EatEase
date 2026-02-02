@@ -412,11 +412,6 @@
   padding: 0px 20px 20px 20px;
 }
 
-.confirmation-icon {
-  font-size: 50px;
-  color: #4caf50;
-  margin-bottom: 20px;
-}
 
 .confirmation-details {
   background: #efedde;
@@ -474,11 +469,13 @@
 .instructions h4 {
   margin-top: 0;
   color: #333;
+  font-size: 14px;
 }
 
 .instructions ul {
   margin: 10px 0;
   padding-left: 20px;
+  font-size: 13px;
 }
 
 .instructions li {
@@ -503,34 +500,15 @@
 }
 
 .done-btn {
-  padding: 12px 30px;
-  background: #4caf50;
+  padding: 10px 20px;
+  width: 100%;
+  background: #000000;
   color: white;
   border: none;
   border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.3s ease;
-}
-
-.done-btn:hover {
-  background: #45a049;
-}
-
-.view-holds-btn {
-  padding: 12px 30px;
-  background: white;
-  color: #4caf50;
-  border: 2px solid #4caf50;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.view-holds-btn:hover {
-  background: #4caf50;
-  color: white;
+  font-size: 13px;
 }
 
 /* Hold button specific */
@@ -573,4 +551,155 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Fee Notice Small */
+.fee-notice-small {
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: #fff3cd;
+  border-radius: 4px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.fee-notice-small .fee-label {
+  font-weight: 600;
+  color: #856404;
+}
+
+.fee-notice-small .fee-amount {
+  font-weight: 700;
+  color: #28a745;
+}
+
+.fee-notice-small .fee-note {
+  color: #666;
+  font-size: 11px;
+  margin-left: auto;
+}
+
+/* Fee Summary */
+.fee-summary {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 15px 0;
+}
+
+.fee-summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.fee-total {
+  font-size: 13px;
+  font-weight: 700;
+  color: #28a745;
+}
+
+.fee-breakdown {
+  border-top: 1px solid #dee2e6;
+  padding-top: 10px;
+}
+
+.breakdown-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 13px;
+}
+
+.fee-disclaimer {
+  font-size: 11px;
+  color: #6c757d;
+  font-style: italic;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed #dee2e6;
+}
+
+/* Fee Highlight in Confirmation */
+.fee-highlight {
+  background: #fff3cd;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin: 8px 0;
+}
+
+.fee-highlight .fee-amount {
+  font-size: 16px;
+  font-weight: 700;
+  color: #28a745;
+}
+
+/* Fee Settings Button in SpotHoldManagement */
+.fee-settings-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #6f42c1;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-left: 10px;
+}
+
+
+/* Fee Modal */
+.fee-modal {
+  max-width: 500px;
+}
+
+.fee-current {
+  background: #e7f5ff;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+.fee-current h4 {
+  margin-top: 0;
+  color: #000000;
+}
+
+.fee-desc {
+  font-style: italic;
+  color: #495057;
+  margin-top: 8px;
+}
+
+.currency-input {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.currency-symbol {
+  padding: 10px 15px;
+  background: #f5f5f5;
+  border-right: 1px solid #ddd;
+  font-weight: 600;
+}
+
+.currency-input input {
+  flex: 1;
+  border: none;
+  padding: 10px;
+  font-size: 16px;
 }

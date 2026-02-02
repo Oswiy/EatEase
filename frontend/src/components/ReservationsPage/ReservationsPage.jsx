@@ -7,6 +7,10 @@ const ReservationsPage = ({ user, onBack }) => {
 
   useEffect(() => {
     fetchReservations();
+
+    // Refresh every 30 seconds to update expired status
+    const interval = setInterval(fetchReservations, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchReservations = async () => {
@@ -36,15 +40,59 @@ const ReservationsPage = ({ user, onBack }) => {
             data.reservations ||
             []
           ).map((res) => {
-            // Check if this is an expired hold
-            if (res.status === "pending_hold" && res.expires_at) {
-              const expiresAt = new Date(res.expires_at);
-              const now = new Date();
-              if (expiresAt < now) {
-                return { ...res, status: "expired" };
+            let isExpired = false;
+
+            if (res.status === "pending_hold") {
+              // Check original_expires_at first (restaurant response deadline)
+              if (res.original_expires_at) {
+                const expiresAt = new Date(res.original_expires_at);
+                const now = new Date();
+                if (expiresAt < now) {
+                  isExpired = true;
+                }
+              }
+              // If original_expires_at is NULL, check if hold was created more than 10 minutes ago
+              else if (res.created_at) {
+                const createdAt = new Date(res.created_at);
+                const now = new Date();
+                const minutesSinceCreation = (now - createdAt) / (1000 * 60);
+
+                // If hold was created more than 10 minutes ago and hasn't been accepted
+                if (
+                  minutesSinceCreation > 10 &&
+                  res.hold_status === "pending"
+                ) {
+                  isExpired = true;
+                }
+              }
+              // Fallback: check expires_at for old holds
+              else if (res.expires_at) {
+                const expiresAt = new Date(res.expires_at);
+                const now = new Date();
+                if (expiresAt < now) {
+                  isExpired = true;
+                }
+              }
+            } else if (
+              res.status === "confirmed" &&
+              res.hold_status === "accepted"
+            ) {
+              // Check expires_at for accepted holds
+              if (res.expires_at) {
+                const expiresAt = new Date(res.expires_at);
+                const now = new Date();
+                if (expiresAt < now) {
+                  isExpired = true;
+                }
               }
             }
-            return res;
+
+            return {
+              ...res,
+              is_expired: isExpired,
+              // Update status if expired
+              status: isExpired ? "expired" : res.status,
+            };
           });
 
           setReservations(processedReservations);
@@ -59,53 +107,59 @@ const ReservationsPage = ({ user, onBack }) => {
 
   const formatDateTime = (date, time) => {
     try {
-      // Handle different date formats - FIXED for 2026-01-25T00:00:00.000000Z format
+      // Handle different date formats
       let dateStr = date;
       let timeStr = time;
 
-      // If date is in ISO format with timezone (like 2026-01-25T00:00:00.000000Z)
+      // If date is in ISO format
       if (dateStr && dateStr.includes("T")) {
-        // Extract just the date part (before T)
-        const datePart = dateStr.split("T")[0];
-        const dateObj = new Date(datePart);
+        const dateObj = new Date(dateStr);
 
-        // If we have a specific time, add it
+        // Adjust for Philippine timezone
+        const phTime = new Date(
+          dateObj.toLocaleString("en-US", { timeZone: "Asia/Manila" }),
+        );
+
         if (timeStr && timeStr !== "00:00:00" && timeStr !== "00:00") {
-          // Parse the time
           const [hours, minutes] = timeStr.split(":").map(Number);
-          dateObj.setHours(hours, minutes || 0, 0);
+          phTime.setHours(hours, minutes || 0, 0);
         }
 
-        if (isNaN(dateObj.getTime())) {
+        if (isNaN(phTime.getTime())) {
           console.warn("Invalid date after processing:", date, time);
           return "Scheduled";
         }
 
-        return dateObj.toLocaleString("en-US", {
+        return phTime.toLocaleString("en-PH", {
           weekday: "short",
           month: "short",
           day: "numeric",
           year: "numeric",
           hour: "numeric",
           minute: "2-digit",
+          timeZone: "Asia/Manila",
         });
       }
 
-      // Regular date parsing
+      // Regular date parsing with timezone adjustment
       const dateObj = new Date(`${dateStr}T${timeStr || "00:00"}`);
+      const phTime = new Date(
+        dateObj.toLocaleString("en-US", { timeZone: "Asia/Manila" }),
+      );
 
-      if (isNaN(dateObj.getTime())) {
+      if (isNaN(phTime.getTime())) {
         console.warn("Invalid date:", date, time);
         return "Scheduled";
       }
 
-      return dateObj.toLocaleString("en-US", {
+      return phTime.toLocaleString("en-PH", {
         weekday: "short",
         month: "short",
         day: "numeric",
         year: "numeric",
         hour: "numeric",
         minute: "2-digit",
+        timeZone: "Asia/Manila",
       });
     } catch (error) {
       console.error("Error formatting date:", error);
@@ -113,14 +167,13 @@ const ReservationsPage = ({ user, onBack }) => {
     }
   };
 
-  const formatStatus = (status, expiresAt) => {
-    // Check if hold is expired
-    if (status === "pending_hold" && expiresAt) {
-      const expiresDate = new Date(expiresAt);
-      const now = new Date();
-      if (expiresDate < now) {
-        return "Expired";
-      }
+  const formatStatus = (reservation) => {
+    const { status, hold_status, is_expired, expires_at, original_expires_at } =
+      reservation;
+
+    // Check if expired
+    if (is_expired) {
+      return "Expired";
     }
 
     // Map status to display names
@@ -138,41 +191,53 @@ const ReservationsPage = ({ user, onBack }) => {
     return statusMap[status] || status;
   };
 
-  const getStatusClass = (status, expiresAt) => {
-    // Check if hold is expired
-    if (status === "pending_hold" && expiresAt) {
-      const expiresDate = new Date(expiresAt);
-      const now = new Date();
-      if (expiresDate < now) {
-        return "expired";
-      }
+  const getStatusClass = (reservation) => {
+    const { status, is_expired } = reservation;
+
+    if (is_expired) {
+      return "expired";
     }
 
     return status;
   };
 
-  const formatHoldExpiry = (expiresAt) => {
-    if (!expiresAt) return "";
+  const formatHoldExpiry = (reservation) => {
+    const { expires_at, original_expires_at, is_expired } = reservation;
+
+    if (is_expired) {
+      return "Expired";
+    }
+
+    const expiryTime = original_expires_at || expires_at;
+    if (!expiryTime) return "";
 
     try {
-      const expiresDate = new Date(expiresAt);
+      const expiresDate = new Date(expiryTime);
       const now = new Date();
-
-      // Check if expired
-      if (expiresDate < now) {
-        return "Expired";
-      }
 
       // Calculate time remaining
       const diffMs = expiresDate - now;
       const diffMins = Math.floor(diffMs / 60000);
+
+      if (diffMins <= 0) {
+        return "Expired";
+      }
+
       const diffHours = Math.floor(diffMins / 60);
       const remainingMins = diffMins % 60;
 
-      if (diffHours > 0) {
-        return `Expires in ${diffHours}h ${remainingMins}m`;
+      if (original_expires_at) {
+        if (diffHours > 0) {
+          return `Restaurant response in ${diffHours}h ${remainingMins}m`;
+        } else {
+          return `Restaurant response in ${diffMins}m`;
+        }
       } else {
-        return `Expires in ${diffMins}m`;
+        if (diffHours > 0) {
+          return `Expires in ${diffHours}h ${remainingMins}m`;
+        } else {
+          return `Expires in ${diffMins}m`;
+        }
       }
     } catch (error) {
       return "";
@@ -180,6 +245,19 @@ const ReservationsPage = ({ user, onBack }) => {
   };
 
   const handleCancel = async (id) => {
+    const reservation = reservations.find((r) => r.id === id);
+
+    // Check if reservation can be cancelled
+    if (reservation.is_expired) {
+      alert("This hold has already expired and cannot be cancelled.");
+      return;
+    }
+
+    if (reservation.status === "expired") {
+      alert("This reservation has expired.");
+      return;
+    }
+
     if (!confirm("Cancel this reservation?")) return;
 
     const token = localStorage.getItem("auth_token");
@@ -198,9 +276,13 @@ const ReservationsPage = ({ user, onBack }) => {
       if (response.ok) {
         alert("Reservation cancelled");
         fetchReservations();
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || "Failed to cancel reservation");
       }
     } catch (error) {
       console.error("Error cancelling:", error);
+      alert("Error cancelling reservation");
     }
   };
 
@@ -238,10 +320,30 @@ const ReservationsPage = ({ user, onBack }) => {
     }
   };
 
-  // Check if reservation can be removed (cancelled, rejected, or expired)
+  // Check if reservation can be removed
   const canRemoveReservation = (reservation) => {
-    const removableStatuses = ["cancelled", "expired", "rejected"];
-    return removableStatuses.includes(reservation.status);
+    const { status, is_expired } = reservation;
+    const removableStatuses = ["cancelled", "expired", "rejected", "completed"];
+
+    return is_expired || removableStatuses.includes(status);
+  };
+
+  // Check if reservation can be cancelled
+  const canCancelReservation = (reservation) => {
+    const { status, hold_status, is_expired } = reservation;
+
+    if (is_expired) return false;
+    if (status === "expired") return false;
+    if (status === "cancelled") return false;
+    if (status === "rejected") return false;
+    if (status === "completed") return false;
+
+    // Only pending holds and confirmed reservations can be cancelled
+    return (
+      status === "pending_hold" ||
+      status === "confirmed" ||
+      status === "pending"
+    );
   };
 
   return (
@@ -300,9 +402,10 @@ const ReservationsPage = ({ user, onBack }) => {
       ) : (
         <div className="reservations-list">
           {reservations.map((res) => {
-            const displayStatus = formatStatus(res.status, res.expires_at);
-            const statusClass = getStatusClass(res.status, res.expires_at);
+            const displayStatus = formatStatus(res);
+            const statusClass = getStatusClass(res);
             const canRemove = canRemoveReservation(res);
+            const canCancel = canCancelReservation(res);
 
             return (
               <div key={res.id} className="reservation-card">
@@ -316,9 +419,10 @@ const ReservationsPage = ({ user, onBack }) => {
                       <span className={`status ${statusClass}`}>
                         {displayStatus}
                       </span>
-                      {res.expires_at && displayStatus === "Pending Hold" && (
+                      {(res.status === "pending_hold" ||
+                        res.status === "confirmed") && (
                         <span className="expiry-info">
-                          {formatHoldExpiry(res.expires_at)}
+                          {formatHoldExpiry(res)}
                         </span>
                       )}
                     </div>
@@ -380,22 +484,21 @@ const ReservationsPage = ({ user, onBack }) => {
                   )}
                 </div>
                 <div className="reservation-actions">
-                  {res.status === "pending_hold" ? (
-                    <button
-                      className="cancel-hold-btn"
-                      onClick={() => handleCancel(res.id)}
-                      title="Cancel this spot hold"
-                    >
-                      Cancel Hold
-                    </button>
-                  ) : res.status === "confirmed" || res.status === "pending" ? (
+                  {canCancel && (
                     <button
                       className="cancel-btn"
                       onClick={() => handleCancel(res.id)}
+                      title={
+                        res.status === "pending_hold"
+                          ? "Cancel this spot hold"
+                          : "Cancel reservation"
+                      }
                     >
-                      Cancel Reservation
+                      {res.status === "pending_hold"
+                        ? "Cancel Hold"
+                        : "Cancel Reservation"}
                     </button>
-                  ) : null}
+                  )}
                 </div>
               </div>
             );
