@@ -237,7 +237,7 @@ const OwnerOverviewTab = ({
         </div>
 
         {restaurant.features && restaurant.features.length > 0 ? (
-          <div className="features-list">
+          <div className="overview-features-list">
             {restaurant.features.map((feature, index) => (
               <span key={index} className="feature-tag">
                 {feature}

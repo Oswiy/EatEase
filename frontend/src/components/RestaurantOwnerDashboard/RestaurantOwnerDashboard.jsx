@@ -38,6 +38,9 @@ function RestaurantOwnerDashboard({ user }) {
     features: [],
   });
   const [editingImageType, setEditingImageType] = useState(null); // 'profile' or 'banner'
+  const [promoText, setPromoText] = useState("");
+  const [showPromo, setShowPromo] = useState(false);
+  const [showPromoModal, setShowPromoModal] = useState(false);
 
   useEffect(() => {
     if (user && user.user_type === "restaurant_owner") {
@@ -91,6 +94,49 @@ function RestaurantOwnerDashboard({ user }) {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const handleSavePromo = async () => {
+    if (!restaurant?.is_featured) {
+      alert("Only featured restaurants can add promo text");
+      return;
+    }
+
+    if (promoText.length > 100) {
+      alert("Promo text must be 100 characters or less");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("auth_token");
+      const response = await fetch(
+        "http://localhost/EatEase-Backend/backend/public/api/restaurant/promo",
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            promo_text: promoText,
+            show_promo: showPromo,
+          }),
+        },
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        alert("✅ Promo text saved!");
+        fetchRestaurant(); // Refresh restaurant data
+        if (showPromoModal) setShowPromoModal(false); // Close modal if open
+      } else {
+        alert("Failed to save promo: " + data.message);
+      }
+    } catch (error) {
+      console.error("Error saving promo:", error);
+      alert("Error saving promo text");
+    }
+  };
 
   const fetchTier = async () => {
     const token = localStorage.getItem("auth_token");
@@ -266,6 +312,13 @@ function RestaurantOwnerDashboard({ user }) {
       alert("Error upgrading tier");
     }
   };
+
+  useEffect(() => {
+    if (restaurant) {
+      setPromoText(restaurant.promo_text || "");
+      setShowPromo(restaurant.show_promo || false);
+    }
+  }, [restaurant]);
 
   useEffect(() => {
     fetchRestaurant();
@@ -702,6 +755,58 @@ function RestaurantOwnerDashboard({ user }) {
                               : "Be Featured"}
                           </span>
                         </button>
+                      )}
+
+                      {restaurant.is_featured && (
+                        <div className="dropdown-promo-section">
+                          <div className="promo-header-small">
+                            <svg
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="#ffd43b"
+                            >
+                              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                            </svg>
+                            <span>Promo Text</span>
+                          </div>
+
+                          <div className="promo-input-group-small">
+                            <input
+                              type="text"
+                              value={promoText}
+                              onChange={(e) =>
+                                setPromoText(e.target.value.slice(0, 30))
+                              }
+                              placeholder="e.g., '20% Off Today'"
+                              maxLength={50}
+                              className="dropdown-promo-input"
+                            />
+                            <div className="char-count-small">
+                              {promoText.length}/30
+                            </div>
+                          </div>
+
+                          <div className="promo-toggle-row">
+                            <label className="toggle-label-small">
+                              <input
+                                type="checkbox"
+                                checked={showPromo}
+                                onChange={(e) => setShowPromo(e.target.checked)}
+                              />
+                              <span id="toggle-text-small">
+                                Show in carousel
+                              </span>
+                            </label>
+                            <button
+                              onClick={handleSavePromo}
+                              id="save-promo-btn-small"
+                              disabled={!promoText.trim()}
+                            >
+                              Save
+                            </button>
+                          </div>
+                        </div>
                       )}
 
                       <button
