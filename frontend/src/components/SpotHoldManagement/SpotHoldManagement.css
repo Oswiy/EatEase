@@ -34,7 +34,6 @@
   min-width: 250px;
 }
 
-
 .capacity-label {
   font-size: 12px;
   color: var(--text-secondary);
@@ -57,6 +56,21 @@
   font-size: 12px;
   color: var(--text-secondary);
   text-align: center;
+}
+
+.fee-settings-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: center;
+  border-radius: 8px;
+  width: fit-content;
+  font-size: 12px;
+  padding: 5px;
+  margin-top: 10px;
+  background: black;
+  color: white;
+  border: none;
 }
 
 .management-tabs {
@@ -159,7 +173,7 @@
   border-radius: 12px;
   box-shadow: var(--card-shadow);
   padding: 20px;
-    box-shadow: 0 2px 8px rgba(0.1, 0.1, 0.1, 0.4);
+  box-shadow: 0 2px 8px rgba(0.1, 0.1, 0.1, 0.4);
 }
 
 .hold-card:hover {
@@ -327,6 +341,9 @@
   border-radius: 12px;
   overflow: hidden;
   box-shadow: var(--card-shadow);
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
 }
 
 .reservations-table th {
@@ -336,12 +353,19 @@
   font-weight: 600;
   color: var(--text-primary);
   border-bottom: 2px solid #e9ecef;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .reservations-table td {
   padding: 15px;
   border-bottom: 1px solid #e9ecef;
   color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .reservations-table tr:last-child td {
@@ -355,7 +379,7 @@
 /* Expired Holds Styles */
 .expired-holds {
   display: grid;
-  gap: 10px;
+  gap: 20px;
 }
 
 .expired-hold-card {
@@ -369,9 +393,10 @@
 .expired-hold-header {
   display: flex;
   gap: 15px;
-  align-items: center;
+  justify-content: space-between;
   margin-bottom: 10px;
-  font-size: 14px;
+  font-size: 13px;
+  align-items: center;
 }
 
 .customer-name {
@@ -380,7 +405,7 @@
 }
 
 .expired-hold-details {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-secondary);
   line-height: 1.5;
 }
@@ -417,11 +442,11 @@
   }
 
   .reservations-table {
-    font-size: 14px;
+    font-size: 12px;
   }
 
   .reservations-table th,
   .reservations-table td {
-    padding: 10px;
+    padding: 5px;
   }
 }

@@ -6,10 +6,18 @@ const SpotHoldManagement = ({ restaurant }) => {
   const [todaysReservations, setTodaysReservations] = useState([]);
   const [restaurantInfo, setRestaurantInfo] = useState(restaurant);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("active"); // active, today, expired
+  const [activeTab, setActiveTab] = useState("active");
   const [capacityInfo, setCapacityInfo] = useState({
     current: restaurant?.current_occupancy || 0,
     max: restaurant?.max_capacity || 100,
+  });
+
+  // ✅ ADD FEE STATE
+  const [showFeeModal, setShowFeeModal] = useState(false);
+  const [feeSettings, setFeeSettings] = useState({
+    hold_fee: 0,
+    min_party_for_fee: 1,
+    fee_description: "",
   });
 
   useEffect(() => {
@@ -19,12 +27,70 @@ const SpotHoldManagement = ({ restaurant }) => {
         max: restaurant.max_capacity || 100,
       });
       fetchData();
+      fetchFeeSettings(); // ✅ ADD THIS
 
-      // Refresh every 30 seconds for real-time updates
       const interval = setInterval(fetchData, 30000);
       return () => clearInterval(interval);
     }
   }, [activeTab, restaurant]);
+
+  // ✅ ADD FETCH FEE SETTINGS
+  const fetchFeeSettings = async () => {
+    try {
+      const token = localStorage.getItem("auth_token");
+      const response = await fetch(
+        "http://localhost:8000/api/restaurant/fee-settings",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        },
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Ensure all values are properly converted to numbers
+        setFeeSettings({
+          hold_fee: Number(data.hold_fee) || 0,
+          min_party_for_fee: Number(data.min_party_for_fee) || 1,
+          fee_description: data.fee_description || "",
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching fee settings:", error);
+    }
+  };
+  // ✅ ADD SAVE FEE SETTINGS
+  const saveFeeSettings = async () => {
+    try {
+      const token = localStorage.getItem("auth_token");
+      const response = await fetch(
+        "http://localhost:8000/api/restaurant/update-fee",
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify(feeSettings),
+        },
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        alert("✅ Fee settings saved!");
+        setShowFeeModal(false);
+      } else {
+        alert("Failed to save: " + data.message);
+      }
+    } catch (error) {
+      console.error("Error saving fee:", error);
+      alert("Error saving fee settings");
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -46,10 +112,10 @@ const SpotHoldManagement = ({ restaurant }) => {
 
   const fetchWithAuth = async (endpoint, options = {}) => {
     const token = localStorage.getItem("auth_token");
-    const baseUrl = "http://localhost/EatEase-Backend/backend/public";
+    const baseUrl = "http://localhost:8000";
     const url = `${baseUrl}/api${endpoint}`;
 
-    console.log("API Call:", url); // Debug log
+    console.log("API Call:", url, endpoint);
 
     const defaultHeaders = {
       Authorization: `Bearer ${token}`,
@@ -57,17 +123,27 @@ const SpotHoldManagement = ({ restaurant }) => {
       "Content-Type": "application/json",
     };
 
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        ...defaultHeaders,
-        ...options.headers,
-      },
-    });
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          ...defaultHeaders,
+          ...options.headers,
+        },
+      });
 
-    console.log("Response Status:", response.status);
+      console.log("Response Status:", response.status);
 
-    return response.json();
+      if (!response.ok) {
+        console.error("API Error:", response.status, response.statusText);
+        throw new Error(`API Error: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Fetch error:", error);
+      throw error;
+    }
   };
 
   const fetchActiveHolds = async () => {
@@ -109,12 +185,15 @@ const SpotHoldManagement = ({ restaurant }) => {
   };
 
   const handleAcceptHold = async (holdId) => {
+    console.log("Accepting hold ID:", holdId);
+
     if (
       !window.confirm(
         "Accept this spot hold? This will confirm the reservation.",
       )
-    )
+    ) {
       return;
+    }
 
     try {
       const data = await fetchWithAuth(
@@ -124,11 +203,12 @@ const SpotHoldManagement = ({ restaurant }) => {
         },
       );
 
+      console.log("Accept hold response:", data);
+
       if (data.success) {
         alert("✅ Spot hold accepted! Reservation confirmed.");
-        fetchData(); // Refresh all data
+        fetchData();
 
-        // Update capacity from response if available
         if (data.restaurant_occupancy) {
           setCapacityInfo({
             current: data.restaurant_occupancy.current,
@@ -137,10 +217,11 @@ const SpotHoldManagement = ({ restaurant }) => {
         }
       } else {
         alert(`❌ ${data.message || "Failed to accept hold"}`);
+        console.error("Accept failed:", data);
       }
     } catch (error) {
       console.error("Error accepting hold:", error);
-      alert("Error accepting spot hold");
+      alert("Error accepting spot hold. Check console for details.");
     }
   };
 
@@ -157,7 +238,7 @@ const SpotHoldManagement = ({ restaurant }) => {
 
       if (data.success) {
         alert("Spot hold rejected.");
-        fetchData(); // Refresh data
+        fetchData();
       } else {
         alert(data.message || "Failed to reject hold");
       }
@@ -167,7 +248,7 @@ const SpotHoldManagement = ({ restaurant }) => {
     }
   };
 
-  const formatTimeRemaining = (minutes) => {
+  const formatTimeRemaining = (minutes, hold) => {
     if (minutes <= 0) return "Expired";
     if (minutes < 60) return `${minutes}m remaining`;
     const hours = Math.floor(minutes / 60);
@@ -225,6 +306,18 @@ const SpotHoldManagement = ({ restaurant }) => {
           <div className="available-capacity">
             Available: {calculateAvailableCapacity()} seats
           </div>
+
+          {/* ✅ ADD FEE SETTINGS BUTTON */}
+          <button
+            className="fee-settings-btn"
+            onClick={() => setShowFeeModal(true)}
+            title="Configure hold fees"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z" />
+            </svg>
+            Fee Settings
+          </button>
         </div>
       </div>
 
@@ -285,11 +378,103 @@ const SpotHoldManagement = ({ restaurant }) => {
           </>
         )}
       </div>
+
+      {/* ✅ ADD FEE MODAL */}
+      {showFeeModal && (
+        <div className="modal-overlay" onClick={() => setShowFeeModal(false)}>
+          <div
+            className="modal-content fee-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <h3>Spot Hold Fee Settings</h3>
+              <button
+                className="close-btn"
+                onClick={() => setShowFeeModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="fee-current">
+                <h4>
+                  Current Fee: ₱{Number(feeSettings.hold_fee || 0).toFixed(2)}
+                </h4>
+                <p>
+                  Applies to parties of {feeSettings.min_party_for_fee || 1} or
+                  more
+                </p>
+                {feeSettings.fee_description && (
+                  <p className="fee-desc">{feeSettings.fee_description}</p>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label>Hold Fee (₱)</label>
+                <div className="currency-input">
+                  <span className="currency-symbol">₱</span>
+                  <input
+                    type="number"
+                    value={
+                      feeSettings.hold_fee === 0 ||
+                      feeSettings.hold_fee === null
+                        ? ""
+                        : Number(feeSettings.hold_fee)
+                    }
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Convert to number or 0 if empty
+                      setFeeSettings({
+                        ...feeSettings,
+                        hold_fee: value === "" ? 0 : parseFloat(value),
+                      });
+                    }}
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                  />
+                </div>
+                <small>Set to 0 for free holds</small>
+              </div>
+
+              <div className="form-group">
+                <label>Minimum Party Size for Fee</label>
+                <input
+                  type="number"
+                  value={feeSettings.min_party_for_fee || 1}
+                  onChange={(e) =>
+                    setFeeSettings({
+                      ...feeSettings,
+                      min_party_for_fee: parseInt(e.target.value) || 1,
+                    })
+                  }
+                  min="1"
+                  max="20"
+                />
+                <small>
+                  Fee applies only to parties of this size or larger
+                </small>
+              </div>
+            </div>
+            <div className="modal-actions">
+              <button
+                className="cancel-btn"
+                onClick={() => setShowFeeModal(false)}
+              >
+                Cancel
+              </button>
+              <button className="save-btn" onClick={saveFeeSettings}>
+                Save Settings
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-// Sub-component: Active Holds
+// Sub-component: Active Holds (FIXED - remove duplicate functions)
 const ActiveHoldsView = ({
   holds,
   onAccept,
@@ -312,7 +497,24 @@ const ActiveHoldsView = ({
   return (
     <div className="holds-list">
       {holds.map((hold) => {
-        const isExpired = hold.time_remaining <= 0;
+        // ✅ FIXED: Calculate isExpired based on hold_status
+        let isExpired = false;
+        let timeRemainingText = "";
+
+        if (hold.hold_status === "pending") {
+          // Pending holds: Restaurant has 10 minutes to respond
+          isExpired = hold.time_remaining <= 0;
+          timeRemainingText = isExpired
+            ? "Response deadline passed"
+            : `Restaurant response in: ${formatTimeRemaining(hold.time_remaining)}`;
+        } else if (hold.hold_status === "accepted") {
+          // Accepted holds: Timer from acceptance
+          isExpired = hold.time_remaining <= 0;
+          timeRemainingText = isExpired
+            ? "Hold expired"
+            : `Diner arrival time: ${formatTimeRemaining(hold.time_remaining)}`;
+        }
+
         const canAccept = !isExpired && hold.party_size <= availableCapacity;
 
         return (
@@ -337,23 +539,50 @@ const ActiveHoldsView = ({
                 <span className="confirmation-code">
                   Code: {hold.confirmation_code}
                 </span>
+                {hold.hold_fee > 0 && (
+                  <span className="fee-badge">
+                    Fee: ₱{Number(hold.hold_fee || 0).toFixed(2)}
+                  </span>
+                )}
               </div>
             </div>
 
             <div className="hold-details">
               <div className="time-info">
                 <div className="time-remaining">
-                  <span className="time-label">Time Remaining:</span>
+                  <span className="time-label">Status:</span>
                   <span className={`time-value ${isExpired ? "expired" : ""}`}>
-                    {formatTimeRemaining(hold.time_remaining)}
+                    {hold.hold_status === "pending"
+                      ? "Waiting for acceptance"
+                      : "Accepted - Timer running"}
                   </span>
                 </div>
-                <div className="expires-at">
-                  Expires:{" "}
-                  {new Date(hold.expires_at).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+
+                <div className="time-details">
+                  {timeRemainingText && (
+                    <div className="time-text">{timeRemainingText}</div>
+                  )}
+
+                  {hold.hold_status === "pending" ? (
+                    <div className="expires-at">
+                      Auto-cancels if not accepted by:{" "}
+                      {new Date(hold.original_expires_at).toLocaleTimeString(
+                        [],
+                        {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        },
+                      )}
+                    </div>
+                  ) : hold.accepted_at ? (
+                    <div className="accepted-at">
+                      Accepted at:{" "}
+                      {new Date(hold.accepted_at).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </div>
+                  ) : null}
                 </div>
               </div>
 
@@ -365,29 +594,35 @@ const ActiveHoldsView = ({
             </div>
 
             <div className="hold-actions">
-              {!isExpired ? (
-                <>
-                  <button
-                    className="btn-accept"
-                    onClick={() => onAccept(hold.id)}
-                    disabled={!canAccept}
-                    title={
-                      !canAccept
-                        ? "Not enough capacity"
-                        : "Accept this spot hold"
-                    }
-                  >
-                    Accept Hold
-                  </button>
-                  <button
-                    className="btn-reject"
-                    onClick={() => onReject(hold.id)}
-                  >
-                    Reject
-                  </button>
-                </>
-              ) : (
+              {hold.hold_status === "pending" ? (
+                !isExpired ? (
+                  <>
+                    <button
+                      className="btn-accept"
+                      onClick={() => onAccept(hold.id)}
+                      disabled={!canAccept}
+                      title={
+                        !canAccept
+                          ? "Not enough capacity"
+                          : "Accept this spot hold"
+                      }
+                    >
+                      Accept Hold
+                    </button>
+                    <button
+                      className="btn-reject"
+                      onClick={() => onReject(hold.id)}
+                    >
+                      Reject
+                    </button>
+                  </>
+                ) : (
+                  <span className="expired-label">Reservation Expired</span>
+                )
+              ) : isExpired ? (
                 <span className="expired-label">Hold Expired</span>
+              ) : (
+                <span className="accepted-label">Accepted</span>
               )}
             </div>
           </div>
@@ -397,7 +632,7 @@ const ActiveHoldsView = ({
   );
 };
 
-// Sub-component: Today's Reservations
+// Sub-component: Today's Reservations (keep same)
 const TodaysReservationsView = ({ reservations }) => {
   if (reservations.length === 0) {
     return (
@@ -440,7 +675,7 @@ const TodaysReservationsView = ({ reservations }) => {
   );
 };
 
-// Sub-component: Expired Holds
+// Sub-component: Expired Holds (keep same)
 const ExpiredHoldsView = ({ holds, getHoldTypeLabel }) => {
   if (holds.length === 0) {
     return (
