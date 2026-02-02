@@ -1,6 +1,6 @@
 // EatEase-Diner/frontend/src/services/pollingService.js
 
-const API_BASE_URL = "http://localhost:8000";
+const API_BASE_URL = "http://localhost/EatEase/backend/public";
 
 class PollingService {
   constructor() {

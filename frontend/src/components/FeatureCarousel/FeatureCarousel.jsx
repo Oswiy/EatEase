@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from "react";
 import "./FeatureCarousel.css";
+import pollingService from "../../services/pollingService"; // Add this import
 
 function FeatureCarousel({ restaurants, onRestaurantClick }) {
   const [featuredRestaurants, setFeaturedRestaurants] = useState([]);
   const [loadedImages, setLoadedImages] = useState({});
+
+  // Store real-time updated restaurant data
+  const [updatedRestaurants, setUpdatedRestaurants] = useState({});
 
   useEffect(() => {
     // Filter featured restaurants
@@ -13,7 +17,54 @@ function FeatureCarousel({ restaurants, onRestaurantClick }) {
     );
     console.log("Featured restaurants:", featured);
     setFeaturedRestaurants(featured);
+    
+    // Initialize updated restaurants with initial data
+    const initialUpdates = {};
+    featured.forEach(restaurant => {
+      initialUpdates[restaurant.id] = {
+        crowd_status: restaurant.crowd_status || restaurant.status,
+        occupancy_percentage: restaurant.occupancy_percentage || 0
+      };
+    });
+    setUpdatedRestaurants(initialUpdates);
   }, [restaurants]);
+
+  // Set up polling for all featured restaurants
+  useEffect(() => {
+    if (featuredRestaurants.length === 0) return;
+
+    console.log("Setting up polling for featured restaurants:", featuredRestaurants.map(r => r.id));
+
+    const unsubscribeCallbacks = [];
+
+    // Subscribe each restaurant to polling
+    featuredRestaurants.forEach(restaurant => {
+      const unsubscribe = pollingService.subscribe(
+        restaurant.id,
+        (updatedData) => {
+          console.log(`🔄 FeatureCarousel received update for ${restaurant.name}:`, updatedData);
+          
+          // Update the specific restaurant's data
+          setUpdatedRestaurants(prev => ({
+            ...prev,
+            [restaurant.id]: {
+              crowd_status: updatedData.crowd_status,
+              occupancy_percentage: updatedData.occupancy_percentage,
+              updated_at: updatedData.updated_at
+            }
+          }));
+        }
+      );
+      
+      unsubscribeCallbacks.push(unsubscribe);
+    });
+
+    // Cleanup: unsubscribe from all when component unmounts
+    return () => {
+      console.log("Cleaning up polling subscriptions for featured restaurants");
+      unsubscribeCallbacks.forEach(unsubscribe => unsubscribe());
+    };
+  }, [featuredRestaurants]);
 
   const handleRestaurantClick = (restaurant) => {
     if (onRestaurantClick) {
@@ -86,6 +137,16 @@ function FeatureCarousel({ restaurants, onRestaurantClick }) {
     setLoadedImages((prev) => ({ ...prev, [restaurantId]: false }));
   };
 
+  // Helper to get the current status for a restaurant
+  const getCurrentRestaurantData = (restaurant) => {
+    const updatedData = updatedRestaurants[restaurant.id];
+    return {
+      ...restaurant,
+      crowd_status: updatedData?.crowd_status || restaurant.crowd_status || restaurant.status,
+      occupancy_percentage: updatedData?.occupancy_percentage || restaurant.occupancy_percentage
+    };
+  };
+
   // Empty state - no featured restaurants
   if (featuredRestaurants.length === 0) {
     return (
@@ -109,13 +170,14 @@ function FeatureCarousel({ restaurants, onRestaurantClick }) {
 
       <div className="carousel-container">
         {featuredRestaurants.map((restaurant) => {
+          const currentData = getCurrentRestaurantData(restaurant);
           const imageUrl = getImageUrl(restaurant.banner_image);
           const hasLoaded = loadedImages[restaurant.id];
 
           console.log(`Rendering ${restaurant.name}:`, {
-            imageUrl: imageUrl,
-            hasLoaded: hasLoaded,
-            banner_image: restaurant.banner_image,
+            currentStatus: currentData.crowd_status,
+            originalStatus: restaurant.crowd_status,
+            hasUpdate: !!updatedRestaurants[restaurant.id]
           });
 
           return (
@@ -124,13 +186,13 @@ function FeatureCarousel({ restaurants, onRestaurantClick }) {
               className="carousel-item"
               onClick={() => handleRestaurantClick(restaurant)}
             >
-              {/* Crowd Status Indicator */}
+              {/* Crowd Status Indicator with polling updates */}
               <div className="crowd-status-indicator">
                 <div
-                  className={`status-dot ${getStatusClass(restaurant.crowd_status || restaurant.status)}`}
+                  className={`status-dot ${getStatusClass(currentData.crowd_status)}`}
                 ></div>
                 <span>
-                  {getStatusLabel(restaurant.crowd_status || restaurant.status)}
+                  {getStatusLabel(currentData.crowd_status)}
                 </span>
               </div>
 
