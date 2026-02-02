@@ -55,7 +55,7 @@ class Reservation extends Model
         return $this->belongsTo(Restaurant::class);
     }
 
-        public function isExpired(): bool
+    public function isExpired(): bool
     {
         if ($this->status !== 'pending_hold') {
             return false;
@@ -73,19 +73,45 @@ class Reservation extends Model
     /**
      * Auto-update status if hold is expired
      */
+    /**
+     * Auto-update status if hold is expired
+     */
     public static function boot()
     {
         parent::boot();
 
         static::saving(function ($reservation) {
-            // Auto-update expired holds
-            if ($reservation->status === 'pending_hold' && $reservation->expires_at) {
-                $expiresAt = new \DateTime($reservation->expires_at);
+            // Auto-update expired holds based on original_expires_at (restaurant response)
+            if (
+                $reservation->status === 'pending_hold' &&
+                $reservation->hold_status === 'pending' &&
+                $reservation->original_expires_at
+            ) {
+
+                $expiresAt = new \DateTime($reservation->original_expires_at);
                 $now = new \DateTime();
-                
+
                 if ($expiresAt < $now) {
                     $reservation->status = 'cancelled';
-                    $reservation->hold_status = 'rejected';
+                    $reservation->hold_status = 'expired';
+                    $reservation->cancelled_at = now();
+                }
+            }
+
+            // Also check expires_at for accepted holds
+            if (
+                $reservation->status === 'confirmed' &&
+                $reservation->hold_status === 'accepted' &&
+                $reservation->expires_at
+            ) {
+
+                $expiresAt = new \DateTime($reservation->expires_at);
+                $now = new \DateTime();
+
+                if ($expiresAt < $now) {
+                    $reservation->status = 'cancelled';
+                    $reservation->hold_status = 'expired';
+                    $reservation->cancelled_at = now();
                 }
             }
         });

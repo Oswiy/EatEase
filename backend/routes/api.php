@@ -58,6 +58,9 @@ Route::get('/restaurants/{id}/reviews', [ReviewController::class, 'index']);
 Route::get('/restaurants/{id}/menu-text', [MenuController::class, 'show']);
 Route::get('/restaurants/{id}/menu', [MenuController::class, 'show']);
 
+// ✅ ADD THIS NEW PUBLIC ROUTE FOR DINERS
+Route::get('/restaurants/{id}/fee-settings', [RestaurantController::class, 'getFeeSettingsForDiner']);
+
 // Status endpoints with higher rate limits
 Route::get('/restaurants/{id}/status', [RestaurantController::class, 'getStatus'])
     ->middleware('throttle:300,1');
@@ -79,6 +82,9 @@ Route::middleware('auth:sanctum')->group(function () {
             'auth_working' => !is_null($user)
         ]);
     });
+
+    Route::get('/restaurant/fee-settings', [RestaurantController::class, 'getFeeSettings']);
+    Route::put('/restaurant/update-fee', [RestaurantController::class, 'updateFeeSettings']);
 
     Route::post('/restaurant/renew-premium', [RestaurantController::class, 'renewPremium']);
 

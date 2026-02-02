@@ -18,6 +18,8 @@ class Kernel extends ConsoleKernel
         // Run premium expiry check daily at midnight
         $schedule->command('premium:check-expiry')
             ->dailyAt('00:00');
+
+        $schedule->command('holds:auto-cancel')->everyMinute();
     }
 
     /**

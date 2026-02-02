@@ -49,6 +49,9 @@ class Restaurant extends Model
         'banner_position',
         'promo_text',
         'show_promo',
+        'hold_fee',
+        'min_party_for_fee',
+        'fee_description',
     ];
 
     protected $casts = [
@@ -69,6 +72,8 @@ class Restaurant extends Model
         'occupancy_percentage' => 'float', // ✅ ADD THIS
         'current_occupancy' => 'integer', // ✅ ADD THIS
         'max_capacity' => 'integer', // ✅ ADD THIS
+        'hold_fee' => 'decimal:2',
+        'min_party_for_fee' => 'integer',
     ];
 
     protected $appends = ['profile_image_url', 'banner_image_url'];
@@ -96,6 +101,21 @@ class Restaurant extends Model
                 }
             }
         });
+    }
+
+    // Add method to calculate fee:
+    public function calculateHoldFee($partySize)
+    {
+        if ($partySize < $this->min_party_for_fee) {
+            return 0;
+        }
+        return $this->hold_fee;
+    }
+
+    // Add method to check if fee applies:
+    public function hasHoldFee()
+    {
+        return $this->hold_fee > 0;
     }
 
     public function shouldShowPromo()

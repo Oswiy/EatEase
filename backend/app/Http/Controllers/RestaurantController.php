@@ -116,6 +116,125 @@ class RestaurantController extends Controller
         }
     }
 
+    /**
+     * Get restaurant fee settings
+     */
+    public function getFeeSettings()
+    {
+        try {
+            $user = auth()->user();
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Not authenticated'
+                ], 401);
+            }
+
+            $restaurant = Restaurant::where('owner_id', $user->id)->first();
+
+            if (!$restaurant) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Restaurant not found'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'hold_fee' => $restaurant->hold_fee,
+                'min_party_for_fee' => $restaurant->min_party_for_fee,
+                'fee_description' => $restaurant->fee_description
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch fee settings'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get restaurant fee settings for diners (public)
+     */
+    public function getFeeSettingsForDiner($id)
+    {
+        try {
+            $restaurant = Restaurant::find($id);
+
+            if (!$restaurant) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Restaurant not found'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'hold_fee' => $restaurant->hold_fee,
+                'min_party_for_fee' => $restaurant->min_party_for_fee,
+                'fee_description' => $restaurant->fee_description
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch fee settings'
+            ], 500);
+        }
+    }
+
+    /**
+     * Update restaurant fee settings
+     */
+    public function updateFeeSettings(Request $request)
+    {
+        try {
+            $user = auth()->user();
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Not authenticated'
+                ], 401);
+            }
+
+            $restaurant = Restaurant::where('owner_id', $user->id)->first();
+
+            if (!$restaurant) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Restaurant not found'
+                ], 404);
+            }
+
+            // Validate input
+            $validated = $request->validate([
+                'hold_fee' => 'required|numeric|min:0|max:9999',
+                'min_party_for_fee' => 'required|integer|min:1|max:20',
+                'fee_description' => 'nullable|string|max:100'
+            ]);
+
+            // Update restaurant fee settings
+            $restaurant->update([
+                'hold_fee' => $validated['hold_fee'],
+                'min_party_for_fee' => $validated['min_party_for_fee'],
+                'fee_description' => $validated['fee_description'] ?? null
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Fee settings updated successfully',
+                'data' => [
+                    'hold_fee' => $restaurant->hold_fee,
+                    'min_party_for_fee' => $restaurant->min_party_for_fee,
+                    'fee_description' => $restaurant->fee_description
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update fee settings: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 
     public function updatePromoText(Request $request)
     {
