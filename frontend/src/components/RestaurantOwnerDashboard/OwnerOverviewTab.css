@@ -286,3 +286,133 @@
     align-items: flex-start;
   }
 }
+
+/* Premium Tier Info */
+.premium-tier-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Premium Expiry Display */
+.premium-expiry-display {
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+  background: #f8f9fa;
+  transition: all 0.3s ease;
+}
+
+.premium-expiry-display.active {
+  background: #e7f5ff;
+  border-color: #4dabf7;
+  box-shadow: 0 2px 8px rgba(77, 171, 247, 0.1);
+}
+
+.premium-expiry-display.warning {
+  background: #fff3bf;
+  border-color: #ffd43b;
+  box-shadow: 0 2px 12px rgba(255, 212, 59, 0.15);
+  animation: pulse-gentle 2s infinite;
+}
+
+.premium-expiry-display.expired {
+  background: #ffe3e3;
+  border-color: #ff6b6b;
+  color: #c92a2a;
+}
+
+.expiry-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.expiry-label {
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+.expiry-date {
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.expiry-details {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-top: 3px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.days-left {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 12px;
+}
+
+.days-left.active {
+  background: #4dabf7;
+  color: white;
+}
+
+.days-left.warning {
+  background: #ffd43b;
+  color: #212529;
+}
+
+.days-left.expired {
+  background: #ff6b6b;
+  color: white;
+}
+
+.renew-now-btn {
+  background: linear-gradient(135deg, #37b24d, #2b8a3e);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.renew-now-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(43, 138, 62, 0.3);
+}
+
+@keyframes pulse-gentle {
+  0% {
+    box-shadow: 0 2px 12px rgba(255, 212, 59, 0.15);
+  }
+  50% {
+    box-shadow: 0 2px 20px rgba(255, 212, 59, 0.25);
+  }
+  100% {
+    box-shadow: 0 2px 12px rgba(255, 212, 59, 0.15);
+  }
+}
+
+/* For mobile responsiveness */
+@media (max-width: 768px) {
+  .expiry-row {
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .expiry-details {
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .renew-now-btn {
+    width: 100%;
+  }
+}

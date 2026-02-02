@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react"; // Add useEffect
 import "./OwnerOverviewTab.css";
 
 const OwnerOverviewTab = ({
@@ -14,10 +14,78 @@ const OwnerOverviewTab = ({
   );
   const [loading, setLoading] = useState(false);
 
-  // const handleUpgrade = () => {
-  //   // You'll need to pass this from parent or handle differently
-  //   window.alert("Please use the upgrade button in the main dashboard");
-  // };
+  // ✅ ADD THESE STATE VARIABLES
+  const [expiryStatus, setExpiryStatus] = useState(null);
+  const [expiryDate, setExpiryDate] = useState(null);
+  const [remainingDays, setRemainingDays] = useState(null);
+
+  // ✅ ADD THIS USEEFFECT FOR EXPIRY CALCULATION
+  useEffect(() => {
+    if (
+      restaurant &&
+      restaurant.subscription_tier === "premium" &&
+      restaurant.subscription_ends_at
+    ) {
+      // Format expiry date
+      const expiry = new Date(restaurant.subscription_ends_at);
+      const formattedDate = expiry.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+      setExpiryDate(formattedDate);
+
+      // Calculate days left
+      const now = new Date();
+      const timeDiff = expiry - now;
+      const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+      setRemainingDays(daysLeft);
+
+      // Set status for styling
+      if (daysLeft <= 0) {
+        setExpiryStatus("expired");
+      } else if (daysLeft <= 7) {
+        setExpiryStatus("warning");
+      } else {
+        setExpiryStatus("active");
+      }
+    } else {
+      // Reset if not premium or no expiry date
+      setExpiryStatus(null);
+      setExpiryDate(null);
+      setRemainingDays(null);
+    }
+  }, [restaurant]);
+
+  const handleRenewSubscription = async () => {
+    try {
+      const token = localStorage.getItem("auth_token");
+      const response = await fetch(
+        "http://localhost:8000/api/restaurant/renew-premium",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        alert(`✅ Premium renewed! New expiry: ${data.expires_at}`);
+        // Trigger a refresh of restaurant data
+        if (window.location.reload) {
+          window.location.reload(); // Simple refresh
+        }
+      } else {
+        alert("Renewal failed: " + data.message);
+      }
+    } catch (error) {
+      console.error("Renewal error:", error);
+      alert("Error renewing subscription");
+    }
+  };
 
   const handleUpdateOccupancy = async () => {
     if (newOccupancy < 0 || newOccupancy > restaurant.max_capacity) {
@@ -127,7 +195,90 @@ const OwnerOverviewTab = ({
             </div>
           ) : (
             <div className="premium-tier-display">
-              <span className="tier-badge premium">Premium</span>
+              <div className="premium-tier-info">
+                <span className="tier-badge premium">Premium</span>
+
+                {/* ✅ ADD EXPIRY DISPLAY HERE */}
+                {expiryDate && (
+                  <div className={`premium-expiry-display ${expiryStatus}`}>
+                    <div className="expiry-row">
+                      <span className="expiry-label">
+                        Subscription ends on:
+                      </span>
+                      <span className="expiry-date">{expiryDate}</span>
+                    </div>
+
+                    {remainingDays !== null && (
+                      <div className="expiry-details">
+                        {remainingDays > 0 ? (
+                          <>
+                            <span className={`days-left ${expiryStatus}`}>
+                              {remainingDays}{" "}
+                              {remainingDays === 1 ? "day" : "days"} left
+                            </span>
+
+                            {/* ✅ Show Renew button only when ≤ 7 days AND > 0 days */}
+                            {remainingDays <= 7 && remainingDays > 0 && (
+                              <button
+                                className="renew-now-btn"
+                                onClick={() => {
+                                  if (
+                                    window.confirm(
+                                      "Renew your premium subscription for 30 days?\n\nYou'll keep all premium features for another month.",
+                                    )
+                                  ) {
+                                    handleRenewSubscription();
+                                  }
+                                }}
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="12"
+                                  height="12"
+                                  viewBox="0 -960 960 960"
+                                  fill="currentColor"
+                                >
+                                  <path d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-32-56-87.5-88T480-720q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z" />
+                                </svg>
+                                Renew Now
+                              </button>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <span className="days-left expired">Expired</span>
+
+                            {/* Show Renew button even when expired */}
+                            <button
+                              className="renew-now-btn"
+                              onClick={() => {
+                                if (
+                                  window.confirm(
+                                    "Your premium subscription has expired. Renew for 30 days to restore premium features?",
+                                  )
+                                ) {
+                                  handleRenewSubscription();
+                                }
+                              }}
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="12"
+                                height="12"
+                                viewBox="0 -960 960 960"
+                                fill="currentColor"
+                              >
+                                <path d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-32-56-87.5-88T480-720q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z" />
+                              </svg>
+                              Renew Subscription
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

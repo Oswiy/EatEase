@@ -95,6 +95,35 @@ function RestaurantOwnerDashboard({ user }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const handleRenewSubscription = async () => {
+    try {
+      const token = localStorage.getItem("auth_token");
+      const response = await fetch(
+        "http://localhost:8000/api/restaurant/renew-premium",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+        },
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        alert("✅ Premium subscription renewed for 30 days!");
+        setShowRenewModal(false);
+        fetchRestaurant(); // Refresh restaurant data
+      } else {
+        alert("Failed to renew: " + data.message);
+      }
+    } catch (error) {
+      console.error("Renew error:", error);
+      alert("Failed to renew subscription. Please try again.");
+    }
+  };
+
   const handleSavePromo = async () => {
     if (!restaurant?.is_featured) {
       alert("Only featured restaurants can add promo text");
@@ -724,7 +753,7 @@ function RestaurantOwnerDashboard({ user }) {
                         </svg>
                         <span>Edit Profile</span>
                       </button>
-
+                      
                       {/* Be Featured Button - Only for Premium */}
                       {tier === "premium" && (
                         <button
@@ -832,46 +861,7 @@ function RestaurantOwnerDashboard({ user }) {
                 </div>
               </div>
             </div>
-
-            {/* Hamburger Menu... keep as is */}
           </div>
-
-          {/* Verification Status */}
-          {/* <div className="owner-verification-status">
-                {restaurant.is_verified ? (
-                  <div className="verification-badge verified">
-                    <span className="badge-icon">✅</span>
-                    <span className="badge-text">Verified Restaurant</span>
-                  </div>
-                ) : restaurant.verification_requested ? (
-                  <div className="verification-badge pending">
-                    <span className="badge-icon">⏳</span>
-                    <span className="badge-text">Verification Pending</span>
-                  </div>
-                ) : (
-                  <div className="verification-badge not-verified">
-                    <span className="badge-icon">⚠️</span>
-                    <span className="badge-text">Not Verified</span>
-                    {/* Conditional feature button 
-                    {canBeFeatured ? (
-                      <button
-                        className="request-verification-btn"
-                        onClick={() => setShowVerificationForm(true)}
-                      >
-                        Request Verification
-                      </button>
-                    ) : (
-                      <button
-                        className="request-verification-btn disabled"
-                        disabled
-                        title="Upgrade to Premium to verify"
-                      >
-                        Upgrade for Verification
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div> */}
           <div className="content-wrapper">
             <div className="owner-header">
               {/* Restaurant Name and Verification Status */}
