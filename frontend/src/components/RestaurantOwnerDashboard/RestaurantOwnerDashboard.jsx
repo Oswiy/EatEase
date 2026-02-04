@@ -12,6 +12,7 @@ import ImageUpload from "../ImageUpload/ImageUpload";
 // Add this with your other imports:
 import SpotHoldManagement from "../SpotHoldManagement/SpotHoldManagement"; // Or the correct path
 import pollingService from "../../services/pollingService"; // Adjust path
+import IoTDeviceManager from "../IoTDeviceManager/IoTDeviceManager";
 
 function RestaurantOwnerDashboard({ user }) {
   const [showVerificationForm, setShowVerificationForm] = useState(false);
@@ -555,6 +556,153 @@ function RestaurantOwnerDashboard({ user }) {
             isPremium={tier === "premium"}
           />
         );
+      // ✅ ADD THIS NEW IOT TAB CASE
+      case "iot":
+        return (
+          <div className="iot-dashboard-tab">
+            <div className="tab-section">
+              <div className="section-header">
+                <h3>IoT Sensor Management</h3>
+              </div>
+              <IoTDeviceManager restaurant={restaurant} />
+            </div>
+
+            {/* Real-time Occupancy Display */}
+            <div className="tab-section">
+              <div className="section-header">
+                <h3>Real-time Occupancy</h3>
+                <span className={`status-badge ${restaurant.crowd_status}`}>
+                  {restaurant.crowd_status === "green"
+                    ? "Low"
+                    : restaurant.crowd_status === "yellow"
+                      ? "Moderate"
+                      : restaurant.crowd_status === "orange"
+                        ? "Busy"
+                        : "Full"}
+                </span>
+              </div>
+
+              <div className="occupancy-display">
+                <div className="occupancy-metrics">
+                  <div className="metric">
+                    <div className="metric-label">Current Occupancy</div>
+                    <div className="metric-value">
+                      {restaurant.current_occupancy}
+                    </div>
+                  </div>
+                  <div className="metric">
+                    <div className="metric-label">Max Capacity</div>
+                    <div className="metric-value">
+                      {restaurant.max_capacity}
+                    </div>
+                  </div>
+                  <div className="metric">
+                    <div className="metric-label">Percentage</div>
+                    <div className="metric-value">
+                      {restaurant.max_capacity > 0
+                        ? Math.round(
+                            (restaurant.current_occupancy /
+                              restaurant.max_capacity) *
+                              100,
+                          )
+                        : 0}
+                      %
+                    </div>
+                  </div>
+                </div>
+
+                <div className="capacity-visual">
+                  <div className="capacity-bar">
+                    <div
+                      className="capacity-fill"
+                      style={{
+                        width: `${
+                          restaurant.max_capacity > 0
+                            ? Math.min(
+                                (restaurant.current_occupancy /
+                                  restaurant.max_capacity) *
+                                  100,
+                                100,
+                              )
+                            : 0
+                        }%`,
+                        backgroundColor:
+                          restaurant.crowd_status === "green"
+                            ? "#10b981"
+                            : restaurant.crowd_status === "yellow"
+                              ? "#f59e0b"
+                              : restaurant.crowd_status === "orange"
+                                ? "#f97316"
+                                : "#ef4444",
+                      }}
+                    ></div>
+                  </div>
+                  <div className="capacity-labels">
+                    <span>0</span>
+                    <span>25%</span>
+                    <span>50%</span>
+                    <span>75%</span>
+                    <span>100%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* IoT Instructions */}
+            <div className="tab-section">
+              <div className="section-header">
+                <h3>Setup Instructions</h3>
+              </div>
+              <div className="instructions-box">
+                <h4>ESP32-CAM Setup Guide</h4>
+                <ol>
+                  <li>
+                    <strong>Register Device:</strong> Click "Register New
+                    Device" above
+                  </li>
+                  <li>
+                    <strong>Copy API Key:</strong> Save the API key shown after
+                    registration
+                  </li>
+                  <li>
+                    <strong>Update ESP32 Code:</strong> Replace in your Arduino
+                    code:
+                    <pre>
+                      {`const char* serverUrl = "http://YOUR_IP:8000";
+String deviceId = "ESP32CAM-001"; // Must match registered ID
+int restaurantId = ${restaurant?.id || 1};
+String apiKey = "YOUR_API_KEY_HERE";`}
+                    </pre>
+                  </li>
+                  <li>
+                    <strong>Upload to ESP32:</strong> Connect via USB and upload
+                    code
+                  </li>
+                  <li>
+                    <strong>Test:</strong> Press button - single click for
+                    entry, double click for exit
+                  </li>
+                  <li>
+                    <strong>Monitor:</strong> Watch real-time updates here
+                  </li>
+                </ol>
+
+                <div className="code-snippet">
+                  <h5>ESP32 Button Code Snippet:</h5>
+                  <pre>
+                    {`// Button detection example
+int detectButtonAction() {
+  // Single click = entry
+  // Double click = exit
+  // Visual feedback via LED
+}`}
+                  </pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
       default:
         return (
           <OwnerOverviewTab
@@ -576,7 +724,6 @@ function RestaurantOwnerDashboard({ user }) {
         );
     }
   };
-
   if (loading) {
     return (
       <div className="restaurant-owner-dashboard">
@@ -753,7 +900,7 @@ function RestaurantOwnerDashboard({ user }) {
                         </svg>
                         <span>Edit Profile</span>
                       </button>
-                      
+
                       {/* Be Featured Button - Only for Premium */}
                       {tier === "premium" && (
                         <button
@@ -956,6 +1103,12 @@ function RestaurantOwnerDashboard({ user }) {
                 }
               >
                 {tier === "premium" ? "Analytics" : "Analytics"}
+              </button>
+              <button
+                className={`tab-btn ${activeTab === "iot" ? "active" : ""}`}
+                onClick={() => setActiveTab("iot")}
+              >
+                IoT Sensors
               </button>
             </div>
 
