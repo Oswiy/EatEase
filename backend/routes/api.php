@@ -15,8 +15,69 @@ use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\RestaurantPhotoController;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\BadWordController;
+use App\Http\Controllers\IoTController;
+use Illuminate\Support\Facades\Log;
 
 // ==================== PUBLIC ROUTES (No Auth) ====================
+
+// ==================== IOT ROUTES ====================
+
+// Super fast response endpoint
+Route::post('/iot/quick', function (Request $request) {
+    // Immediate response with minimal processing
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Quick response from Laravel',
+        'received' => $request->all(),
+        'timestamp' => now()->format('H:i:s.u'),
+        'response_time_ms' => 0
+    ]);
+});
+
+// ULTRA-SIMPLE IoT TEST (no dependencies)
+Route::post('/iot/test-ultra-simple', function (Request $request) {
+    Log::info('🎯 ULTRA SIMPLE TEST RECEIVED:', [
+        'raw' => $request->getContent(),
+        'json' => $request->all(),
+        'headers' => $request->headers->all()
+    ]);
+    
+    // Just echo back what we received
+    return response()->json([
+        'status' => 'success',
+        'message' => '✅ IoT Test Working!',
+        'received' => $request->all(),
+        'timestamp' => now()->toDateTimeString(),
+        'server' => 'Laravel',
+        'note' => 'This proves ESP32 can talk to Laravel'
+    ], 200, [], JSON_UNESCAPED_SLASHES);
+});
+
+Route::post('/iot/log', function (Request $request) {
+    Log::info('📱 ESP32 DEBUG LOG:', [
+        'data' => $request->all(),
+        'ip' => $request->ip(),
+        'time' => now()->format('H:i:s.u')
+    ]);
+    
+    return response()->json([
+        'success' => true,
+        'message' => 'Log received',
+        'timestamp' => now()->format('H:i:s.u')
+    ]);
+});
+
+// Public IoT endpoints (device authentication via device_id + api_key)
+Route::post('/iot/update-occupancy', [IoTController::class, 'updateOccupancy']);
+Route::post('/iot/sync-counts', [IoTController::class, 'updateOccupancy']); // Reuse same logic
+
+// Protected IoT endpoints (restaurant owner only)
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/iot/register-device', [IoTController::class, 'registerDevice']);
+    Route::get('/iot/devices', [IoTController::class, 'getDevices']);
+    Route::post('/iot/reset-counters', [IoTController::class, 'resetCounters']);
+    Route::delete('/iot/devices/{deviceId}', [IoTController::class, 'deleteDevice']);
+});
 
 // Test routes
 Route::get('/test-db', function () {
@@ -286,3 +347,4 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::post('/bad-words/toggle-strict-mode', [AdminController::class, 'toggleBadWordStrictMode']);
     Route::post('/bad-words/test', [AdminController::class, 'testBadWordFilter']);
 });
+
