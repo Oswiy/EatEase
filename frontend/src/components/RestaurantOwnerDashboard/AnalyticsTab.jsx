@@ -260,26 +260,6 @@ const AnalyticsTab = ({ restaurantId, isPremium }) => {
             </div>
           </div>
         </div>
-
-        <div className="customer-card">
-          <h3>Customer Analysis</h3>
-          <div className="customer-content">
-            <div className="customer-metric">
-              <div className="metric-value">{customersData.total || 0}</div>
-              <div className="metric-label">Total Customers</div>
-            </div>
-            <div className="customer-breakdown">
-              <div className="breakdown-item repeat">
-                <div className="breakdown-percent">{customersData.repeat || 0}%</div>
-                <div className="breakdown-label">Repeat</div>
-              </div>
-              <div className="breakdown-item new">
-                <div className="breakdown-percent">{customersData.new || 0}%</div>
-                <div className="breakdown-label">New</div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Data Info */}

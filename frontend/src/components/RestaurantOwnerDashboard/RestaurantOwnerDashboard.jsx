@@ -560,11 +560,56 @@ function RestaurantOwnerDashboard({ user }) {
       case "iot":
         return (
           <div className="iot-dashboard-tab">
+            {/* Device Registration Section */}
             <div className="tab-section">
               <div className="section-header">
-                <h3>IoT Sensor Management</h3>
+                <h3>Button Sensor Management</h3>
               </div>
               <IoTDeviceManager restaurant={restaurant} />
+            </div>
+
+            {/* Customer Journey Display */}
+            <div className="tab-section">
+              <div className="section-header">
+                <h3>Customer Self-Service System</h3>
+                <span className="status-badge green">Active</span>
+              </div>
+
+              <div className="customer-journey-box">
+                <h4>How It Works for Customers:</h4>
+                <div className="journey-steps">
+                  <div className="journey-step">
+                    <div className="step-number">1</div>
+                    <div className="step-content">
+                      <strong>Approach Entrance</strong>
+                      <p>Customer sees clearly labeled button</p>
+                    </div>
+                  </div>
+                  <div className="journey-step">
+                    <div className="step-number">2</div>
+                    <div className="step-content">
+                      <strong>Press Button ONCE</strong>
+                      <p>To enter restaurant</p>
+                      <div className="led-indicator green">✓ Entry Counted</div>
+                    </div>
+                  </div>
+                  <div className="journey-step">
+                    <div className="step-number">3</div>
+                    <div className="step-content">
+                      <strong>Press Button TWICE</strong>
+                      <p>To exit restaurant</p>
+                      <div className="led-indicator yellow">✓ Exit Counted</div>
+                    </div>
+                  </div>
+                  <div className="journey-step">
+                    <div className="step-number">4</div>
+                    <div className="step-content">
+                      <strong>No Staff Needed</strong>
+                      <p>Fully automated customer operation</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Real-time Occupancy Display */}
@@ -582,7 +627,7 @@ function RestaurantOwnerDashboard({ user }) {
                 </span>
               </div>
 
-              <div className="occupancy-display">
+<div className="occupancy-display">
                 <div className="occupancy-metrics">
                   <div className="metric">
                     <div className="metric-label">Current Occupancy</div>
@@ -648,55 +693,121 @@ function RestaurantOwnerDashboard({ user }) {
               </div>
             </div>
 
-            {/* IoT Instructions */}
+            {/* Button System Instructions */}
             <div className="tab-section">
               <div className="section-header">
-                <h3>Setup Instructions</h3>
+                <h3>Button Sensor Setup</h3>
               </div>
               <div className="instructions-box">
-                <h4>ESP32-CAM Setup Guide</h4>
-                <ol>
+                <h4>ESP32-CAM Button System Guide</h4>
+                <div className="system-advantages">
+                  <div className="advantage-card">
+                    <div className="advantage-icon">✓</div>
+                    <div className="advantage-text">
+                      <strong>100% Accuracy</strong>
+                      <p>Manual button press ensures perfect counting</p>
+                    </div>
+                  </div>
+                  <div className="advantage-card">
+                    <div className="advantage-icon">👥</div>
+                    <div className="advantage-text">
+                      <strong>Customer-Operated</strong>
+                      <p>No staff intervention required</p>
+                    </div>
+                  </div>
+                  <div className="advantage-card">
+                    <div className="advantage-icon">💰</div>
+                    <div className="advantage-text">
+                      <strong>Cost-Effective</strong>
+                      <p>Simple button system vs complex camera AI</p>
+                    </div>
+                  </div>
+                </div>
+
+                <ol className="setup-steps">
                   <li>
                     <strong>Register Device:</strong> Click "Register New
-                    Device" above
+                    Device" above to get your API key
                   </li>
                   <li>
-                    <strong>Copy API Key:</strong> Save the API key shown after
-                    registration
+                    <strong>Label the Button:</strong> Clearly mark with:
+                    <div className="instruction-label">
+                      <span className="label-primary">PRESS ONCE TO ENTER</span>
+                      <span className="label-secondary">
+                        PRESS TWICE TO EXIT
+                      </span>
+                    </div>
                   </li>
                   <li>
-                    <strong>Update ESP32 Code:</strong> Replace in your Arduino
+                    <strong>Update ESP32 Code:</strong> Use this simplified
                     code:
-                    <pre>
-                      {`const char* serverUrl = "http://YOUR_IP:8000";
-String deviceId = "ESP32CAM-001"; // Must match registered ID
-int restaurantId = ${restaurant?.id || 1};
-String apiKey = "YOUR_API_KEY_HERE";`}
+                    <pre className="code-snippet">
+                      {`// Customer-operated button system
+void handleButtonPress() {
+  if (singleClick) {
+    sendToServer("ENTRY"); // Increment count
+    setLED(GREEN); // Confirm entry
+  } else if (doubleClick) {
+    sendToServer("EXIT");  // Decrement count  
+    setLED(YELLOW); // Confirm exit
+  }
+}`}
                     </pre>
                   </li>
                   <li>
-                    <strong>Upload to ESP32:</strong> Connect via USB and upload
-                    code
+                    <strong>Install at Entrance:</strong> Mount at customer
+                    height with clear instructions
                   </li>
                   <li>
-                    <strong>Test:</strong> Press button - single click for
-                    entry, double click for exit
+                    <strong>Test the System:</strong> Press button once (should
+                    see green LED) and twice (yellow LED)
                   </li>
                   <li>
-                    <strong>Monitor:</strong> Watch real-time updates here
+                    <strong>Monitor Here:</strong> Watch occupancy update in
+                    real-time
                   </li>
                 </ol>
 
-                <div className="code-snippet">
-                  <h5>ESP32 Button Code Snippet:</h5>
-                  <pre>
-                    {`// Button detection example
-int detectButtonAction() {
-  // Single click = entry
-  // Double click = exit
-  // Visual feedback via LED
-}`}
-                  </pre>
+                <div className="troubleshooting">
+                  <h5>Troubleshooting:</h5>
+                  <ul>
+                    <li>
+                      <strong>No LED response:</strong> Check power and wiring
+                    </li>
+                    <li>
+                      <strong>Count not updating:</strong> Verify WiFi
+                      connection
+                    </li>
+                    <li>
+                      <strong>Double press not detected:</strong> Adjust timing
+                      in code
+                    </li>
+                    <li>
+                      <strong>Always reset to 0:</strong> Use "Reset Counters"
+                      button
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Debug/Logs Section */}
+            <div className="tab-section">
+              <div className="section-header">
+                <h3>Sensor Logs</h3>
+              </div>
+              <div className="logs-box">
+                <p>Last 10 occupancy changes:</p>
+                {/* You can fetch and display logs here */}
+                <div className="log-entry">
+                  <span className="log-time">14:32:05</span>
+                  <span className="log-action entry">+1 Entry</span>
+                  <span className="log-user">Customer Button Press</span>
+                </div>
+                <div className="log-entry">
+                  <span className="log-time">14:45:22</span>
+                  <span className="log-action exit">-1 Exit</span>
+                  <span className="log-user">Customer Button Press</span>
                 </div>
               </div>
             </div>
@@ -1105,7 +1216,7 @@ int detectButtonAction() {
                 {tier === "premium" ? "Analytics" : "Analytics"}
               </button>
               <button
-                className={`tab-btn ${activeTab === "iot" ? "active" : ""}`}
+                className={`owner-tab-btn ${activeTab === "iot" ? "active" : ""}`}
                 onClick={() => setActiveTab("iot")}
               >
                 IoT Sensors
