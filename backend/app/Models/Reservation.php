@@ -14,21 +14,25 @@ class Reservation extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
-        'restaurant_id',
-        'party_size',
-        'reservation_date',
-        'reservation_time',
-        'status',
-        'special_requests',
-        'confirmation_code',
-        'notification_count',
-        'last_notified_at',
-        'hold_type',      // ← ADD THIS
-        'expires_at',     // ← ADD THIS
-        'hold_status',
-        'is_hidden' // ✅ ADD THIS LINE
-    ];
+    'user_id',
+    'restaurant_id',
+    'party_size',
+    'reservation_date',
+    'reservation_time',
+    'status',
+    'special_requests',
+    'confirmation_code',
+    'notification_count',
+    'last_notified_at',
+    'hold_type',          // ← MAKE SURE THIS EXISTS
+    'expires_at',         // ← MAKE SURE THIS EXISTS  
+    'hold_status',        // ← MAKE SURE THIS EXISTS
+    'original_expires_at', // ← ADD THIS NEW FIELD
+    'accepted_at',        // ← ADD THIS NEW FIELD
+    'is_hidden',
+    'hold_fee',           // ← ADD THIS FOR FEE SUPPORT
+    'cancelled_at'        // ← ADD THIS FOR CANCELLATION TRACKING
+];
 
     protected $casts = [
         'reservation_date' => 'date',

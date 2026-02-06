@@ -441,6 +441,9 @@ class NotificationController extends Controller
     /**
      * Remove a notification
      */
+    /**
+     * Remove a notification preference (NOT notification log)
+     */
     public function removeNotification($notification_id)
     {
         try {
@@ -450,12 +453,16 @@ class NotificationController extends Controller
                 return response()->json(['message' => 'User not authenticated'], 401);
             }
 
+            // This removes a NOTIFICATION PREFERENCE from user_notifications table
             $notification = UserNotification::where('id', $notification_id)
                 ->where('user_id', $user->id)
                 ->first();
 
             if (!$notification) {
-                return response()->json(['message' => 'Notification not found'], 404);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Notification preference not found'
+                ], 404);
             }
 
             // Soft delete by setting inactive
@@ -466,13 +473,13 @@ class NotificationController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Notification removed'
+                'message' => 'Notification preference removed'
             ]);
         } catch (\Exception $e) {
-            Log::error('Remove notification error: ' . $e->getMessage());
+            Log::error('Remove notification preference error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to remove notification',
+                'message' => 'Failed to remove notification preference',
                 'error' => $e->getMessage()
             ], 500);
         }

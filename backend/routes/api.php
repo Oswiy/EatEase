@@ -41,7 +41,7 @@ Route::post('/iot/test-ultra-simple', function (Request $request) {
         'json' => $request->all(),
         'headers' => $request->headers->all()
     ]);
-    
+
     // Just echo back what we received
     return response()->json([
         'status' => 'success',
@@ -59,7 +59,7 @@ Route::post('/iot/log', function (Request $request) {
         'ip' => $request->ip(),
         'time' => now()->format('H:i:s.u')
     ]);
-    
+
     return response()->json([
         'success' => true,
         'message' => 'Log received',
@@ -243,20 +243,26 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/restaurants/{id}/capacity', [ReservationController::class, 'getCapacityStatus']);
 
+    // ========== NOTIFICATION & BOOKMARK ROUTES WITH HIGH LIMIT ==========
     // ========== NOTIFICATION & BOOKMARK ROUTES ==========
-    Route::post('/bookmarks/{restaurant_id}', [NotificationController::class, 'toggleBookmark']);
-    Route::get('/bookmarks', [NotificationController::class, 'getBookmarks']);
-    Route::delete('/bookmarks/cleanup', [NotificationController::class, 'cleanupOrphanedBookmarks']);
+    Route::middleware(['auth:sanctum', 'throttle:300,1'])->group(function () {
+        // Notification preferences
+        Route::post('/notifications/{restaurant_id}', [NotificationController::class, 'setNotification']);
+        Route::get('/notifications', [NotificationController::class, 'getNotifications']);
+        Route::delete('/notifications/{notification_id}', [NotificationController::class, 'removeNotification']);
+        Route::put('/notifications/{notification_id}/mark-read', [NotificationController::class, 'markAsRead']);
 
-    Route::post('/notifications/{restaurant_id}', [NotificationController::class, 'setNotification']);
-    Route::get('/notifications', [NotificationController::class, 'getNotifications']);
-    Route::delete('/notifications/{notification_id}', [NotificationController::class, 'removeNotification']);
-    Route::put('/notifications/{notification_id}/mark-read', [NotificationController::class, 'markAsRead']);
+        // Actual notification logs (sent notifications)
+        Route::get('/user-notifications', [NotificationController::class, 'getUserNotifications']);
+        Route::delete('/user-notifications/{id}', [NotificationController::class, 'destroy']);
+        Route::delete('/user-notifications', [NotificationController::class, 'destroyAll']);
 
-    Route::get('/user-notifications', [NotificationController::class, 'getUserNotifications']);
-    Route::delete('/user-notifications/{id}', [NotificationController::class, 'destroy']);
-    Route::delete('/user-notifications', [NotificationController::class, 'destroyAll']);
-
+        // Bookmarks
+        Route::post('/bookmarks/{restaurant_id}', [NotificationController::class, 'toggleBookmark']);
+        Route::get('/bookmarks', [NotificationController::class, 'getBookmarks']);
+        Route::delete('/bookmarks/cleanup', [NotificationController::class, 'cleanupOrphanedBookmarks']);
+    });
+    
     // ========== REVIEW ROUTES (without filtering for DELETE) ==========
     Route::post('/restaurants/{id}/reviews', [ReviewController::class, 'store']);
     Route::put('/reviews/{id}', [ReviewController::class, 'updateReview']);
@@ -347,4 +353,3 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::post('/bad-words/toggle-strict-mode', [AdminController::class, 'toggleBadWordStrictMode']);
     Route::post('/bad-words/test', [AdminController::class, 'testBadWordFilter']);
 });
-

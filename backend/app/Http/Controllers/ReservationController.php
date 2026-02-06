@@ -203,9 +203,37 @@ class ReservationController extends Controller
 
             $data = $validator->validated();
 
-            // Check if user already has an active hold at this restaurant
+            // ✅ CRITICAL FIX: Auto-update ALL expired holds for this user FIRST
+            $expiredHoldsToUpdate = Reservation::where('user_id', $user->id)
+                ->where('restaurant_id', $data['restaurant_id'])
+                ->where('status', 'pending_hold')
+                ->where('hold_status', 'pending')
+                ->where(function ($query) {
+                    $query->where('original_expires_at', '<=', now())
+                        ->orWhereNull('original_expires_at');
+                })
+                ->get();
+
+            Log::info('Auto-updating expired holds', [
+                'count' => $expiredHoldsToUpdate->count(),
+                'user_id' => $user->id,
+                'restaurant_id' => $data['restaurant_id']
+            ]);
+
+            foreach ($expiredHoldsToUpdate as $hold) {
+                $hold->status = 'cancelled';
+                $hold->hold_status = 'expired';
+                $hold->save();
+                Log::info('Updated expired hold', [
+                    'hold_id' => $hold->id,
+                    'original_expires_at' => $hold->original_expires_at
+                ]);
+            }
+
+            // ✅ NOW check for ACTIVE holds (non-expired)
             $existingHold = Reservation::where('user_id', $user->id)
                 ->where('restaurant_id', $data['restaurant_id'])
+                ->where('status', 'pending_hold')
                 ->where('hold_status', 'pending')
                 ->where(function ($query) {
                     $query->where('original_expires_at', '>', now())
@@ -214,17 +242,42 @@ class ReservationController extends Controller
                 ->first();
 
             if ($existingHold) {
+                Log::warning('User already has active hold', [
+                    'user_id' => $user->id,
+                    'restaurant_id' => $data['restaurant_id'],
+                    'hold_id' => $existingHold->id,
+                    'expires_at' => $existingHold->original_expires_at,
+                    'time_remaining' => now()->diffInMinutes($existingHold->original_expires_at, false)
+                ]);
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'You already have an active hold at this restaurant'
+                    'message' => 'You already have an active spot hold at this restaurant. Please wait for it to expire or cancel it first.',
+                    'hold_expires_at' => $existingHold->original_expires_at,
+                    'time_remaining_minutes' => now()->diffInMinutes($existingHold->original_expires_at, false)
                 ], 400);
+            }
+
+            // ✅ Check for EXPIRED holds and auto-clean them up
+            $expiredHolds = Reservation::where('user_id', $user->id)
+                ->where('restaurant_id', $data['restaurant_id'])
+                ->where('status', 'pending_hold')
+                ->where('hold_status', 'pending')
+                ->where('original_expires_at', '<=', now())
+                ->get();
+
+            foreach ($expiredHolds as $hold) {
+                Log::info('Auto-cleaning expired hold', [
+                    'hold_id' => $hold->id,
+                    'expired_at' => $hold->original_expires_at
+                ]);
+                $hold->status = 'cancelled';
+                $hold->hold_status = 'expired';
+                $hold->save();
             }
 
             // ✅ FIXED: Set original_expires_at (10 minutes for restaurant to respond)
             $originalExpiresAt = now()->addMinutes(10);
-
-            // ✅ FIXED: expires_at should be NULL initially
-            // Timer only starts when restaurant accepts
 
             // Create hold
             $holdData = [
@@ -234,8 +287,8 @@ class ReservationController extends Controller
                 'hold_type' => $data['hold_type'],
                 'status' => 'pending_hold',
                 'hold_status' => 'pending',
-                'expires_at' => null, // ✅ IMPORTANT: NULL until accepted
-                'original_expires_at' => $originalExpiresAt, // ✅ 10-min restaurant response deadline
+                'expires_at' => null, // NULL until accepted
+                'original_expires_at' => $originalExpiresAt,
                 'reservation_date' => now()->format('Y-m-d'),
                 'reservation_time' => now()->format('H:i:s'),
                 'special_requests' => $data['special_requests'] ?? null,
@@ -585,7 +638,7 @@ class ReservationController extends Controller
                 'owner_id' => $restaurant->owner_id
             ]);
 
-            // Get active spot holds (NOT expired)
+            // ✅ FIXED QUERY: Get ALL pending holds (not just non-expired)
             $query = Reservation::with(['user' => function ($q) {
                 $q->select('id', 'name', 'email');
             }])
@@ -593,15 +646,14 @@ class ReservationController extends Controller
                 ->where('status', 'pending_hold')
                 ->where('hold_status', 'pending');
 
-            // Show holds where restaurant still has time to respond
-            $query->where(function ($q) {
-                $q->where('original_expires_at', '>', now())
-                    ->orWhere(function ($q2) {
-                        // For backward compatibility with old holds
-                        $q2->whereNull('original_expires_at')
-                            ->where('expires_at', '>', now());
-                    });
-            });
+            // Remove the expiration filter to show ALL pending holds
+            // $query->where(function ($q) {
+            //     $q->where('original_expires_at', '>', now())
+            //         ->orWhere(function ($q2) {
+            //             $q2->whereNull('original_expires_at')
+            //                 ->where('expires_at', '>', now());
+            //         });
+            // });
 
             // Filter by hold type if specified
             if ($request->has('hold_type')) {
@@ -617,14 +669,10 @@ class ReservationController extends Controller
             ]);
 
             // ✅ FIXED: Calculate time remaining based on correct field
+            // ✅ Calculate time remaining for display
             $reservations->each(function ($reservation) {
-                if ($reservation->hold_status === 'pending') {
-                    // For pending holds, use original_expires_at (restaurant response deadline)
+                if ($reservation->hold_status === 'pending' && $reservation->original_expires_at) {
                     $reservation->time_remaining = now()->diffInMinutes($reservation->original_expires_at, false);
-                    $reservation->is_expired = $reservation->time_remaining <= 0;
-                } elseif ($reservation->hold_status === 'accepted' && $reservation->expires_at) {
-                    // For accepted holds, use expires_at (timer from acceptance)
-                    $reservation->time_remaining = now()->diffInMinutes($reservation->expires_at, false);
                     $reservation->is_expired = $reservation->time_remaining <= 0;
                 } else {
                     $reservation->time_remaining = null;
