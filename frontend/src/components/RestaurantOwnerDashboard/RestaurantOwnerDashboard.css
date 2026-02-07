@@ -1659,12 +1659,25 @@
   color: #6b7280;
 }
 
+.journey-steps {
+  text-align: start;
+  gap: 5px;
+  display: flex;
+  flex-direction: column;
+}
+
+.customer-journey-box h4 {
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
 /* Instructions Box */
 .instructions-box {
   background: #f0f9ff;
   border: 1px solid #bae6fd;
   border-radius: 10px;
   padding: 20px;
+  text-align: start;
 }
 
 .instructions-box h4 {
@@ -1709,27 +1722,9 @@
   font-size: 14px;
 }
 
-/* IoT Device Manager Customization */
-.iot-device-manager {
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  overflow: hidden;
+.system-advantages {
+  font-size: 13px;
+  text-align: start;
+  padding-bottom: 20px;
 }
 
-/* Make sure the IoTDeviceManager fits well */
-.iot-device-manager .iot-header {
-  padding: 20px;
-  background: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.iot-device-manager .devices-grid {
-  padding: 20px;
-}
-
-.iot-device-manager .instructions-panel {
-  margin: 0;
-  border-radius: 0;
-  border-left: none;
-  border-bottom: none;
-}

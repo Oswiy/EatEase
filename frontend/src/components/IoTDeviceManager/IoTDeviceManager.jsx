@@ -125,7 +125,7 @@ const IoTDeviceManager = ({ restaurant }) => {
     return (
       <div className="iot-device-manager">
         <div className="loading-spinner"></div>
-        <p>Loading IoT devices...</p>
+        <p>Loading...</p>
       </div>
     );
   }
@@ -138,7 +138,7 @@ const IoTDeviceManager = ({ restaurant }) => {
           className="btn-primary"
           onClick={() => setShowRegisterForm(true)}
         >
-          + Register New Device
+          + Add
         </button>
       </div>
 
@@ -281,8 +281,7 @@ const IoTDeviceManager = ({ restaurant }) => {
         <h4>Setup Instructions</h4>
         <ol>
           <li>Register your ESP32 device with a unique Device ID</li>
-          <li>Copy the API key provided after registration</li>
-          <li>Update your ESP32 code with the device ID and API key</li>
+          <li>Update your ESP32 code with the device</li>
           <li>Connect the ESP32 to power and WiFi</li>
           <li>Press the button to test entry/exit counting</li>
           <li>Real-time occupancy will update automatically</li>
