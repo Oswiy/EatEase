@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import "./RestaurantDetails.css";
-import profileImage from "../../Assets/Images/profile1.jpg";
 import pollingService from "../../services/pollingService"; // Adjust path
 
 // Tab Components
@@ -24,6 +23,22 @@ function RestaurantDetails({ restaurantId, onBack }) {
 
     // The API returns paths like "/storage/restaurant-banners/..."
     return `${backendBase}${imagePath}`;
+  };
+
+  // ========== ADD THIS MISSING FUNCTION ==========
+  const getStatusText = (status) => {
+    switch (status) {
+      case "green":
+        return "Low";
+      case "yellow":
+        return "Moderate";
+      case "orange":
+        return "Busy";
+      case "red":
+        return "Full";
+      default:
+        return "Unknown";
+    }
   };
 
   // ========== STATE VARIABLES ==========
