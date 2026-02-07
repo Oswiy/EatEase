@@ -1928,7 +1928,7 @@ body {
   border-radius: 12px;
 }
 
-.photo-thumbnail img{
+.photo-thumbnail img {
   border-radius: 12px;
   width: 80%;
   height: 70%;
@@ -1940,7 +1940,7 @@ body {
   display: flex;
 }
 
-.photos-tab.empty h3{
+.photos-tab.empty h3 {
   font-size: 16px;
 }
 
@@ -2360,4 +2360,174 @@ body {
   z-index: 2;
   /* border-bottom-left-radius: 20px;
   border-bottom-right-radius: 20px; */
+}
+
+/* Notification Modal Styles */
+.notification-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.notification-modal {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #333;
+}
+
+.close-modal-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.close-modal-btn:hover {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.notification-options-grid {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.notification-option-btn {
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 15px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.notification-option-btn:hover {
+  border-color: #ccc;
+  background: #f9f9f9;
+}
+
+.notification-option-btn.active {
+  border-color: #2196f3;
+  background: #e3f2fd;
+}
+
+.notification-option-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.option-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.status-indicator-wrapper {
+  position: relative;
+  width: 24px;
+  height: 24px;
+}
+
+.status-indicator {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
+
+.status-indicator.green {
+  background-color: #51cf66;
+}
+.status-indicator.yellow {
+  background-color: #fcc419;
+}
+.status-indicator.orange {
+  background-color: #ff922b;
+}
+.status-indicator.red {
+  background-color: #ff6b6b;
+}
+
+.option-text {
+  flex: 1;
+}
+
+.option-title {
+  display: block;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 2px;
+}
+
+.option-desc {
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.modal-footer {
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+  text-align: right;
+}
+
+.modal-close-btn {
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.modal-close-btn:hover {
+  background: #e9e9e9;
+}
+
+/* Update notification button in banner */
+.notification-btn.active {
+  background-color: #ffebee;
+  border-color: #f44336;
+}
+
+.notification-btn.active svg {
+  fill: #f44336;
 }

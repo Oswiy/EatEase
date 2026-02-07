@@ -39,10 +39,18 @@ function RestaurantDetails({ restaurantId, onBack }) {
     average_rating: 0,
     total_reviews: 0,
   });
+  // NEW: Track notification status for each crowd level
+  const [notificationStatus, setNotificationStatus] = useState({
+    green: false,
+    yellow: false,
+    orange: false,
+    red: false,
+  });
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isNotifying, setIsNotifying] = useState(false);
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
   const [notificationLoading, setNotificationLoading] = useState(false);
+  const [showNotificationModal, setShowNotificationModal] = useState(false); // ADD THIS
 
   // ADD THESE FUNCTIONS
   const handleBookmark = async () => {
@@ -76,43 +84,85 @@ function RestaurantDetails({ restaurantId, onBack }) {
     }
   };
 
-  const handleNotification = async () => {
-    if (!restaurant || notificationLoading) return;
+  const handleNotificationToggle = async (status) => {
+    if (!restaurant || notificationLoading[status]) return;
 
-    setNotificationLoading(true);
+    // Set loading for this specific status
+    setNotificationLoading((prev) => ({ ...prev, [status]: true }));
+
     try {
       const token = localStorage.getItem("auth_token");
-      const endpoint = isNotifying ? "remove-notification" : "add-notification";
 
-      const response = await fetch(
-        `http://localhost/EatEase/backend/public/api/notifications/${restaurantId}`,
+      // Check if notification already exists for this status
+      const checkResponse = await fetch(
+        `http://localhost:8000/api/notifications`,
         {
-          method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
             Accept: "application/json",
           },
-          body: JSON.stringify({ notify_when_status: "green" }),
         },
       );
 
-      const data = await response.json();
-      if (data.success) {
-        setIsNotifying(!isNotifying);
-        alert(
-          isNotifying
-            ? "Notification removed"
-            : "You'll be notified when crowd status changes!",
+      if (checkResponse.ok) {
+        const checkData = await checkResponse.json();
+
+        // Find existing notification for this restaurant and status
+        const existingNotification = checkData.notifications?.find(
+          (n) =>
+            n.restaurant_id === parseInt(restaurantId) &&
+            n.notify_when_status === status,
         );
+
+        if (existingNotification) {
+          // Remove existing notification
+          const deleteResponse = await fetch(
+            `http://localhost:8000/api/notifications/${existingNotification.id}`,
+            {
+              method: "DELETE",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                Accept: "application/json",
+              },
+            },
+          );
+
+          if (deleteResponse.ok) {
+            setNotificationStatus((prev) => ({ ...prev, [status]: false }));
+            alert(`Notification for ${getStatusText(status)} crowd removed!`);
+          }
+        } else {
+          // Add new notification
+          const response = await fetch(
+            `http://localhost:8000/api/notifications/${restaurantId}`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+                Accept: "application/json",
+              },
+              body: JSON.stringify({ notify_when_status: status }),
+            },
+          );
+
+          const data = await response.json();
+          if (data.success) {
+            setNotificationStatus((prev) => ({ ...prev, [status]: true }));
+            alert(`You'll be notified when crowd is ${getStatusText(status)}!`);
+          }
+        }
       }
     } catch (error) {
       console.error("Notification error:", error);
+      alert("Error setting notification");
     } finally {
-      setNotificationLoading(false);
+      // Clear loading for this status
+      setNotificationLoading((prev) => ({ ...prev, [status]: false }));
     }
   };
 
+  // ADD THIS EFFECT TO CHECK INITIAL BOOKMARK/NOTIFICATION STATUS
   // ADD THIS EFFECT TO CHECK INITIAL BOOKMARK/NOTIFICATION STATUS
   useEffect(() => {
     if (!restaurantId) return;
@@ -124,10 +174,11 @@ function RestaurantDetails({ restaurantId, onBack }) {
       try {
         // Check bookmark status
         const bookmarkResponse = await fetch(
-          `http://localhost/EatEase/backend/public/api/bookmarks`,
+          `http://localhost:8000/api/bookmarks`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
+              Accept: "application/json",
             },
           },
         );
@@ -141,22 +192,36 @@ function RestaurantDetails({ restaurantId, onBack }) {
           }
         }
 
-        // Check notification status
+        // Check notification status for ALL statuses
         const notificationResponse = await fetch(
-          `http://localhost/EatEase/backend/public/api/notifications`,
+          `http://localhost:8000/api/notifications`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
+              Accept: "application/json",
             },
           },
         );
+
         if (notificationResponse.ok) {
           const data = await notificationResponse.json();
           if (data.success && data.notifications) {
-            const notifying = data.notifications.some(
-              (n) => n.restaurant_id === parseInt(restaurantId),
-            );
-            setIsNotifying(notifying);
+            // Reset all notification statuses
+            const newStatus = {
+              green: false,
+              yellow: false,
+              orange: false,
+              red: false,
+            };
+
+            // Set true for each status the user has notifications for
+            data.notifications.forEach((notification) => {
+              if (notification.restaurant_id === parseInt(restaurantId)) {
+                newStatus[notification.notify_when_status] = true;
+              }
+            });
+
+            setNotificationStatus(newStatus);
           }
         }
       } catch (error) {
@@ -469,33 +534,23 @@ function RestaurantDetails({ restaurantId, onBack }) {
             </button>
 
             {/* Notification Button */}
+            {/* Notification Button - Opens Modal */}
             <button
-              className={`action-btn notification-btn ${isNotifying ? "active" : ""}`}
-              onClick={handleNotification}
-              disabled={notificationLoading}
-              aria-label={
-                isNotifying ? "Stop notifications" : "Get notifications"
-              }
+              className={`action-btn notification-btn ${
+                Object.values(notificationStatus).some((status) => status)
+                  ? "active"
+                  : ""
+              }`}
+              onClick={() => setShowNotificationModal(true)}
+              aria-label="Set notifications"
             >
-              {notificationLoading ? (
-                <div className="loading-spinner-small"></div>
-              ) : isNotifying ? (
-                <svg
-                  className="notification-icon"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                >
-                  <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
-                </svg>
-              ) : (
-                <svg
-                  className="notification-icon"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                >
-                  <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
-                </svg>
-              )}
+              <svg
+                className="notification-icon"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
+              </svg>
             </button>
           </div>
           <div className="banner-background"></div>
@@ -637,6 +692,72 @@ function RestaurantDetails({ restaurantId, onBack }) {
             // Optional: Refresh or update UI
           }}
         />
+      )}
+      {showNotificationModal && restaurant && (
+        <div
+          className="notification-modal-overlay"
+          onClick={() => setShowNotificationModal(false)}
+        >
+          <div
+            className="notification-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <h3>Notify me when {restaurant.name} is:</h3>
+              <button
+                className="close-modal-btn"
+                onClick={() => setShowNotificationModal(false)}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="notification-options-grid">
+              {["green", "yellow", "orange", "red"].map((status) => (
+                <button
+                  key={status}
+                  className={`notification-option-btn ${
+                    notificationStatus[status] ? "active" : ""
+                  } ${status}`}
+                  onClick={() => handleNotificationToggle(status)}
+                  disabled={notificationLoading[status]}
+                >
+                  <div className="option-content">
+                    <div className="status-indicator-wrapper">
+                      <div className={`status-indicator ${status}`}></div>
+                      {notificationStatus[status] && (
+                        <div className="selected-check">✓</div>
+                      )}
+                    </div>
+                    <div className="option-text">
+                      <span className="option-title">
+                        {getStatusText(status)} Crowd
+                      </span>
+                      <small className="option-desc">
+                        {status === "green" && "Get a table easily"}
+                        {status === "yellow" && "Consider going soon"}
+                        {status === "orange" && "Some wait time"}
+                        {status === "red" && "Long wait expected"}
+                      </small>
+                    </div>
+                    {notificationLoading[status] && (
+                      <div className="loading-spinner-small"></div>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <div className="modal-footer">
+              <button
+                className="modal-close-btn"
+                onClick={() => setShowNotificationModal(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

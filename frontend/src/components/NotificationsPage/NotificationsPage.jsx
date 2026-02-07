@@ -105,22 +105,70 @@ function NotificationsPage({ user, onBack }) {
 
     try {
       const token = localStorage.getItem("auth_token");
+
+      // METHOD 1: Try with CSRF token
+      // First get CSRF cookie from Laravel
+      await fetch("http://localhost:8000/sanctum/csrf-cookie", {
+        method: "GET",
+        credentials: "include", // Important!
+      });
+
+      // Then make the DELETE request
       const response = await fetch(
-        `http://localhost:8000/api/user-notifications/${notificationId}`, // NEW ENDPOINT
+        `http://localhost:8000/api/user-notifications/${notificationId}`,
         {
           method: "DELETE",
           headers: {
             Authorization: `Bearer ${token}`,
             Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-Requested-With": "XMLHttpRequest",
           },
+          credentials: "include", // CRITICAL: Include cookies
         },
       );
 
+      // If 419, try METHOD 2 without CSRF (for API-only routes)
+      if (response.status === 419) {
+        console.log("CSRF failed, trying API-only method...");
+
+        const apiResponse = await fetch(
+          `http://localhost:8000/api/user-notifications/${notificationId}`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: "application/json",
+              "Content-Type": "application/json",
+            },
+            // No credentials for API-only
+          },
+        );
+
+        if (apiResponse.ok) {
+          const data = await apiResponse.json();
+          if (data.success) {
+            // Remove from local state
+            setNotifications((prev) =>
+              prev.filter((n) => n.id !== notificationId),
+            );
+            // Update unread count
+            if (
+              notifications.find((n) => n.id === notificationId)?.is_read ===
+              false
+            ) {
+              setUnreadCount((prev) => Math.max(0, prev - 1));
+            }
+            alert("Notification deleted!");
+            return;
+          }
+        }
+      }
+
+      // Handle original response
       const data = await response.json();
       if (data.success) {
-        // Remove from local state
         setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
-        // Update unread count if needed
         if (
           notifications.find((n) => n.id === notificationId)?.is_read === false
         ) {
@@ -456,9 +504,7 @@ function NotificationsPage({ user, onBack }) {
 
                         <div className="notification-details">
                           <span className="notification-type">
-                            {isCrowdAlert
-                              ? "Crowd Alert"
-                              : "Notification"}
+                            {isCrowdAlert ? "Crowd Alert" : "Notification"}
                           </span>
                           <span
                             className={`notifications-status-badge status-${notification.status}`}
@@ -481,10 +527,8 @@ function NotificationsPage({ user, onBack }) {
                               handleBookNow(notification);
                             }}
                           >
-                            <span role="img" aria-label="plate">
-                            
-                            </span>{" "}
-                            Reserve Now
+                            <span role="img" aria-label="plate"></span> Reserve
+                            Now
                           </button>
                         )}
                       </div>
