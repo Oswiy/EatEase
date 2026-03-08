@@ -77,7 +77,7 @@ class AuthController extends Controller
             'name' => [
                 'required',
                 'string',
-                'max:255',
+                'max:50',
                 new NoBadWords('name')
             ],
             'email' => 'required|email|unique:users',
