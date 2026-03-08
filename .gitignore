@@ -74,7 +74,7 @@ _ide_helper_models.php
 composer.lock
 composer.phar
 
-# Laravel rector
+# Laravel rectorx`
 rector.php
 
 # Testing
