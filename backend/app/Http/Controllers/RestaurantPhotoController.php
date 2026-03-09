@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use GuzzleHttp\Client;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use App\Models\RestaurantPhoto;
 use App\Models\Restaurant;
@@ -35,97 +36,114 @@ class RestaurantPhotoController extends Controller
     }
 
     // Upload new photos
-    public function store(Request $request, $restaurantId)
-    {
+public function store(Request $request, $restaurantId)
+{
+    Log::info('=== PHOTO UPLOAD START ===');
+    Log::info('Restaurant ID: ' . $restaurantId);
+    Log::info('User ID: ' . Auth::id());
+    Log::info('Request has files: ' . ($request->hasFile('photos') ? 'YES' : 'NO'));
 
-        Log::info('=== PHOTO UPLOAD START ===');
-        Log::info('Restaurant ID: ' . $restaurantId);
-        Log::info('User ID: ' . Auth::id());
-        Log::info('Request has files: ' . ($request->hasFile('photos') ? 'YES' : 'NO'));
+    $restaurant = Restaurant::findOrFail($restaurantId);
+    $user = Auth::user();
 
-        if ($request->hasFile('photos')) {
-            $files = $request->file('photos');
-            Log::info('Files count: ' . count($files));
-            foreach ($files as $index => $file) {
-                Log::info("File {$index}: " . $file->getClientOriginalName() .
-                    ' | Size: ' . $file->getSize() .
-                    ' | Type: ' . $file->getMimeType());
-            }
-        }
-        $restaurant = Restaurant::findOrFail($restaurantId);
-
-        // Check if user owns the restaurant or is admin
-        $user = Auth::user();
-        if ($user->id !== $restaurant->owner_id && $user->user_type !== 'admin') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized'
-            ], 403);
-        }
-
-        $request->validate([
-            'photos' => 'required|array|min:1|max:10',
-            'photos.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:5120', // 5MB per image
-            'captions' => 'nullable|array',
-            'captions.*' => 'nullable|string|max:255'
-        ]);
-
-        $uploadedPhotos = [];
-
-        foreach ($request->file('photos') as $index => $photo) {
-            try {
-                // Upload to Cloudinary
-                $uploadResult = Cloudinary::upload(
-                    $photo->getRealPath(),
-                    [
-                        'folder' => "restaurant-gallery/{$restaurantId}",
-                        'public_id' => uniqid() . '_' . time() . '_' . ($index + 1)
-                    ]
-                );
-                
-                // Get the permanent HTTPS URL
-                $imageUrl = $uploadResult->getSecurePath();
-
-                // Get caption if provided
-                $caption = $request->input("captions.{$index}", null);
-
-                // Create photo record with Cloudinary URL
-                $restaurantPhoto = RestaurantPhoto::create([
-                    'restaurant_id' => $restaurantId,
-                    'image_url' => $imageUrl, // Stores FULL URL
-                    'caption' => $caption,
-                    'is_primary' => false,
-                    'uploaded_by' => $user->id,
-                ]);
-
-                $uploadedPhotos[] = $restaurantPhoto;
-                
-            } catch (\Exception $e) {
-                Log::error('Cloudinary photo upload error: ' . $e->getMessage());
-                continue;
-            }
-        }
-
+    // Check authorization
+    if ($user->id !== $restaurant->owner_id && $user->user_type !== 'admin') {
         return response()->json([
-            'success' => true,
-            'message' => count($uploadedPhotos) . ' photos uploaded successfully',
-            'photos' => $uploadedPhotos
-        ]);
-
-        Log::info('Uploaded photos count: ' . count($uploadedPhotos));
-        Log::info('=== PHOTO UPLOAD END ===');
-
-        return response()->json([
-            'success' => true,
-            'message' => count($uploadedPhotos) . ' photos uploaded successfully',
-            'photos' => $uploadedPhotos,
-            'debug' => [ // Add debug info
-                'files_received' => $request->hasFile('photos') ? count($request->file('photos')) : 0,
-                'directory' => "restaurant-gallery/{$restaurantId}",
-                'storage_disk' => 'public'
-            ]
-        ]);
+            'success' => false,
+            'message' => 'Unauthorized'
+        ], 403);
     }
+
+    // Validate request
+    $request->validate([
+        'photos' => 'required|array|min:1|max:10',
+        'photos.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+        'captions' => 'nullable|array',
+        'captions.*' => 'nullable|string|max:255'
+    ]);
+
+    $uploadedPhotos = [];
+    $cloudName = env('CLOUDINARY_CLOUD_NAME');
+    $apiKey = env('CLOUDINARY_API_KEY');
+    $apiSecret = env('CLOUDINARY_API_SECRET');
+
+    foreach ($request->file('photos') as $index => $photo) {
+        try {
+            $timestamp = time();
+            $folder = "restaurant-gallery/{$restaurantId}";
+            $publicId = uniqid() . '_' . time() . '_' . ($index + 1);
+            
+            // Generate signature
+            $signature = sha1("folder={$folder}&public_id={$publicId}&timestamp={$timestamp}{$apiSecret}");
+            
+            // Use cURL directly (same as working uploadImage method)
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, "https://api.cloudinary.com/v1_1/{$cloudName}/image/upload");
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+            
+            $postFields = [
+                'file' => new \CURLFile($photo->getRealPath()),
+                'api_key' => $apiKey,
+                'timestamp' => $timestamp,
+                'folder' => $folder,
+                'public_id' => $publicId,
+                'signature' => $signature
+            ];
+            
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
+            
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $error = curl_error($ch);
+            curl_close($ch);
+            
+            if ($error) {
+                throw new \Exception('cURL Error: ' . $error);
+            }
+            
+            if ($httpCode !== 200) {
+                throw new \Exception('HTTP Error: ' . $httpCode . ' - ' . $response);
+            }
+            
+            $result = json_decode($response, true);
+            $imageUrl = $result['secure_url'];
+            
+            // Get caption if provided
+            $caption = $request->input("captions.{$index}", null);
+
+            // Create photo record
+            $restaurantPhoto = RestaurantPhoto::create([
+                'restaurant_id' => $restaurantId,
+                'image_url' => $imageUrl,
+                'caption' => $caption,
+                'is_primary' => false,
+                'uploaded_by' => $user->id,
+            ]);
+
+            $uploadedPhotos[] = $restaurantPhoto;
+            
+        } catch (\Exception $e) {
+            Log::error('Photo upload error: ' . $e->getMessage());
+            continue;
+        }
+    }
+
+    Log::info('Uploaded photos count: ' . count($uploadedPhotos));
+    Log::info('=== PHOTO UPLOAD END ===');
+
+    return response()->json([
+        'success' => true,
+        'message' => count($uploadedPhotos) . ' photos uploaded successfully',
+        'photos' => $uploadedPhotos,
+        'debug' => [
+            'files_received' => count($request->file('photos')),
+            'files_uploaded' => count($uploadedPhotos)
+        ]
+    ]);
+}
 
     // Set a photo as primary
     public function setPrimary($restaurantId, $photoId)
