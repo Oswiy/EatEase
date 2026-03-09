@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Support\Facades\Storage; // ← ADD THIS LINE
 use App\Models\Restaurant;
 use Illuminate\Http\Request;
@@ -342,51 +343,79 @@ class RestaurantController extends Controller
         }
 
         try {
-            // Create directory if it doesn't exist
-            $directory = "restaurant-{$type}s";
-            if (!Storage::disk('public')->exists($directory)) {
-                Storage::disk('public')->makeDirectory($directory);
+                // ===== SIMPLE, RELIABLE CLOUDINARY UPLOAD =====
+                $cloudName = env('CLOUDINARY_CLOUD_NAME');
+                $apiKey = env('CLOUDINARY_API_KEY');
+                $apiSecret = env('CLOUDINARY_API_SECRET');
+                
+                $file = $request->file('image');
+                $timestamp = time();
+                $folder = "restaurant-{$type}s";
+                $publicId = uniqid() . '_' . $timestamp;
+                
+                // Generate signature for authentication
+                $signature = sha1("folder={$folder}&public_id={$publicId}&timestamp={$timestamp}{$apiSecret}");
+                
+                // Use cURL directly with SSL verification disabled
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_URL, "https://api.cloudinary.com/v1_1/{$cloudName}/image/upload");
+                curl_setopt($ch, CURLOPT_POST, true);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // THIS IS THE KEY!
+                curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false); // THIS TOO!
+                
+                // Prepare the multipart form data
+                $postFields = [
+                    'file' => new \CURLFile($file->getRealPath()),
+                    'api_key' => $apiKey,
+                    'timestamp' => $timestamp,
+                    'folder' => $folder,
+                    'public_id' => $publicId,
+                    'signature' => $signature
+                ];
+                
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
+                
+                $response = curl_exec($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                $error = curl_error($ch);
+                curl_close($ch);
+                
+                if ($error) {
+                    throw new \Exception('cURL Error: ' . $error);
+                }
+                
+                if ($httpCode !== 200) {
+                    throw new \Exception('HTTP Error: ' . $httpCode . ' - ' . $response);
+                }
+                
+                $result = json_decode($response, true);
+                $imageUrl = $result['secure_url'];
+                
+                // Update restaurant
+                if ($type === 'profile') {
+                    $restaurant->profile_image = $imageUrl;
+                } elseif ($type === 'banner') {
+                    $restaurant->banner_image = $imageUrl;
+                    $restaurant->banner_position = $request->input('position', 'center');
+                }
+                
+                $restaurant->save();
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => ucfirst($type) . ' image uploaded successfully',
+                    'url' => $imageUrl,
+                    'path' => $imageUrl
+                ]);
+                
+            } catch (\Exception $e) {
+                Log::error('Upload failed: ' . $e->getMessage());
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Upload failed: ' . $e->getMessage()
+                ], 500);
             }
-
-            // Generate unique filename
-            $filename = uniqid() . '_' . time() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs($directory, $filename, 'public');
-
-            // Delete old image if exists
-            if ($type === 'profile' && $restaurant->profile_image) {
-                Storage::disk('public')->delete($restaurant->profile_image);
-            } elseif ($type === 'banner' && $restaurant->banner_image) {
-                Storage::disk('public')->delete($restaurant->banner_image);
-            }
-
-            // Update restaurant
-            if ($type === 'profile') {
-                $restaurant->profile_image = $path;
-            } elseif ($type === 'banner') {
-                $restaurant->banner_image = $path;
-                $restaurant->banner_position = $request->input('position', 'center');
-
-                // // ✅ AUTO-FEATURE: If restaurant is premium, automatically feature it
-                // if ($restaurant->isPremium()) {
-                //     $restaurant->is_featured = true;
-                //     Log::info("Auto-featured premium restaurant: {$restaurant->name} (ID: {$restaurant->id})");
-                // }
-            }
-
-            $restaurant->save();
-
-            return response()->json([
-                'success' => true,
-                'message' => ucfirst($type) . ' image uploaded successfully',
-                'path' => $path,
-                'url' => url('/storage/' . $path)
-            ]);
-        } catch (Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Upload failed: ' . $e->getMessage()
-            ], 500);
-        }
     }
 
     public function featureRestaurant(Request $request)
@@ -855,12 +884,8 @@ class RestaurantController extends Controller
                     'isVerified' => $restaurant->is_verified ?? false,
                     'isPremium' => $restaurant->subscription_tier === 'premium',
                     'subscription_tier' => $restaurant->subscription_tier ?? 'basic',
-                    'banner_image' => $restaurant->banner_image
-                        ? Storage::url($restaurant->banner_image)
-                        : null,
-                    'profile_image' => $restaurant->profile_image
-                        ? Storage::url($restaurant->profile_image)
-                        : null,
+                    'banner_image' => $restaurant->banner_image,
+                    'profile_image' => $restaurant->profile_image, 
                     'banner_position' => $restaurant->banner_position,
                     'average_rating' => $restaurant->average_rating ? (float)$restaurant->average_rating : 0.00,
                     'total_reviews' => $restaurant->total_reviews ? (int)$restaurant->total_reviews : 0
@@ -970,12 +995,8 @@ class RestaurantController extends Controller
                 'total_reviews' => $restaurant->total_reviews ? (int)$restaurant->total_reviews : 0,
                 'created_at' => $restaurant->created_at,
                 'updated_at' => $restaurant->updated_at,
-                'profile_image' => $restaurant->profile_image
-                    ? Storage::url($restaurant->profile_image)
-                    : null,
-                'banner_image' => $restaurant->banner_image
-                    ? Storage::url($restaurant->banner_image)
-                    : null,
+                'profile_image' => $restaurant->profile_image, 
+                'banner_image' => $restaurant->banner_image, 
                 'banner_position' => $restaurant->banner_position ?? 'center',
             ]
         ]);

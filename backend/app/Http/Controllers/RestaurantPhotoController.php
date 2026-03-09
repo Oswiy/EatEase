@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use App\Models\RestaurantPhoto;
 use App\Models\Restaurant;
 use Illuminate\Http\Request;
@@ -73,32 +74,34 @@ class RestaurantPhotoController extends Controller
 
         foreach ($request->file('photos') as $index => $photo) {
             try {
-                // Create directory if it doesn't exist
-                $directory = "restaurant-gallery/{$restaurantId}";
-                if (!Storage::disk('public')->exists($directory)) {
-                    Storage::disk('public')->makeDirectory($directory);
-                }
-
-                // Generate unique filename
-                $filename = uniqid() . '_' . time() . '_' . ($index + 1) . '.' . $photo->getClientOriginalExtension();
-                $path = $photo->storeAs($directory, $filename, 'public');
+                // Upload to Cloudinary
+                $uploadResult = Cloudinary::upload(
+                    $photo->getRealPath(),
+                    [
+                        'folder' => "restaurant-gallery/{$restaurantId}",
+                        'public_id' => uniqid() . '_' . time() . '_' . ($index + 1)
+                    ]
+                );
+                
+                // Get the permanent HTTPS URL
+                $imageUrl = $uploadResult->getSecurePath();
 
                 // Get caption if provided
                 $caption = $request->input("captions.{$index}", null);
 
-                // Create photo record - FIXED
+                // Create photo record with Cloudinary URL
                 $restaurantPhoto = RestaurantPhoto::create([
                     'restaurant_id' => $restaurantId,
-                    'image_url' => $path, // ✅ Changed to image_url
+                    'image_url' => $imageUrl, // Stores FULL URL
                     'caption' => $caption,
                     'is_primary' => false,
                     'uploaded_by' => $user->id,
-                    // ❌ REMOVED: 'display_order' => RestaurantPhoto::where('restaurant_id', $restaurantId)->count()
                 ]);
 
                 $uploadedPhotos[] = $restaurantPhoto;
+                
             } catch (\Exception $e) {
-                Log::error('Photo upload error: ' . $e->getMessage());
+                Log::error('Cloudinary photo upload error: ' . $e->getMessage());
                 continue;
             }
         }
