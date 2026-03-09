@@ -14,15 +14,22 @@ function RestaurantDetails({ restaurantId, onBack }) {
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
 
-    // ✅ CORRECT: Use WAMP URL
-    const backendBase = "http://localhost/EatEase/backend/public";
-
+    // If it's already a full URL (starts with http), use it directly
     if (imagePath.startsWith("http")) {
+      console.log("✅ Using full URL:", imagePath);
       return imagePath;
     }
 
-    // The API returns paths like "/storage/restaurant-banners/..."
-    return `${backendBase}${imagePath}`;
+    // If it's a Cloudinary URL without protocol? (unlikely but check)
+    if (imagePath.includes("cloudinary.com")) {
+      console.log("✅ Cloudinary URL detected:", imagePath);
+      return imagePath;
+    }
+
+    // Otherwise, assume it's a local storage path
+    const fullUrl = `http://localhost/EatEase/backend/public${imagePath}`;
+    console.log("⚠️ Using local URL:", fullUrl);
+    return fullUrl;
   };
 
   // ========== ADD THIS MISSING FUNCTION ==========
@@ -519,6 +526,7 @@ function RestaurantDetails({ restaurantId, onBack }) {
             alt={`${restaurant.name} banner`}
             className="restaurant-details-banner-image"
             onError={(e) => {
+              console.error("Banner failed to load:", bannerImageUrl);
               e.target.style.display = "none";
               e.target.parentElement.style.display = "none";
             }}
@@ -584,6 +592,10 @@ function RestaurantDetails({ restaurantId, onBack }) {
                   alt={`${restaurant.name} profile`}
                   className="restaurant-profile-image"
                   onError={(e) => {
+                    console.error(
+                      "Profile image failed to load:",
+                      profileImageUrl,
+                    );
                     e.target.style.display = "none";
                   }}
                 />

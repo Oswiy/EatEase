@@ -13,21 +13,28 @@ function RestaurantCard({
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
 
-    // ✅ CORRECT: Use WAMP URL, not artisan serve URL
-    const backendBase = "http://localhost/EatEase/backend/public";
-
+    // If it's already a full URL (starts with http), use it directly
     if (imagePath.startsWith("http")) {
+      console.log("✅ Using full URL:", imagePath);
       return imagePath;
     }
 
-    // The API returns paths like "/storage/restaurant-banners/..."
-    // Just prepend the correct backend base URL
-    return `${backendBase}${imagePath}`;
+    // If it's a Cloudinary URL without protocol? (unlikely but check)
+    if (imagePath.includes("cloudinary.com")) {
+      console.log("✅ Cloudinary URL detected:", imagePath);
+      return imagePath;
+    }
+
+    // Otherwise, assume it's a local storage path
+    const fullUrl = `http://localhost/EatEase/backend/public${imagePath}`;
+    console.log("⚠️ Using local URL:", fullUrl);
+    return fullUrl;
   };
-  console.log("🚀 Image URL Debug:", {
+
+  console.log("Image URL Debug:", {
     original: restaurant.banner_image,
     processed: getImageUrl(restaurant.banner_image),
-    backendBase: "http://localhost:8000",
+    backendBase: API_BASE_URL,
   });
 
   // ========== IMAGE URLS (MUST BE BEFORE HOOKS) ==========
@@ -39,7 +46,7 @@ function RestaurantCard({
     ? getImageUrl(restaurant.profile_image)
     : null;
 
-    // ========== STATE VARIABLES ==========
+  // ========== STATE VARIABLES ==========
   const [currentRestaurant, setCurrentRestaurant] = useState(restaurant); // ✅ ADD THIS
   const [isUpdating, setIsUpdating] = useState(false); // ✅ ADD THIS
   const [isBookmarked, setIsBookmarked] = useState(false);
@@ -47,31 +54,36 @@ function RestaurantCard({
   const [loading, setLoading] = useState(false);
   const [userHasNotification, setUserHasNotification] = useState(null);
 
-   // ========== POLLING FOR REAL-TIME UPDATES ========== ✅ ADD THIS SECTION
+  // ========== POLLING FOR REAL-TIME UPDATES ========== ✅ ADD THIS SECTION
   useEffect(() => {
     // Subscribe to real-time updates for this restaurant
     const unsubscribe = pollingService.subscribe(
       restaurant.id,
       (updatedData) => {
         console.log(`Real-time update for ${restaurant.name}:`, updatedData);
-        
+
         // Show updating indicator
         setIsUpdating(true);
-        
+
         // Update the restaurant data
-        setCurrentRestaurant(prev => ({
+        setCurrentRestaurant((prev) => ({
           ...prev,
           crowd_status: updatedData.crowd_status,
           current_occupancy: updatedData.current_occupancy,
           occupancy_percentage: updatedData.occupancy_percentage,
-          crowdLevel: updatedData.crowd_status === 'green' ? 'Low' :
-                    updatedData.crowd_status === 'yellow' ? 'Moderate' :
-                    updatedData.crowd_status === 'orange' ? 'Busy' : 'Full'
+          crowdLevel:
+            updatedData.crowd_status === "green"
+              ? "Low"
+              : updatedData.crowd_status === "yellow"
+                ? "Moderate"
+                : updatedData.crowd_status === "orange"
+                  ? "Busy"
+                  : "Full",
         }));
-        
+
         // Hide indicator after 1 second
         setTimeout(() => setIsUpdating(false), 1000);
-      }
+      },
     );
 
     // Cleanup on unmount
@@ -80,17 +92,17 @@ function RestaurantCard({
     };
   }, [restaurant.id, restaurant.name]);
 
-   // ========== EXISTING EFFECTS (UPDATED TO USE currentRestaurant) ==========
+  // ========== EXISTING EFFECTS (UPDATED TO USE currentRestaurant) ==========
   useEffect(() => {
     const notification = allNotifications.find(
-      (n) => n.restaurant_id === currentRestaurant.id  // ✅ Use currentRestaurant
+      (n) => n.restaurant_id === currentRestaurant.id, // ✅ Use currentRestaurant
     );
     setUserHasNotification(notification?.notify_when_status || null);
-  }, [allNotifications, currentRestaurant.id]);  // ✅ Use currentRestaurant.id
+  }, [allNotifications, currentRestaurant.id]); // ✅ Use currentRestaurant.id
 
   useEffect(() => {
     checkBookmarks();
-  }, [currentRestaurant.id]);  // ✅ Use currentRestaurant.id
+  }, [currentRestaurant.id]); // ✅ Use currentRestaurant.id
 
   const checkBookmarks = async () => {
     const token = localStorage.getItem("auth_token");
@@ -108,7 +120,7 @@ function RestaurantCard({
         const bookmarksData = await bookmarksRes.json();
         if (bookmarksData.success && bookmarksData.bookmarks) {
           const bookmarked = bookmarksData.bookmarks.some(
-            (b) => b.restaurant_id === currentRestaurant.id  // ✅ Use currentRestaurant
+            (b) => b.restaurant_id === currentRestaurant.id, // ✅ Use currentRestaurant
           );
           setIsBookmarked(bookmarked);
         }
@@ -119,7 +131,7 @@ function RestaurantCard({
   };
 
   const handleClick = () => {
-    onRestaurantClick(currentRestaurant);  // ✅ Use currentRestaurant
+    onRestaurantClick(currentRestaurant); // ✅ Use currentRestaurant
   };
 
   const handleBookmarkClick = async (e) => {
@@ -135,7 +147,7 @@ function RestaurantCard({
 
     try {
       const response = await fetch(
-        `${API_BASE_URL}/api/bookmarks/${currentRestaurant.id}`,  // ✅ Use currentRestaurant
+        `${API_BASE_URL}/api/bookmarks/${currentRestaurant.id}`, // ✅ Use currentRestaurant
         {
           method: "POST",
           headers: {
@@ -178,7 +190,7 @@ function RestaurantCard({
 
     try {
       const response = await fetch(
-        `${API_BASE_URL}/api/notifications/${currentRestaurant.id}`,  // ✅ Use currentRestaurant
+        `${API_BASE_URL}/api/notifications/${currentRestaurant.id}`, // ✅ Use currentRestaurant
         {
           method: "POST",
           headers: {
@@ -199,7 +211,8 @@ function RestaurantCard({
         }
 
         alert(
-          `You'll be notified when ${currentRestaurant.name} has ${getStatusText(  // ✅ Use currentRestaurant
+          `You'll be notified when ${currentRestaurant.name} has ${getStatusText(
+            // ✅ Use currentRestaurant
             crowdLevel,
           )} crowd!`,
         );
@@ -224,7 +237,7 @@ function RestaurantCard({
     setLoading(true);
     try {
       const notification = allNotifications.find(
-        (n) => n.restaurant_id === currentRestaurant.id  // ✅ Use currentRestaurant
+        (n) => n.restaurant_id === currentRestaurant.id, // ✅ Use currentRestaurant
       );
 
       if (notification) {
@@ -288,7 +301,7 @@ function RestaurantCard({
     }
   };
 
-  const shortAddress = currentRestaurant.address  // ✅ Use currentRestaurant
+  const shortAddress = currentRestaurant.address // ✅ Use currentRestaurant
     ? currentRestaurant.address.split(",")[0].trim()
     : "Location not available";
 
@@ -315,8 +328,6 @@ function RestaurantCard({
           ) : (
             <div className="banner-placeholder">{currentRestaurant.name}</div>
           )}
-
-
 
           {/* Rating Display */}
           <div className="banner-rating-display">
@@ -430,8 +441,12 @@ function RestaurantCard({
           </div>
 
           {/* ✅ UPDATED STATUS BADGE WITH PULSE EFFECT */}
-          <div className={`status-badge ${currentRestaurant.crowd_status} ${isUpdating ? 'updating' : ''}`}>
-            Crowd Level: {currentRestaurant.crowdLevel || getStatusText(currentRestaurant.crowd_status)}
+          <div
+            className={`status-badge ${currentRestaurant.crowd_status} ${isUpdating ? "updating" : ""}`}
+          >
+            Crowd Level:{" "}
+            {currentRestaurant.crowdLevel ||
+              getStatusText(currentRestaurant.crowd_status)}
             {isUpdating && <span className="pulse-dot"></span>}
           </div>
         </div>

@@ -7,6 +7,18 @@ const PhotosTab = ({ restaurantId }) => {
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [viewMode, setViewMode] = useState("grid");
 
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return null;
+
+    // If it's already a full URL (starts with http), use it directly
+    if (imagePath.startsWith('http')) {
+      return imagePath;
+    }
+
+    // Otherwise, assume it's a local storage path
+    return `http://localhost/EatEase/backend/public/storage/${imagePath}`;
+  };
+
   useEffect(() => {
     fetchPhotos();
   }, [restaurantId]);
@@ -18,13 +30,13 @@ const PhotosTab = ({ restaurantId }) => {
       );
       const data = await response.json();
       
-      // Use full_image_url instead of image_url
+      // Use full_image_url if available, otherwise construct from image_url
       const processedPhotos = Array.isArray(data) 
         ? data.map(photo => ({
             ...photo,
             // Use full_image_url if available, otherwise construct from image_url
             display_url: photo.full_image_url || 
-                        `http://localhost/EatEase/backend/public/storage/${photo.image_url}`,
+                        (photo.image_url ? getImageUrl(photo.image_url) : null),
             caption: photo.caption || '',
             is_primary: photo.is_primary || false
           }))
@@ -172,11 +184,41 @@ const PhotosTab = ({ restaurantId }) => {
                     }}
                   />
                 </div>
+                <div className="list-photo-details">
+                  <p className="list-photo-caption">
+                    {photo.caption || "No caption"}
+                  </p>
+                  {photo.is_primary && (
+                    <span className="list-primary-badge">Primary</span>
+                  )}
+                </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Full-screen photo viewer modal */}
+      {selectedPhoto && (
+        <div className="photo-viewer-modal" onClick={closePhotoViewer}>
+          <div className="photo-viewer-content" onClick={(e) => e.stopPropagation()}>
+            <button className="close-viewer-btn" onClick={closePhotoViewer}>×</button>
+            <button className="nav-btn prev" onClick={() => navigatePhoto("prev")}>‹</button>
+            <img 
+              src={selectedPhoto.display_url} 
+              alt={selectedPhoto.caption || "Restaurant photo"} 
+              className="viewer-image"
+              onError={(e) => {
+                e.target.src = 'https://via.placeholder.com/800x600?text=Image+Not+Found';
+              }}
+            />
+            <button className="nav-btn next" onClick={() => navigatePhoto("next")}>›</button>
+            {selectedPhoto.caption && (
+              <p className="viewer-caption">{selectedPhoto.caption}</p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

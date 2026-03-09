@@ -123,18 +123,17 @@ function FeatureCarousel({ restaurants, onRestaurantClick }) {
     }
   };
 
-  // ✅ FIXED: Use the working URL format
+  // ✅ FIXED: Handle both local and Cloudinary URLs
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
 
-    // Use the same format as RestaurantCard.jsx
-    const backendBase = "http://localhost/EatEase/backend/public";
-
-    if (imagePath.startsWith("http")) {
+    // If it's already a full URL (starts with http), use it directly
+    if (imagePath.startsWith('http')) {
       return imagePath;
     }
 
-    // The API returns paths like "/storage/restaurant-banners/..."
+    // Otherwise, assume it's a local storage path
+    const backendBase = "http://localhost/EatEase/backend/public";
     return `${backendBase}${imagePath}`;
   };
 
@@ -191,7 +190,8 @@ function FeatureCarousel({ restaurants, onRestaurantClick }) {
           console.log(`Rendering ${restaurant.name}:`, {
             currentStatus: currentData.crowd_status,
             originalStatus: restaurant.crowd_status,
-            hasUpdate: !!updatedRestaurants[restaurant.id]
+            hasUpdate: !!updatedRestaurants[restaurant.id],
+            imageUrl: imageUrl
           });
 
           return (
