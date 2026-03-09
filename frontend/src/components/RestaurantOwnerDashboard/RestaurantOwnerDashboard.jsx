@@ -43,6 +43,19 @@ function RestaurantOwnerDashboard({ user }) {
   const [showPromo, setShowPromo] = useState(false);
   const [showPromoModal, setShowPromoModal] = useState(false);
 
+  // ===== HELPER FUNCTION TO GET CORRECT IMAGE URL =====
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return null;
+
+    // If it's already a full URL (starts with http), use it directly
+    if (imagePath.startsWith("http")) {
+      return imagePath;
+    }
+
+    // Otherwise, assume it's a local storage path
+    return `http://localhost/EatEase/backend/public/storage/${imagePath}`;
+  };
+
   useEffect(() => {
     if (user && user.user_type === "restaurant_owner") {
       fetchTier();
@@ -624,7 +637,9 @@ function RestaurantOwnerDashboard({ user }) {
                   <li>
                     <strong>Label the Button:</strong> Clearly mark with:
                     <div className="instruction-label">
-                      <span className="label-primary">PRESS ONCE TO ENTER <br /></span>
+                      <span className="label-primary">
+                        PRESS ONCE TO ENTER <br />
+                      </span>
                       <span className="label-secondary">
                         PRESS TWICE TO EXIT
                       </span>
@@ -651,7 +666,8 @@ void handleButtonPress() {
                     height with clear instructions
                   </li>
                   <li>
-                    <strong>Test the System:</strong> Press button once and twice to test
+                    <strong>Test the System:</strong> Press button once and
+                    twice to test
                   </li>
                   <li>
                     <strong>Monitor:</strong> Watch occupancy update in
@@ -727,7 +743,7 @@ void handleButtonPress() {
             {restaurant.banner_image ? (
               <div className="restaurant-banner-container">
                 <img
-                  src={`http://localhost/EatEase/backend/public/storage/${restaurant.banner_image}`}
+                  src={getImageUrl(restaurant.banner_image)}
                   alt={`${restaurant.name} banner`}
                   className="restaurant-banner-img"
                 />
@@ -779,7 +795,7 @@ void handleButtonPress() {
                 <div className="profile-image-container">
                   {restaurant.profile_image ? (
                     <img
-                      src={`http://localhost/EatEase/backend/public/storage/${restaurant.profile_image}`}
+                      src={getImageUrl(restaurant.profile_image)}
                       alt={restaurant.name}
                       className="restaurant-profile-img"
                     />
@@ -1355,23 +1371,20 @@ void handleButtonPress() {
               type={editingImageType}
               currentImage={
                 editingImageType === "profile"
-                  ? restaurant.profile_image
-                    ? `http://localhost/EatEase/backend/public/storage/${restaurant.profile_image}`
-                    : null
-                  : restaurant.banner_image
-                    ? `http://localhost/EatEase/backend/public/storage/${restaurant.banner_image}`
-                    : null
+                  ? restaurant.profile_image || null // ✅ Pass raw URL, don't use getImageUrl
+                  : restaurant.banner_image || null // ✅ Pass raw URL, don't use getImageUrl
               }
               onUploadSuccess={(url, path) => {
+                // ✅ IMPORTANT: Use 'url' from the response, not 'path'
                 if (editingImageType === "profile") {
                   setRestaurant((prev) => ({
                     ...prev,
-                    profile_image: path,
+                    profile_image: url, // ✅ Save the Cloudinary URL
                   }));
                 } else {
                   setRestaurant((prev) => ({
                     ...prev,
-                    banner_image: path,
+                    banner_image: url, // ✅ Save the Cloudinary URL
                   }));
                 }
                 setEditingImageType(null);
