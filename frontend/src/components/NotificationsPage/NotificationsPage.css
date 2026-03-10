@@ -279,13 +279,20 @@
   font-size: 12px;
 }
 
+.notification-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .notification-details {
   display: flex;
-  gap: 10px;
-  align-items: center;
+  gap: 5px;
+  /* align-items: center; */
   margin-top: 8px;
   font-size: 11px;
-  justify-content: space-evenly;
+  /* justify-content: space-between; */
+  flex-direction: column;
 }
 
 .notification-type {
@@ -386,10 +393,6 @@
   justify-content: center;
   margin-left: 8px;
   transition: background 0.2s;
-}
-
-.delete-btn:hover {
-  background: #ff5252;
 }
 
 /* Adjust remove-btn to match delete-btn */

@@ -52,7 +52,10 @@ function RestaurantCard({
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [userHasNotification, setUserHasNotification] = useState(null);
+  // ========== NOTIFICATION STATE ==========
+  const [userHasNotification, setUserHasNotification] = useState(null); // Preference
+  const [hasUnreadNotification, setHasUnreadNotification] = useState(false); // Sent notification
+  const [unreadNotificationData, setUnreadNotificationData] = useState(null); // Store notification details
 
   // ========== POLLING FOR REAL-TIME UPDATES ========== ✅ ADD THIS SECTION
   useEffect(() => {
@@ -94,15 +97,105 @@ function RestaurantCard({
 
   // ========== EXISTING EFFECTS (UPDATED TO USE currentRestaurant) ==========
   useEffect(() => {
-    const notification = allNotifications.find(
-      (n) => n.restaurant_id === currentRestaurant.id, // ✅ Use currentRestaurant
-    );
-    setUserHasNotification(notification?.notify_when_status || null);
-  }, [allNotifications, currentRestaurant.id]); // ✅ Use currentRestaurant.id
+    // Only use allNotifications if we haven't fetched preferences separately
+    if (!userHasNotification) {
+      const notification = allNotifications.find(
+        (n) => n.restaurant_id === currentRestaurant.id,
+      );
+      if (notification) {
+        setUserHasNotification(notification.notify_when_status);
+      }
+    }
+  }, [allNotifications, currentRestaurant.id, userHasNotification]);
 
   useEffect(() => {
     checkBookmarks();
   }, [currentRestaurant.id]); // ✅ Use currentRestaurant.id
+
+  // ========== FETCH NOTIFICATION PREFERENCES ==========
+  useEffect(() => {
+    const fetchNotificationPreference = async () => {
+      const token = localStorage.getItem("auth_token");
+      if (!token) return;
+
+      try {
+        const response = await fetch(
+          "http://localhost:8000/api/notifications",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: "application/json",
+            },
+          },
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.notifications) {
+            // Find preference for this restaurant
+            const pref = data.notifications.find(
+              (n) => n.restaurant_id === currentRestaurant.id,
+            );
+            setUserHasNotification(pref?.notify_when_status || null);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching preferences:", error);
+      }
+    };
+
+    fetchNotificationPreference();
+  }, [currentRestaurant.id]);
+
+  // ========== FETCH SENT NOTIFICATIONS ==========
+  const fetchSentNotifications = async () => {
+    const token = localStorage.getItem("auth_token");
+    if (!token) return;
+
+    try {
+      const response = await fetch(
+        "http://localhost:8000/api/user-notifications",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        },
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        // Find unread notification for this restaurant
+        const unread = data.notifications?.find(
+          (n) => n.restaurant_id === currentRestaurant.id && !n.is_read,
+        );
+
+        if (unread) {
+          setHasUnreadNotification(true);
+          setUnreadNotificationData(unread);
+
+          // OPTIONAL: Auto-remove the preference when notification is sent?
+          // If you want the green indicator to disappear when notification is sent,
+          // uncomment this line:
+          // setUserHasNotification(null);
+        } else {
+          setHasUnreadNotification(false);
+          setUnreadNotificationData(null);
+        }
+      }
+    } catch (error) {
+      console.error("Error checking notifications:", error);
+    }
+  };
+
+  // Initial fetch and polling for sent notifications
+  useEffect(() => {
+    fetchSentNotifications();
+
+    // Poll every 30 seconds
+    const interval = setInterval(fetchSentNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [currentRestaurant.id]);
 
   const checkBookmarks = async () => {
     const token = localStorage.getItem("auth_token");
@@ -184,13 +277,14 @@ function RestaurantCard({
     setShowNotificationModal(true);
   };
 
+  // ========== HANDLE SET NOTIFICATION ==========
   const handleSetNotification = async (crowdLevel) => {
-    const token = localStorage.getItem("auth_token");
     setLoading(true);
+    const token = localStorage.getItem("auth_token");
 
     try {
       const response = await fetch(
-        `${API_BASE_URL}/api/notifications/${currentRestaurant.id}`, // ✅ Use currentRestaurant
+        `http://localhost:8000/api/notifications/${currentRestaurant.id}`,
         {
           method: "POST",
           headers: {
@@ -205,18 +299,28 @@ function RestaurantCard({
       const data = await response.json();
       if (data.success) {
         setUserHasNotification(crowdLevel);
+        setShowNotificationModal(false);
 
-        if (window.refreshNotificationCount) {
-          window.refreshNotificationCount();
-        }
+        // Force refresh preferences
+        setTimeout(() => {
+          const fetchPrefs = async () => {
+            const res = await fetch("http://localhost:8000/api/notifications", {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            const prefData = await res.json();
+            if (prefData.success) {
+              const pref = prefData.notifications.find(
+                (n) => n.restaurant_id === currentRestaurant.id,
+              );
+              setUserHasNotification(pref?.notify_when_status || null);
+            }
+          };
+          fetchPrefs();
+        }, 500);
 
         alert(
-          `You'll be notified when ${currentRestaurant.name} has ${getStatusText(
-            // ✅ Use currentRestaurant
-            crowdLevel,
-          )} crowd!`,
+          `You'll be notified when ${currentRestaurant.name} has ${getStatusText(crowdLevel)} crowd!`,
         );
-        setShowNotificationModal(false);
       } else {
         alert(
           "Failed to set notification: " + (data.message || "Unknown error"),
@@ -230,19 +334,25 @@ function RestaurantCard({
     }
   };
 
+  // ========== HANDLE REMOVE NOTIFICATION (Preference) ==========
   const handleRemoveNotification = async () => {
-    const token = localStorage.getItem("auth_token");
-    if (!token) return;
-
     setLoading(true);
+    const token = localStorage.getItem("auth_token");
+
     try {
-      const notification = allNotifications.find(
-        (n) => n.restaurant_id === currentRestaurant.id, // ✅ Use currentRestaurant
+      // First, get the notification preference ID
+      const prefsRes = await fetch("http://localhost:8000/api/notifications", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const prefsData = await prefsRes.json();
+
+      const pref = prefsData.notifications?.find(
+        (n) => n.restaurant_id === currentRestaurant.id,
       );
 
-      if (notification) {
+      if (pref) {
         const deleteRes = await fetch(
-          `${API_BASE_URL}/api/notifications/${notification.id}`,
+          `http://localhost:8000/api/notifications/${pref.id}`,
           {
             method: "DELETE",
             headers: {
@@ -257,17 +367,43 @@ function RestaurantCard({
         if (deleteData.success) {
           setUserHasNotification(null);
 
+          // Refresh notification count if needed
           if (window.refreshNotificationCount) {
             window.refreshNotificationCount();
           }
-
-          alert("Notification removed");
         }
       }
     } catch (error) {
       console.error("Remove notification error:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ========== HANDLE DISMISS SENT NOTIFICATION ==========
+  const handleDismissNotification = async () => {
+    if (!unreadNotificationData) return;
+
+    const token = localStorage.getItem("auth_token");
+
+    try {
+      const response = await fetch(
+        `http://localhost:8000/api/user-notifications/${unreadNotificationData.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        },
+      );
+
+      if (response.ok) {
+        setHasUnreadNotification(false);
+        setUnreadNotificationData(null);
+      }
+    } catch (error) {
+      console.error("Error dismissing notification:", error);
     }
   };
 
@@ -483,8 +619,30 @@ function RestaurantCard({
           </div>
         </div>
 
-        {userHasNotification && (
-          <div className="current-notification">
+        {/* Show SENT notification if exists */}
+        {hasUnreadNotification && unreadNotificationData && (
+          <div className="current-notification sent">
+            <small>
+              <span className="notification-icon">🔔</span>
+              <span className={`status-${unreadNotificationData.status}`}>
+                {unreadNotificationData.message}
+              </span>
+            </small>
+            <button
+              className="remove-notification-btn"
+              onClick={async (e) => {
+                e.stopPropagation();
+                await handleDismissNotification();
+              }}
+            >
+              ×
+            </button>
+          </div>
+        )}
+
+        {/* Show PREFERENCE indicator (what they'll be notified about) */}
+        {!hasUnreadNotification && userHasNotification && (
+          <div className="current-notification preference">
             <small>
               You'll be notified at:{" "}
               <span className={`status-${userHasNotification}`}>
@@ -493,9 +651,11 @@ function RestaurantCard({
             </small>
             <button
               className="remove-notification-btn"
-              onClick={(e) => {
+              onClick={async (e) => {
                 e.stopPropagation();
-                handleRemoveNotification();
+                await handleRemoveNotification();
+                // Force UI update
+                setUserHasNotification(null);
               }}
             >
               ×

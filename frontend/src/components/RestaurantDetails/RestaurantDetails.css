@@ -1475,9 +1475,6 @@ textarea {
   transition: all 0.2s;
 }
 
-.delete-btn:hover {
-  background: #ffc9c9;
-}
 
 /* Reviews List */
 .reviews-list-section {
@@ -1587,9 +1584,6 @@ textarea {
   align-self: flex-start;
 }
 
-.review-delete-btn:hover {
-  background: #ffc9c9;
-}
 
 /* Reservation Action Bar */
 .reservation-action-bar {

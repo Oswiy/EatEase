@@ -398,12 +398,23 @@ function NotificationsPage({ user, onBack }) {
     }
   };
 
-  const formatDate = (dateString) => {
+  const formatDateTime = (dateString, timeString) => {
+    if (!dateString) return "N/A";
+
     const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
+
+    // If time is provided separately
+    if (timeString) {
+      return `${date.toLocaleDateString()} at ${timeString}`;
+    }
+
+    // If date includes time
+    return date.toLocaleString(undefined, {
+      year: "numeric",
       month: "short",
       day: "numeric",
-      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -497,25 +508,29 @@ function NotificationsPage({ user, onBack }) {
                             <span className="unread-badge">NEW</span>
                           )}
                         </h3>
-
-                        <div className="notification-message">
-                          <p>{notification.message}</p>
-                        </div>
-
                         <div className="notification-details">
-                          <span className="notification-type">
-                            {isCrowdAlert ? "Crowd Alert" : "Notification"}
-                          </span>
-                          <span
-                            className={`notifications-status-badge status-${notification.status}`}
-                          >
-                            {getStatusText(notification.status)}
-                          </span>
-                          <span className="notification-time">
-                            {formatDate(
-                              notification.sent_at || notification.created_at,
-                            )}
-                          </span>
+                          <div className="notification-header">
+                            <span className="notification-type">
+                              {isCrowdAlert ? "Crowd Alert" : "Notification"}
+                            </span>
+                            <span
+                              className={`notifications-status-badge status-${notification.status}`}
+                            >
+                              {getStatusText(notification.status)}
+                            </span>
+                          </div>
+
+                          <div className="notification-message">
+                            {notification.message}
+                          </div>
+
+                          <div className="notification-footer">
+                            <span className="notification-time">
+                              {formatDateTime(
+                                notification.sent_at || notification.created_at,
+                              )}
+                            </span>
+                          </div>
                         </div>
 
                         {/* "Book Now" button - show for crowd alerts */}
