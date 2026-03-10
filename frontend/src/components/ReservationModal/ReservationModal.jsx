@@ -254,10 +254,9 @@ const ReservationModal = ({
                 <li>Go to the restaurant within the hold duration</li>
                 <li>Show your confirmation code at the entrance</li>
                 <li>The restaurant will confirm your hold</li>
-                <li>If they're busy, you may still have a short wait</li>
               </ul>
 
-              {/* ✅ ADD FEE NOTE */}
+              {/*ADD FEE NOTE */}
               {confirmation.hold_fee > 0 && (
                 <div className="note important">
                   <strong>Fee Information:</strong> hold fee of ₱

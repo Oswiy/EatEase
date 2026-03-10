@@ -273,12 +273,69 @@ const ReviewsTab = ({ restaurantId, restaurantName }) => {
         </div>
       </div>
 
+      {/* Reviews List */}
+      <div className="reviews-list-section">
+        <h2>Reviews</h2>
+        <div className="reviews-list">
+          {filteredReviews.length === 0 ? (
+            <div className="no-reviews">
+              <p>No reviews yet. Be the first to review!</p>
+            </div>
+          ) : (
+            filteredReviews.map((review) => (
+              <div key={review.id} className="review-card">
+                {/* Top Row: Avatar + Name + Date + Delete Button */}
+                <div className="review-header">
+                  {/* Left: Avatar and Name */}
+                  <div className="reviewer-info">
+                    <div className="reviewer-avatar">
+                      {review.user?.name?.charAt(0)?.toUpperCase() || "U"}
+                    </div>
+
+                    <div className="reviewer-details">
+                      <div className="reviewer-name-date">
+                        <span className="reviewer-name">
+                          {review.user?.name || "Anonymous"}
+                        </span>
+                        <span className="review-date">
+                          {new Date(review.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="review-rating">
+                      {renderStars(review.rating)}
+                    </div>
+                  </div>
+                  {/* Right: Delete Button (if user's review) */}
+                  {user && review.user_id === user.id && (
+                    <button
+                      onClick={() => deleteReview(review.id)}
+                      className="review-delete-btn"
+                      title="Delete your review"
+                    >
+                      Delete
+                    </button>
+                  )}
+                </div>
+                {/* Bottom: Review Comment */}
+                {review.comment && (
+                  <div className="review-content">
+                    <p className="review-comment">{review.comment}</p>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
       {/* Review Form for Diners */}
       {user && user.user_type === "diner" && (
         <div className="review-form-card">
           <h3>{userReview ? "Edit Your Review" : "Write a Review"}</h3>
 
-          <div className="form-group">
+          <div className="review-form-group">
             <label>Rate:</label>
             <div className="star-rating-input">
               {renderStars(newReview.rating, true, (rating) =>
@@ -327,63 +384,6 @@ const ReviewsTab = ({ restaurantId, restaurantName }) => {
           </div>
         </div>
       )}
-
-      {/* Reviews List */}
-      <div className="reviews-list-section">
-        <h2>Reviews</h2>
-        <div className="reviews-list">
-          {filteredReviews.length === 0 ? (
-            <div className="no-reviews">
-              <p>No reviews yet. Be the first to review!</p>
-            </div>
-          ) : (
-            filteredReviews.map((review) => (
-              <div key={review.id} className="review-card">
-                {/* Top Row: Avatar + Name + Date + Delete Button */}
-                <div className="review-header">
-                  {/* Left: Avatar and Name */}
-                  <div className="reviewer-info">
-                    <div className="reviewer-avatar">
-                      {review.user?.name?.charAt(0)?.toUpperCase() || "U"}
-                    </div>
-
-                    <div className="reviewer-details">
-                      <div className="reviewer-name-date">
-                        <span className="reviewer-name">
-                          {review.user?.name || "Anonymous"}
-                        </span>
-                        <span className="review-date">
-                          {new Date(review.created_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="review-rating">
-                      {renderStars(review.rating)}
-                    </div>
-                    {/* Right: Delete Button (if user's review) */}
-                    {user && review.user_id === user.id && (
-                      <button
-                        onClick={() => deleteReview(review.id)}
-                        className="review-delete-btn"
-                        title="Delete your review"
-                      >
-                        Delete
-                      </button>
-                    )}
-                  </div>
-                </div>
-                {/* Bottom: Review Comment */}
-                {review.comment && (
-                  <div className="review-content">
-                    <p className="review-comment">{review.comment}</p>
-                  </div>
-                )}
-              </div>
-            ))
-          )}
-        </div>
-      </div>
     </div>
   );
 };

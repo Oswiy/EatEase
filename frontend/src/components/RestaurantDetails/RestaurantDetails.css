@@ -482,11 +482,11 @@
 }
 
 .feature-tag {
-  background: rgb(67, 67, 67);
+  background: #efedde;
   padding: 6px 8px; /* Reduced padding */
   border-radius: 10px;
   font-size: 12px; /* Smaller */
-  color: #ffffff;
+  color: #000000;
   font-weight: 500;
   text-align: center;
   word-break: break-word; /* Allow long feature names to wrap */
@@ -1184,7 +1184,7 @@ textarea {
   font-size: 13px;
   line-height: 1.5;
   resize: vertical;
-  min-height: 200px;
+  min-height: 100px;
   max-height: 300px;
 }
 
@@ -1192,6 +1192,19 @@ textarea {
   outline: none;
   border-color: #f8f3b7;
   box-shadow: 0 0 0 3px rgba(248, 243, 183, 0.3);
+}
+
+.review-form-group {
+  display: flex;
+  justify-content: center;
+  align-content: center;
+  flex-wrap: wrap;
+  padding-bottom: 15px;
+  flex-direction: column;
+}
+
+.review-form-group label {
+  font-size: 14px;
 }
 
 .editor-actions {
@@ -1322,7 +1335,7 @@ textarea {
 
 .total-reviews {
   color: #666;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 /* Rating Distribution */
@@ -1417,12 +1430,15 @@ textarea {
 .star-rating-input {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 0px;
+  align-content: center;
+  flex-wrap: wrap;
+  flex-direction: column;
 }
 
 .selected-rating {
   color: #666;
-  font-size: 14px;
+  font-size: 11px;
 }
 
 .menu-form-group textarea:focus {
@@ -1651,7 +1667,6 @@ textarea {
   }
 
   .review-header {
-    flex-direction: column;
     align-items: stretch;
     gap: 10px;
     margin-bottom: 4px;
@@ -1780,7 +1795,6 @@ textarea {
   }
 
   .review-header {
-    flex-direction: column;
     align-items: flex-start;
     margin-bottom: 4px;
   }

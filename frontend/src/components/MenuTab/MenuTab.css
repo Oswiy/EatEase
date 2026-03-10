@@ -52,7 +52,7 @@
 .menu-header-section h2 {
   margin: 0;
   font-size: 20px;
-  font-weight: 600;
+  font-weight: 800;
   color: #333;
 }
 
@@ -86,7 +86,7 @@
 .menu-table-header {
   display: grid;
   grid-template-columns: 3fr 1fr;
-  background: #f8f9fa;
+  background: #d9d9d9;
   padding: 14px 20px;
   border-bottom: 2px solid #e9ecef;
 }
@@ -142,10 +142,10 @@
 /* Footer */
 .menu-footer {
   margin-top: 20px;
-  padding-top: 16px;
+  padding-top: 10px;
   border-top: 1px solid #e9ecef;
-  font-size: 11px;
-  color: #666;
+  font-size: 12px;
+  color: #000000;
   text-align: center;
 }
 

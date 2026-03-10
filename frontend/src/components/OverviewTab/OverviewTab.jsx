@@ -111,15 +111,6 @@ const OverviewTab = ({ restaurant, stats, reviewsData }) => {
           </span>
         ))}
       </div>
-
-      {/* Restaurant Description */}
-      <div className="tab-header">About</div>
-      <div className="info-section" id="about">
-        <p>
-          {restaurant.description ||
-            `Welcome to ${restaurant.name}! Enjoy delicious ${restaurant.cuisine_type} cuisine.`}
-        </p>
-      </div>
     </div>
   );
 };
