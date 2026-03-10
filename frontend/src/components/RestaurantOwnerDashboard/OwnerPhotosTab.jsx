@@ -34,12 +34,15 @@ const OwnerPhotosTab = ({ restaurant }) => {
       const token = localStorage.getItem("auth_token");
       console.log("Fetching photos with token:", token ? "exists" : "missing");
 
-      const response = await fetch(`/api/restaurant/${restaurantId}/photos`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/restaurant/${restaurantId}/photos`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
         },
-      });
+      );
 
       console.log("Photos API response status:", response.status);
 
@@ -134,12 +137,12 @@ const OwnerPhotosTab = ({ restaurant }) => {
       // DEBUG: Log the request
       console.log(
         "Sending request to:",
-        `/api/restaurant/${restaurantId}/photos`,
+        `http://127.0.0.1:8000/api/restaurant/${restaurantId}/photos`,
       );
       console.log("Token exists:", !!token);
 
       const response = await fetch(
-        `/api/restaurant/${restaurantId}/photos`,
+        `http://127.0.0.1:8000/api/restaurant/${restaurantId}/photos`,
         {
           method: "POST",
           headers: {

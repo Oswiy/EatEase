@@ -20,6 +20,13 @@ const SpotHoldManagement = ({ restaurant }) => {
     fee_description: "",
   });
 
+  const handleRemoveExpired = () => {
+    // Refresh the expired holds list
+    if (activeTab === "expired") {
+      fetchExpiredHolds();
+    }
+  };
+
   useEffect(() => {
     if (restaurant) {
       setCapacityInfo({
@@ -277,14 +284,11 @@ const SpotHoldManagement = ({ restaurant }) => {
       <div className="management-header">
         <div>
           <h3>Spot Hold Management</h3>
-          {restaurantInfo && (
-            <p className="restaurant-name">{restaurantInfo.name}</p>
-          )}
         </div>
 
         {/* Capacity Status */}
         <div className="capacity-status">
-          <div className="capacity-bar">
+          <div className="spot-hold-capacity-bar">
             <div className="capacity-label">
               Capacity: {capacityInfo.current}/{capacityInfo.max}
             </div>
@@ -373,13 +377,15 @@ const SpotHoldManagement = ({ restaurant }) => {
               <ExpiredHoldsView
                 holds={activeHolds}
                 getHoldTypeLabel={getHoldTypeLabel}
+                onRemoveExpired={handleRemoveExpired}
+                setActiveHolds={setActiveHolds} // ✅ Pass this down
               />
             )}
           </>
         )}
       </div>
 
-      {/* ✅ ADD FEE MODAL */}
+      {/*ADD FEE MODAL */}
       {showFeeModal && (
         <div className="modal-overlay" onClick={() => setShowFeeModal(false)}>
           <div
@@ -400,19 +406,14 @@ const SpotHoldManagement = ({ restaurant }) => {
                 <h4>
                   Current Fee: ₱{Number(feeSettings.hold_fee || 0).toFixed(2)}
                 </h4>
-                <p>
-                  Applies to parties of {feeSettings.min_party_for_fee || 1} or
-                  more
-                </p>
                 {feeSettings.fee_description && (
                   <p className="fee-desc">{feeSettings.fee_description}</p>
                 )}
               </div>
 
               <div className="form-group">
-                <label>Hold Fee (₱)</label>
                 <div className="currency-input">
-                  <span className="currency-symbol">₱</span>
+                  <label className="currency-symbol">Php Amount:</label>
                   <input
                     type="number"
                     value={
@@ -525,16 +526,16 @@ const ActiveHoldsView = ({
             <div className="hold-header">
               <div className="hold-user">
                 <span className="user-name">
-                  {hold.user?.name || "Customer"}
+                  Username: {hold.user?.name || "Customer"}
                 </span>
-                <span className="user-email">{hold.user?.email}</span>
+                <span className="user-email">
+                  User Email: {hold.user?.email}
+                </span>
               </div>
               <div className="hold-meta">
-                <span className="party-size">
-                  {hold.party_size} person{hold.party_size !== 1 ? "s" : ""}
-                </span>
+                <span className="party-size">People: {hold.party_size}</span>
                 <span className="hold-type">
-                  {getHoldTypeLabel(hold.hold_type)}
+                  Type: {getHoldTypeLabel(hold.hold_type)}
                 </span>
                 <span className="confirmation-code">
                   Code: {hold.confirmation_code}
@@ -585,12 +586,6 @@ const ActiveHoldsView = ({
                   ) : null}
                 </div>
               </div>
-
-              {hold.special_requests && (
-                <div className="special-requests">
-                  <strong>Special Requests:</strong> {hold.special_requests}
-                </div>
-              )}
             </div>
 
             <div className="hold-actions">
@@ -675,8 +670,13 @@ const TodaysReservationsView = ({ reservations }) => {
   );
 };
 
-// Sub-component: Expired Holds (keep same)
-const ExpiredHoldsView = ({ holds, getHoldTypeLabel }) => {
+// Sub-component: Expired Holds (with remove button)
+const ExpiredHoldsView = ({
+  holds,
+  getHoldTypeLabel,
+  onRemoveExpired,
+  setActiveHolds,
+}) => {
   if (holds.length === 0) {
     return (
       <div className="hold-empty-state">
@@ -685,10 +685,75 @@ const ExpiredHoldsView = ({ holds, getHoldTypeLabel }) => {
     );
   }
 
+  const handleRemove = async (holdId) => {
+    if (!window.confirm("Remove this expired hold from view?")) return;
+
+    try {
+      const token = localStorage.getItem("auth_token");
+
+      const response = await fetch(
+        `http://localhost:8000/api/my-restaurant/expired-holds/${holdId}/hide`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        },
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Remove from UI
+        setActiveHolds((prev) => prev.filter((h) => h.id !== holdId));
+        if (onRemoveExpired) onRemoveExpired();
+        alert("Hold hidden successfully");
+      } else {
+        alert("Failed to hide hold: " + data.message);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Error hiding hold");
+    }
+  };
+
+  const formatExpiryDate = (hold) => {
+    // Try multiple date fields
+    let dateString =
+      hold.expires_at || hold.original_expires_at || hold.created_at;
+
+    if (!dateString) return "Date not available";
+
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return "Date not available";
+      if (date.getTime() === 0) return "Date not available";
+
+      return date.toLocaleString(undefined, {
+        year: "numeric",
+        month: "numeric",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
+    } catch {
+      return "Date not available";
+    }
+  };
+
   return (
     <div className="expired-holds">
       {holds.map((hold) => (
         <div key={hold.id} className="expired-hold-card">
+          <button
+            className="remove-expired-btn"
+            onClick={() => handleRemove(hold.id)}
+            title="Remove from view"
+          >
+            ×
+          </button>
           <div className="expired-hold-header">
             <span className="customer-name">
               {hold.user?.name || "Customer"}
@@ -699,11 +764,8 @@ const ExpiredHoldsView = ({ holds, getHoldTypeLabel }) => {
             <span className="party-size">{hold.party_size}p</span>
           </div>
           <div className="expired-hold-details">
-            <div>Expired: {new Date(hold.expires_at).toLocaleString()}</div>
+            <div>Expired: {formatExpiryDate(hold)}</div> 
             <div>Code: {hold.confirmation_code}</div>
-            {hold.special_requests && (
-              <div>Requests: {hold.special_requests}</div>
-            )}
           </div>
         </div>
       ))}

@@ -103,7 +103,7 @@ const AnalyticsTab = ({ restaurantId, isPremium }) => {
   if (!hasData) {
     return (
       <div className="analytics-empty-state">
-        <div className="empty-icon">📊</div>
+        <div className="empty-icon"></div>
         <h3>No Analytics Data Yet</h3>
         <p>
           Your analytics dashboard will show occupancy trends, peak hours,

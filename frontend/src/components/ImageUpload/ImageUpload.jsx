@@ -116,28 +116,6 @@ function ImageUpload({ type, currentImage, onUploadSuccess, restaurantId }) {
     <div className={`image-upload ${type}`}>
       <h3>{type === "profile" ? "Profile Image" : "Banner Image"}</h3>
 
-      {/* Display current image if it exists */}
-      {currentImageDisplay && (
-        <div className="current-image-section">
-          <h4>Current Image:</h4>
-          <img
-            src={currentImageDisplay}
-            alt={`Current ${type}`}
-            className="current-image"
-            onError={(e) => {
-              console.error("Image failed to load:", currentImageDisplay);
-              // Try to fix the URL if it's broken
-              if (
-                currentImageDisplay &&
-                !currentImageDisplay.includes("/storage/")
-              ) {
-                e.target.src = `http://localhost:8000/storage/${currentImageDisplay}`;
-              }
-            }}
-          />
-        </div>
-      )}
-
       {/* Upload area - this only shows when previewing a NEW file */}
       <div className="upload-area">
         {preview ? (
@@ -191,22 +169,6 @@ function ImageUpload({ type, currentImage, onUploadSuccess, restaurantId }) {
       </div>
 
       {error && <div className="error-message">{error}</div>}
-
-      {type === "banner" && (
-        <div className="banner-options">
-          <label>Banner Position:</label>
-          <select
-            onChange={(e) => {
-              // Optional: Add API call to update banner position
-              console.log("Position changed to:", e.target.value);
-            }}
-          >
-            <option value="center">Center</option>
-            <option value="top">Top</option>
-            <option value="bottom">Bottom</option>
-          </select>
-        </div>
-      )}
     </div>
   );
 }

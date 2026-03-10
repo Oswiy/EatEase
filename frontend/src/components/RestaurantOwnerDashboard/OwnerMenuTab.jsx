@@ -23,7 +23,7 @@ const OwnerMenuTab = ({ restaurantId }) => {
             Authorization: `Bearer ${token}`,
             Accept: "application/json",
           },
-        }
+        },
       );
       const data = await response.json();
 
@@ -44,37 +44,39 @@ const OwnerMenuTab = ({ restaurantId }) => {
 
   const parseMenuText = (text) => {
     const items = [];
-    const lines = text.split('\n').filter(line => line.trim());
-    
-    lines.forEach(line => {
+    const lines = text.split("\n").filter((line) => line.trim());
+
+    lines.forEach((line) => {
       const trimmed = line.trim();
       // Try to parse format: Item Name - $Price
-      if (trimmed.includes(' - $')) {
-        const parts = trimmed.split(' - $');
+      if (trimmed.includes(" - $")) {
+        const parts = trimmed.split(" - $");
         if (parts.length === 2) {
           items.push({
             name: parts[0].trim(),
             price: parts[1].trim(),
-            id: Date.now() + Math.random() // Temporary ID
+            id: Date.now() + Math.random(), // Temporary ID
           });
         }
       }
     });
-    
+
     return items;
   };
 
   const formatMenuText = (items) => {
     if (items.length === 0) return "";
-    
-    return items.map(item => {
-      return `${item.name} - $${item.price}`;
-    }).join('\n');
+
+    return items
+      .map((item) => {
+        return `${item.name} - $${item.price}`;
+      })
+      .join("\n");
   };
 
   const saveMenu = async () => {
     if (!validateMenuItems()) return;
-    
+
     setIsSaving(true);
     setMessage("");
 
@@ -91,7 +93,7 @@ const OwnerMenuTab = ({ restaurantId }) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ menu_description: menuText }),
-        }
+        },
       );
 
       const data = await response.json();
@@ -116,8 +118,14 @@ const OwnerMenuTab = ({ restaurantId }) => {
         setMessage("Please enter a name for all menu items");
         return false;
       }
-      if (!item.price || isNaN(parseFloat(item.price)) || parseFloat(item.price) <= 0) {
-        setMessage("Please enter a valid price (positive number) for all items");
+      if (
+        !item.price ||
+        isNaN(parseFloat(item.price)) ||
+        parseFloat(item.price) <= 0
+      ) {
+        setMessage(
+          "Please enter a valid price (positive number) for all items",
+        );
         return false;
       }
     }
@@ -129,41 +137,50 @@ const OwnerMenuTab = ({ restaurantId }) => {
       setMessage("Please enter an item name");
       return;
     }
-    
-    if (!newItem.price || isNaN(parseFloat(newItem.price)) || parseFloat(newItem.price) <= 0) {
+
+    if (
+      !newItem.price ||
+      isNaN(parseFloat(newItem.price)) ||
+      parseFloat(newItem.price) <= 0
+    ) {
       setMessage("Please enter a valid price (positive number)");
       return;
     }
 
-    setMenuItems([...menuItems, {
-      ...newItem,
-      id: Date.now() + Math.random(),
-      price: parseFloat(newItem.price).toFixed(2)
-    }]);
+    setMenuItems([
+      ...menuItems,
+      {
+        ...newItem,
+        id: Date.now() + Math.random(),
+        price: parseFloat(newItem.price).toFixed(2),
+      },
+    ]);
     setNewItem({ name: "", price: "" });
     setMessage("");
   };
 
   const handleUpdateItem = (id, field, value) => {
-    setMenuItems(menuItems.map(item => {
-      if (item.id === id) {
-        return { ...item, [field]: value };
-      }
-      return item;
-    }));
+    setMenuItems(
+      menuItems.map((item) => {
+        if (item.id === id) {
+          return { ...item, [field]: value };
+        }
+        return item;
+      }),
+    );
   };
 
   const handleRemoveItem = (id) => {
-    setMenuItems(menuItems.filter(item => item.id !== id));
+    setMenuItems(menuItems.filter((item) => item.id !== id));
   };
 
   const handlePriceChange = (value, setter) => {
     // Allow only numbers and one decimal point
-    const sanitized = value.replace(/[^0-9.]/g, '');
+    const sanitized = value.replace(/[^0-9.]/g, "");
     // Ensure only one decimal point
-    const parts = sanitized.split('.');
+    const parts = sanitized.split(".");
     if (parts.length > 2) {
-      setter(parts[0] + '.' + parts.slice(1).join(''));
+      setter(parts[0] + "." + parts.slice(1).join(""));
     } else {
       setter(sanitized);
     }
@@ -172,8 +189,8 @@ const OwnerMenuTab = ({ restaurantId }) => {
   return (
     <div className="owner-menu-tab">
       <div className="menu-header">
-        <div className="menu-actions">
-          <h3>Restaurant Menu</h3>
+        <h3>Restaurant Menu</h3>
+        <div className="owner-menu-actions">
           {!isEditing ? (
             <button onClick={() => setIsEditing(true)} className="edit-btn">
               <svg
@@ -219,7 +236,9 @@ const OwnerMenuTab = ({ restaurantId }) => {
       </div>
 
       {message && (
-        <div className={`message ${message.includes("successfully") ? "success" : "error"}`}>
+        <div
+          className={`message ${message.includes("successfully") ? "success" : "error"}`}
+        >
           {message}
         </div>
       )}
@@ -236,7 +255,9 @@ const OwnerMenuTab = ({ restaurantId }) => {
                   <input
                     type="text"
                     value={newItem.name}
-                    onChange={(e) => setNewItem({...newItem, name: e.target.value})}
+                    onChange={(e) =>
+                      setNewItem({ ...newItem, name: e.target.value })
+                    }
                     placeholder="Name"
                     className="item-name-input"
                   />
@@ -246,19 +267,29 @@ const OwnerMenuTab = ({ restaurantId }) => {
                   <input
                     type="text"
                     value={newItem.price}
-                    onChange={(e) => handlePriceChange(e.target.value, (val) => 
-                      setNewItem({...newItem, price: val})
-                    )}
+                    onChange={(e) =>
+                      handlePriceChange(e.target.value, (val) =>
+                        setNewItem({ ...newItem, price: val }),
+                      )
+                    }
                     placeholder="Price"
                     className="item-price-input"
                   />
                 </div>
-                <button 
-                  onClick={handleAddItem}
-                  className="add-item-btn"
-                >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                <button onClick={handleAddItem} className="add-item-btn">
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M12 4v16m8-8H4"
+                    />
                   </svg>
                   Add Item
                 </button>
@@ -283,7 +314,9 @@ const OwnerMenuTab = ({ restaurantId }) => {
                         <input
                           type="text"
                           value={item.name}
-                          onChange={(e) => handleUpdateItem(item.id, 'name', e.target.value)}
+                          onChange={(e) =>
+                            handleUpdateItem(item.id, "name", e.target.value)
+                          }
                           className="item-input"
                           placeholder="Item name"
                         />
@@ -293,9 +326,11 @@ const OwnerMenuTab = ({ restaurantId }) => {
                           <input
                             type="text"
                             value={item.price}
-                            onChange={(e) => handlePriceChange(e.target.value, (val) => 
-                              handleUpdateItem(item.id, 'price', val)
-                            )}
+                            onChange={(e) =>
+                              handlePriceChange(e.target.value, (val) =>
+                                handleUpdateItem(item.id, "price", val),
+                              )
+                            }
                             className="price-input"
                             placeholder="0.00"
                           />
@@ -307,8 +342,19 @@ const OwnerMenuTab = ({ restaurantId }) => {
                           className="remove-item-btn"
                           title="Remove item"
                         >
-                          <svg width="12" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                          <svg
+                            width="12"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M6 18L18 6M6 6l12 12"
+                            />
                           </svg>
                         </button>
                       </div>

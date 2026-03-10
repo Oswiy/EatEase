@@ -12,7 +12,6 @@ import ImageUpload from "../ImageUpload/ImageUpload";
 // Add this with your other imports:
 import SpotHoldManagement from "../SpotHoldManagement/SpotHoldManagement"; // Or the correct path
 import pollingService from "../../services/pollingService"; // Adjust path
-import IoTDeviceManager from "../IoTDeviceManager/IoTDeviceManager";
 
 function RestaurantOwnerDashboard({ user }) {
   const [showVerificationForm, setShowVerificationForm] = useState(false);
@@ -569,115 +568,6 @@ function RestaurantOwnerDashboard({ user }) {
             isPremium={tier === "premium"}
           />
         );
-      // ✅ ADD THIS NEW IOT TAB CASE
-      case "iot":
-        return (
-          <div className="iot-dashboard-tab">
-            {/* Device Registration Section */}
-            <div className="tab-section">
-              <div className="section-header">
-                <h3>Button Sensor Management</h3>
-              </div>
-              <IoTDeviceManager restaurant={restaurant} />
-            </div>
-
-            {/* Customer Journey Display */}
-            <div className="tab-section">
-              <div className="section-header">
-                <h3>Customer Self-Service System</h3>
-                <span className="status-badge green">Active</span>
-              </div>
-
-              <div className="customer-journey-box">
-                <h4>How It Works for Customers:</h4>
-                <div className="journey-steps">
-                  <div className="journey-step">
-                    <div className="step-content">
-                      <strong>1: Approach Entrance</strong>
-                      <p>Customer sees clearly labeled button</p>
-                    </div>
-                  </div>
-                  <div className="journey-step">
-                    <div className="step-content">
-                      <strong>2: Press Button ONCE</strong>
-                      <p>To enter restaurant</p>
-                      <div className="led-indicator green">Entry Counted</div>
-                    </div>
-                  </div>
-                  <div className="journey-step">
-                    <div className="step-content">
-                      <strong>3: Press Button TWICE</strong>
-                      <p>To exit restaurant</p>
-                      <div className="led-indicator yellow">Exit Counted</div>
-                    </div>
-                  </div>
-                  <div className="journey-step">
-                    <div className="step-content">
-                      <strong>4: No Staff Needed</strong>
-                      <p>Fully automated customer operation</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Button System Instructions */}
-            <div className="tab-section">
-              <div className="section-header">
-                <h3>Button Sensor Setup</h3>
-              </div>
-              <div className="instructions-box">
-                <h4>ESP32-CAM Button System Guide</h4>
-
-                <ol className="setup-steps">
-                  <li>
-                    <strong>Register Device:</strong> Click "Register New
-                    Device" above
-                  </li>
-                  <li>
-                    <strong>Label the Button:</strong> Clearly mark with:
-                    <div className="instruction-label">
-                      <span className="label-primary">
-                        PRESS ONCE TO ENTER <br />
-                      </span>
-                      <span className="label-secondary">
-                        PRESS TWICE TO EXIT
-                      </span>
-                    </div>
-                  </li>
-                  <li>
-                    <strong>Update ESP32 Code:</strong> Use this simplified
-                    code:
-                    <pre className="code-snippet">
-                      {`// Customer-operated button system
-void handleButtonPress() {
-  if (singleClick) {
-    sendToServer("ENTRY"); // Increment count
-    setLED(GREEN); // Confirm entry
-  } else if (doubleClick) {
-    sendToServer("EXIT");  // Decrement count  
-    setLED(YELLOW); // Confirm exit
-  }
-}`}
-                    </pre>
-                  </li>
-                  <li>
-                    <strong>Install at Entrance:</strong> Mount at customer
-                    height with clear instructions
-                  </li>
-                  <li>
-                    <strong>Test the System:</strong> Press button once and
-                    twice to test
-                  </li>
-                  <li>
-                    <strong>Monitor:</strong> Watch occupancy update in
-                    real-time
-                  </li>
-                </ol>
-              </div>
-            </div>
-          </div>
-        );
 
       default:
         return (
@@ -1080,45 +970,10 @@ void handleButtonPress() {
               >
                 {tier === "premium" ? "Analytics" : "Analytics"}
               </button>
-              <button
-                className={`owner-tab-btn ${activeTab === "iot" ? "active" : ""}`}
-                onClick={() => setActiveTab("iot")}
-              >
-                IoT Sensors
-              </button>
             </div>
 
             {/* Tab Content */}
             <div className="owner-tab-content">{renderTabContent()}</div>
-            {/* Feature CTA - Conditional based on tier */}
-            {!restaurant.is_featured && (
-              <div className="owner-feature-cta">
-                <div className="feature-cta-content">
-                  <h3>Want more customers?</h3>
-                  <p>
-                    Get featured on our homepage and get 3x more visibility!
-                  </p>
-
-                  {/* Conditional feature button */}
-                  {canBeFeatured ? (
-                    <button
-                      className="feature-cta-button"
-                      onClick={() => setShowFeatureModal(true)}
-                    >
-                      Be Featured Now
-                    </button>
-                  ) : (
-                    <button
-                      className="feature-cta-button disabled"
-                      disabled
-                      title="Upgrade to Premium to be featured"
-                    >
-                      Upgrade to Be Featured
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       )}
