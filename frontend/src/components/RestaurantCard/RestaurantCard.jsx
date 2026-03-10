@@ -576,7 +576,7 @@ function RestaurantCard({
             </div>
           </div>
 
-          {/* ✅ UPDATED STATUS BADGE WITH PULSE EFFECT */}
+          {/* UPDATED STATUS BADGE WITH PULSE EFFECT */}
           <div
             className={`status-badge ${currentRestaurant.crowd_status} ${isUpdating ? "updating" : ""}`}
           >

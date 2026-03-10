@@ -68,6 +68,13 @@
   background: #f8f9fa;
 }
 
+@media screen and (min-width: 760px) {
+  .carousel-item {
+    height: 200px;
+    flex: 0 0 400px;
+  }
+}
+
 .carousel-item:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);

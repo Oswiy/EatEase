@@ -1315,6 +1315,8 @@ textarea {
   display: flex;
   gap: 20px;
   align-items: center;
+      flex-direction: column;
+    gap: 5px;
 }
 
 .rating-overview {
@@ -1783,10 +1785,6 @@ textarea {
 
 /* Responsive */
 @media (max-width: 768px) {
-  .rating-summary-card {
-    flex-direction: column;
-    gap: 5px;
-  }
 
   .section-header {
     flex-direction: row;
@@ -1858,7 +1856,7 @@ body {
   }
 
   .restaurant-header {
-    padding: 60px 40px 30px 40px;
+    padding: 30px;
   }
 
   .restaurant-image-placeholder {
@@ -1881,6 +1879,19 @@ body {
 
   .menu-item-card {
     padding: 20px;
+  }
+
+  .details-restaurant-name {
+    font-size: 60px;
+  }
+
+  .reservation-btn {
+    padding: 16px 20px;
+  }
+
+  .stat-item {
+    padding: 20px 10px;
+    gap: 7px;
   }
 }
 

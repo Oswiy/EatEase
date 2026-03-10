@@ -1,13 +1,13 @@
 .reservations-page {
   padding: 20px;
-  max-width: 800px;
+  /* max-width: 800px; */
   margin: 0 auto;
   background-color: #efedde;
   padding: 20px;
-  max-width: 800px;
   margin: 0 auto;
   min-height: 100vh;
 }
+
 
 .page-header {
   display: flex;
@@ -414,5 +414,13 @@
 
   .detail-label {
     min-width: auto;
+  }
+}
+
+@media (min-width: 768px) {
+  .reservations-page {
+    padding: 1rem;
+    /* max-width: 800px;
+    margin: 0 auto; */
   }
 }

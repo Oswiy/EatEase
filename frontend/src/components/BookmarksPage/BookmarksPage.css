@@ -179,8 +179,25 @@
 
 @media (min-width: 768px) {
   .bookmarks-page {
-    padding: 2rem;
-    max-width: 800px;
-    margin: 0 auto;
+    padding: 1rem;
+    /* max-width: 800px;
+    margin: 0 auto; */
+  }
+  .bookmark-info h3 {
+    font-size: 20px;
+  }
+
+  .bookmark-info .cuisine, .bookmark-info .address {
+    font-size: 13px;
+  }
+
+  .bookmark-info .bookmarked-date {
+    font-size: 13px;
+  }
+
+  .bookmarks-remove-btn {
+    height: 35px;
+    font-size: 15px;
+    margin-top: 20px;
   }
 }
