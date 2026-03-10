@@ -22,7 +22,22 @@ use Illuminate\Support\Facades\Log;
 // ==================== PUBLIC ROUTES (No Auth) ====================
 
 // ==================== IOT ROUTES ====================
-
+Route::get('/list-routes', function() {
+    $routes = [];
+    foreach (Route::getRoutes() as $route) {
+        if (str_contains($route->uri(), 'reservation')) {
+            $routes[] = [
+                'uri' => $route->uri(),
+                'methods' => $route->methods(),
+                'name' => $route->getName(),
+            ];
+        }
+    }
+    return response()->json([
+        'reservation_routes' => $routes,
+        'count' => count($routes)
+    ]);
+});
 // Super fast response endpoint
 Route::post('/iot/quick', function (Request $request) {
     // Immediate response with minimal processing
@@ -203,6 +218,8 @@ Route::middleware('auth:sanctum')->group(function () {
         // Reservations (with filtering)
         Route::post('/reservations', [ReservationController::class, 'store']);
         Route::post('/reservations/hold-spot', [ReservationController::class, 'holdSpot']);
+        // reserve hide expired holds:
+        Route::delete('/my-restaurant/expired-holds/{id}/hide', [ReservationController::class, 'hideExpiredHold']);
     });
 
     // ========== RESTAURANT OWNER ROUTES ==========
@@ -230,6 +247,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/{id}', [ReservationController::class, 'destroy']);
         Route::post('/hold-spot', [ReservationController::class, 'holdSpot']);
         Route::delete('/{id}/remove', [ReservationController::class, 'removeFromView']);
+        Route::delete('/my-restaurant/expired-holds/{id}/hide', [ReservationController::class, 'hideExpiredHold']);
     });
 
     // ========== RESTAURANT OWNER RESERVATION MANAGEMENT ==========
@@ -268,7 +286,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/restaurants/{id}/reviews', [ReviewController::class, 'store']);
     Route::put('/reviews/{id}', [ReviewController::class, 'updateReview']);
     Route::delete('/reviews/{id}', [ReviewController::class, 'destroy']);
-    // Remove duplicate: Route::delete('/reviews/{id}', [ReviewController::class, 'deleteReview']);
 
     // ========== SUBSCRIPTION ROUTES ==========
     Route::get('/subscription/tier', [SubscriptionController::class, 'getCurrentTier']);
