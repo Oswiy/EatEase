@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./Login.css";
+import { api } from "../services/api";
 
 function Login({ onLogin, onSwitchToSignup }) {
   const [formData, setFormData] = useState({
@@ -48,7 +49,6 @@ function Login({ onLogin, onSwitchToSignup }) {
       if (lastAttempt) {
         const timeSinceLastAttempt = Date.now() - parseInt(lastAttempt);
         if (timeSinceLastAttempt < 300000) {
-          // 5 minutes
           setError("Too many login attempts. Please try again in 5 minutes.");
           return;
         }
@@ -59,19 +59,10 @@ function Login({ onLogin, onSwitchToSignup }) {
     setError("");
 
     try {
-      // FIXED URL: Use the correct WAMP URL
-      const response = await fetch(
-        "http://localhost/EatEase-Backend/backend/public/api/auth/login",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-            "X-Requested-App": "restaurant-app",
-          },
-          body: JSON.stringify(formData),
-        },
-      );
+      // FIXED: Use api service instead of hardcoded fetch
+      const response = await api.post("/api/auth/login", formData, {
+        "X-Requested-App": "restaurant-app",
+      });
 
       const data = await response.json();
 
@@ -230,15 +221,7 @@ function Login({ onLogin, onSwitchToSignup }) {
           <button
             type="submit"
             disabled={loading}
-            className={
-              loading ? (
-                <div className="loading-spinner-container">
-                  <div className="loading-spinner"></div>
-                </div>
-              ) : (
-                "secure-button"
-              )
-            }
+            className={loading ? "loading-button" : "secure-button"}
           >
             {loading ? (
               <>
