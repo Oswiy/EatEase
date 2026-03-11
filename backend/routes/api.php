@@ -61,7 +61,7 @@ Route::post('/iot/test-ultra-simple', function (Request $request) {
     // Just echo back what we received
     return response()->json([
         'status' => 'success',
-        'message' => '✅ IoT Test Working!',
+        'message' => 'IoT Test Working!',
         'received' => $request->all(),
         'timestamp' => now()->toDateTimeString(),
         'server' => 'Laravel',
@@ -70,7 +70,7 @@ Route::post('/iot/test-ultra-simple', function (Request $request) {
 });
 
 Route::post('/iot/log', function (Request $request) {
-    Log::info('📱 ESP32 DEBUG LOG:', [
+    Log::info('ESP32 DEBUG LOG:', [
         'data' => $request->all(),
         'ip' => $request->ip(),
         'time' => now()->format('H:i:s.u')
@@ -115,7 +115,7 @@ Route::get('/test-db', function () {
 
 Route::get('/test-api', function () {
     return response()->json([
-        'message' => '✅ API is working!',
+        'message' => '///API is working!',
         'timestamp' => now()
     ]);
 });
@@ -154,7 +154,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/debug-protected', function () {
         $user = auth()->user();
         return response()->json([
-            'message' => '✅ Protected route works',
+            'message' => 'Protected route works',
             'user' => $user ? ['id' => $user->id, 'email' => $user->email] : null,
             'auth_working' => !is_null($user)
         ]);
