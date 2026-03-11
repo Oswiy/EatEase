@@ -28,6 +28,19 @@ $app->useStoragePath($tmpStorage);
 $app->bootstrapPath('/tmp/bootstrap');
 // ↑ END OF ADDITIONS
 
+$app->useStoragePath($tmpStorage);
+$app->bootstrapPath('/tmp/bootstrap');
+
+// Force PackageManifest to use /tmp
+$app->instance('path.cached_packages', '/tmp/bootstrap/cache/packages.php');
+$app->bind(\Illuminate\Foundation\PackageManifest::class, function($app) {
+    return new \Illuminate\Foundation\PackageManifest(
+        new \Illuminate\Filesystem\Filesystem,
+        $app->basePath(),
+        '/tmp/bootstrap/cache/packages.php'
+    );
+});
+
 /*
 |--------------------------------------------------------------------------
 | Bind Important Interfaces
