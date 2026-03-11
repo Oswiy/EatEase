@@ -19,7 +19,15 @@ class Cors
         if (preg_match('/^http:\/\/(localhost|127\.0\.0\.1|localhost\.local):[0-9]+$/', $origin)) {
             $allowedOrigin = $origin;
         }
+
+        $allowedProductionOrigins = [
+            'https://eatease-restaurant.vercel.app',
+            'https://eatease-diner.vercel.app',
+        ];
         
+        if (in_array($origin, $allowedProductionOrigins)) {
+            $allowedOrigin = $origin;
+        }
         // If no match, use a safe default
         if (!$allowedOrigin) {
             $allowedOrigin = 'http://localhost:5176';
