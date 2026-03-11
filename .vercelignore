@@ -1,0 +1,9 @@
+backend/vendor
+backend/node_modules
+backend/.env
+backend/storage
+backend/test
+/.git
+/.github
+/storage
+/tests
