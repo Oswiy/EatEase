@@ -13,7 +13,7 @@ function Login({ onLogin, onSwitchToSignup }) {
 
   // Check for stored login attempts
   useEffect(() => {
-    const attempts = localStorage.getItem('business_login_attempts');
+    const attempts = localStorage.getItem("business_login_attempts");
     if (attempts) {
       setLoginAttempts(parseInt(attempts));
     }
@@ -28,7 +28,7 @@ function Login({ onLogin, onSwitchToSignup }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Frontend validation
     if (!formData.email || !formData.password) {
       setError("Please enter both email and password");
@@ -44,10 +44,11 @@ function Login({ onLogin, onSwitchToSignup }) {
 
     // Frontend rate limiting
     if (loginAttempts >= 5) {
-      const lastAttempt = localStorage.getItem('last_business_login_attempt');
+      const lastAttempt = localStorage.getItem("last_business_login_attempt");
       if (lastAttempt) {
         const timeSinceLastAttempt = Date.now() - parseInt(lastAttempt);
-        if (timeSinceLastAttempt < 300000) { // 5 minutes
+        if (timeSinceLastAttempt < 300000) {
+          // 5 minutes
           setError("Too many login attempts. Please try again in 5 minutes.");
           return;
         }
@@ -59,15 +60,18 @@ function Login({ onLogin, onSwitchToSignup }) {
 
     try {
       // FIXED URL: Use the correct WAMP URL
-      const response = await fetch("http://localhost/EatEase-Backend/backend/public/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-          "X-Requested-App": "restaurant-app"
+      const response = await fetch(
+        "http://localhost/EatEase-Backend/backend/public/api/auth/login",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            "X-Requested-App": "restaurant-app",
+          },
+          body: JSON.stringify(formData),
         },
-        body: JSON.stringify(formData),
-      });
+      );
 
       const data = await response.json();
 
@@ -85,7 +89,7 @@ function Login({ onLogin, onSwitchToSignup }) {
       }
 
       // Check for wrong-app error
-      if (data.error === 'wrong_app') {
+      if (data.error === "wrong_app") {
         alert(data.message);
         if (data.redirect_url) {
           window.location.href = data.redirect_url;
@@ -98,7 +102,7 @@ function Login({ onLogin, onSwitchToSignup }) {
         // Store auth data
         localStorage.setItem("auth_token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
-        
+
         // Store token expiry if provided
         if (data.token_expires_at) {
           localStorage.setItem("token_expires_at", data.token_expires_at);
@@ -115,9 +119,9 @@ function Login({ onLogin, onSwitchToSignup }) {
         }
 
         // Reset login attempts on success
-        localStorage.removeItem('business_login_attempts');
-        localStorage.removeItem('last_business_login_attempt');
-        
+        localStorage.removeItem("business_login_attempts");
+        localStorage.removeItem("last_business_login_attempt");
+
         onLogin(data.user);
       } else {
         setError(data.message || "Invalid email or password");
@@ -135,8 +139,8 @@ function Login({ onLogin, onSwitchToSignup }) {
   const incrementLoginAttempts = () => {
     const newAttempts = loginAttempts + 1;
     setLoginAttempts(newAttempts);
-    localStorage.setItem('business_login_attempts', newAttempts.toString());
-    localStorage.setItem('last_business_login_attempt', Date.now().toString());
+    localStorage.setItem("business_login_attempts", newAttempts.toString());
+    localStorage.setItem("last_business_login_attempt", Date.now().toString());
   };
 
   const togglePasswordVisibility = () => {
@@ -149,18 +153,9 @@ function Login({ onLogin, onSwitchToSignup }) {
         <div className="login-header">
           <h2>Sign In</h2>
         </div>
-        
+
         {loginAttempts >= 3 && (
           <div className="security-warning">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              fill="#ff922b"
-              viewBox="0 0 256 256"
-            >
-              <path d="M236.8,188.09,149.35,36.22h0a24.76,24.76,0,0,0-42.7,0L19.2,188.09a23.51,23.51,0,0,0,0,23.72A24.35,24.35,0,0,0,40.55,224h174.9a24.35,24.35,0,0,0,21.33-12.19A23.51,23.51,0,0,0,236.8,188.09ZM120,104a8,8,0,0,1,16,0v40a8,8,0,0,1-16,0Zm8,88a12,12,0,1,1,12-12A12,12,0,0,1,128,192Z"></path>
-            </svg>
             <span>Multiple failed login attempts detected.</span>
           </div>
         )}
@@ -232,14 +227,24 @@ function Login({ onLogin, onSwitchToSignup }) {
             </div>
           )}
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={loading}
-            className={loading ? "loading-button" : "secure-button"}
+            className={
+              loading ? (
+                <div className="loading-spinner-container">
+                  <div className="loading-spinner"></div>
+                </div>
+              ) : (
+                "secure-button"
+              )
+            }
           >
             {loading ? (
               <>
-                <span className="spinner"></span>
+                <div className="loading-spinner-container">
+                  <div className="loading-spinner"></div>
+                </div>
               </>
             ) : (
               "Sign In"

@@ -421,7 +421,7 @@ function Signup({ onSignup, onSwitchToLogin }) {
             type="submit"
             disabled={loading}
             className={
-              loading ? "loading-button" : "secure-button business-button"
+              loading ? "loading-spinner" : "secure-button business-button"
             }
           >
             {loading ? (

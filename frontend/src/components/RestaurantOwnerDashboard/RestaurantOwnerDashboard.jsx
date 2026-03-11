@@ -1013,7 +1013,7 @@ function RestaurantOwnerDashboard({ user }) {
 
               <div className="form-group">
                 <label>Address *</label>
-                <textarea
+                <input
                   value={formData.address}
                   onChange={(e) =>
                     setFormData({ ...formData, address: e.target.value })
