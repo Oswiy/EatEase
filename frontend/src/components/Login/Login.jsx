@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./Login.css";
-import { api } from "../services/api";
+import { api } from '../../services/api';
 
 function Login({ onLogin, onSwitchToSignup }) {
   const [formData, setFormData] = useState({
