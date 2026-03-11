@@ -3,7 +3,7 @@
 # ============================================
 
 # LARAVEL BACKEND
-backend/vendor/
+# backend/vendor/
 backend/node_modules/
 backend/bootstrap/cache/*
 !backend/bootstrap/cache/.gitkeep
