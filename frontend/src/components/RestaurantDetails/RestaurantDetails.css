@@ -1278,12 +1278,6 @@ textarea {
   }
 }
 
-.error-icon {
-  font-size: 48px;
-  margin-bottom: 20px;
-  opacity: 0.5;
-}
-
 .error-container h3 {
   font-size: 20px;
   color: #333;

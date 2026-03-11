@@ -272,10 +272,6 @@ button[type="submit"]:disabled {
   border-radius: 4px;
 }
 
-.error-icon {
-  margin-right: 8px;
-}
-
 .terms-agreement {
   margin: 15px 0;
   font-size: 14px;

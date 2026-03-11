@@ -245,7 +245,6 @@ const ReviewsTab = ({ restaurantId, restaurantName }) => {
   if (error) {
     return (
       <div className="reviews-tab error-state">
-        <div className="error-icon">⚠️</div>
         <h3>Could not load reviews</h3>
         <p>{error}</p>
         <button onClick={fetchReviews} className="retry-btn">

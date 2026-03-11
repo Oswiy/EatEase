@@ -404,7 +404,6 @@ function Signup({ onSignup, onSwitchToLogin }) {
 
           {error && (
             <div className="error-message security-error">
-              <span className="error-icon">❌</span>
               {error}
             </div>
           )}

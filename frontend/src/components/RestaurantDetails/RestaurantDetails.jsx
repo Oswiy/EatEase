@@ -482,7 +482,6 @@ function RestaurantDetails({ restaurantId, onBack }) {
     return (
       <div className="restaurant-details-page">
         <div className="error-container">
-          <div className="error-icon">⚠️</div>
           <h3>Error Loading Restaurant</h3>
           <p>{error || "Restaurant not found"}</p>
           <button onClick={onBack} className="retry-btn">

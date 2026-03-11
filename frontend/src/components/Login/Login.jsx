@@ -161,7 +161,6 @@ function Login({ onLogin, onSwitchToSignup }) {
 
         {loginAttempts >= 3 && (
           <div className="security-warning">
-            <span className="warning-icon">⚠️</span>
             <span>Multiple failed login attempts detected.</span>
           </div>
         )}
@@ -229,7 +228,6 @@ function Login({ onLogin, onSwitchToSignup }) {
 
           {error && (
             <div className="error-message security-error">
-              <span className="error-icon">❌</span>
               {error}
             </div>
           )}
