@@ -5,7 +5,12 @@ return [
     
     'allowed_methods' => ['*'],
     
-    'allowed_origins' => ['*'], // Allow all for now
+    'allowed_origins' => [
+        'https://eatease-restaurant.vercel.app',
+        'https://eatease-diner.vercel.app',
+        'http://localhost:5173',
+        'http://localhost:5174',
+    ],
     
     'allowed_origins_patterns' => [
         '/localhost:[0-9]+/',
