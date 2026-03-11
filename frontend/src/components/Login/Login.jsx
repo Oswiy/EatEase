@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./Login.css";
+import { api } from "../services/api";
 
 function Login({ onLogin, onSwitchToSignup }) {
   const [formData, setFormData] = useState({
@@ -59,28 +60,18 @@ function Login({ onLogin, onSwitchToSignup }) {
     setError("");
 
     try {
-      console.log("🔐 SECURE LOGIN ATTEMPT");
+      console.log("SECURE LOGIN ATTEMPT");
 
-      // FIXED URL: Use the correct WAMP URL
-      const response = await fetch(
-        "http://localhost/EatEase-Backend/backend/public/api/auth/login",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-            "X-Requested-App": "diner-app",
-          },
-          body: JSON.stringify(formData),
-        },
-      );
+      // CORRECT: Use api service
+      const response = await api.post("/api/auth/login", formData, {
+        "X-Requested-App": "diner-app",
+      });
 
-      console.log("🔐 RESPONSE STATUS:", response.status);
+      console.log("RESPONSE STATUS:", response.status);
       const data = await response.json();
 
       // Handle different error cases
       if (response.status === 422 && data.errors) {
-        // Validation errors from backend
         const firstError = Object.values(data.errors)[0]?.[0];
         setError(firstError || "Validation failed");
         incrementLoginAttempts();
@@ -88,7 +79,6 @@ function Login({ onLogin, onSwitchToSignup }) {
       }
 
       if (response.status === 429) {
-        // Rate limit exceeded from backend
         setError(data.message || "Too many attempts. Please wait.");
         return;
       }
@@ -102,13 +92,11 @@ function Login({ onLogin, onSwitchToSignup }) {
 
       // Handle successful login
       if (response.ok && data.user && data.token) {
-        console.log("✅ SECURE LOGIN SUCCESS");
+        console.log("SECURE LOGIN SUCCESS");
 
-        // Store auth data
         localStorage.setItem("auth_token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
 
-        // Store token expiry if provided
         if (data.token_expires_at) {
           localStorage.setItem("token_expires_at", data.token_expires_at);
         }
@@ -123,7 +111,6 @@ function Login({ onLogin, onSwitchToSignup }) {
           return;
         }
 
-        // Reset login attempts on success
         localStorage.removeItem("login_attempts");
         localStorage.removeItem("last_login_attempt");
 
@@ -133,7 +120,7 @@ function Login({ onLogin, onSwitchToSignup }) {
         incrementLoginAttempts();
       }
     } catch (err) {
-      console.error("🔐 LOGIN ERROR:", err);
+      console.error("LOGIN ERROR:", err);
       setError("Network error. Please check your connection.");
       incrementLoginAttempts();
     } finally {
@@ -226,11 +213,7 @@ function Login({ onLogin, onSwitchToSignup }) {
             </div>
           </div>
 
-          {error && (
-            <div className="error-message security-error">
-              {error}
-            </div>
-          )}
+          {error && <div className="error-message security-error">{error}</div>}
 
           <button
             type="submit"
