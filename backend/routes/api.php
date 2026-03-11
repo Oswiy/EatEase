@@ -20,6 +20,9 @@ use App\Http\Controllers\IoTController;
 use Illuminate\Support\Facades\Log;
 
 // ==================== PUBLIC ROUTES (No Auth) ====================
+Route::get('/test', function() {
+    return response()->json(['message' => 'Laravel is working!']);
+});
 
 // ==================== IOT ROUTES ====================
 Route::get('/list-routes', function() {
