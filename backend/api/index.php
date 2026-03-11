@@ -1,5 +1,8 @@
 <?php
-// Load Laravel from the current directory
+// Change to the Laravel public directory
+chdir(__DIR__ . '/../public');
+
+// Load Laravel from the public directory
 require __DIR__ . '/../vendor/autoload.php';
 $app = require_once __DIR__ . '/../bootstrap/app.php';
 
