@@ -319,7 +319,6 @@
   text-align: center;
   flex-direction: column;
   gap: 6px;
-  box-shadow: 1px 1px 8px rgba(0.4, 0.4, 0.4, 0.4);
 }
 
 .stat-value {
