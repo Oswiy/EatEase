@@ -20,6 +20,15 @@ use App\Http\Controllers\IoTController;
 use Illuminate\Support\Facades\Log;
 
 // ==================== PUBLIC ROUTES (No Auth) ====================
+Route::get('/{any}', function($any) {
+    return response()->json([
+        'caught' => $any,
+        'all_routes' => collect(\Illuminate\Support\Facades\Route::getRoutes()->getRoutes())
+            ->map(fn($r) => $r->uri())
+            ->take(20)
+            ->values()
+    ]);
+})->where('any', '.*');
 Route::get('/test', function() {
     return response()->json(['message' => 'Laravel is working!']);
 });
