@@ -21,25 +21,11 @@ foreach ($cacheFiles as $file) {
     }
 }
 
-try {
-    $app = require_once __DIR__ . '/../bootstrap/app.php';
-    $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
-    $request = Illuminate\Http\Request::capture();
-    $kernel->handle($request);
+$app = require_once __DIR__ . '/../bootstrap/app.php';
 
-    $router = $app->make('router');
-    echo json_encode([
-        'routes_count' => count($router->getRoutes()->getRoutes()),
-        'routes' => collect($router->getRoutes()->getRoutes())
-            ->map(fn($r) => $r->uri())
-            ->take(20)
-            ->values()
-    ]);
-} catch (\Throwable $e) {
-    echo json_encode([
-        'error' => $e->getMessage(),
-        'file' => $e->getFile(),
-        'line' => $e->getLine(),
-    ]);
-}
-die();
+$kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
+$response = $kernel->handle(
+    $request = Illuminate\Http\Request::capture()
+);
+$response->send();
+$kernel->terminate($request, $response);
