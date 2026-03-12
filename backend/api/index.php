@@ -23,10 +23,11 @@ foreach ($cacheFiles as $file) {
 
 try {
     $app = require_once __DIR__ . '/../bootstrap/app.php';
-    echo json_encode(['step' => 'app_loaded', 'success' => true]);
+    $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
+    echo json_encode(['step' => 'kernel_loaded', 'success' => true]);
 } catch (\Throwable $e) {
     echo json_encode([
-        'step' => 'app_load_failed',
+        'step' => 'kernel_failed',
         'error' => $e->getMessage(),
         'file' => $e->getFile(),
         'line' => $e->getLine(),
