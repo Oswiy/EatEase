@@ -13,21 +13,22 @@ foreach ($dirs as $dir) {
     if (!is_dir($dir)) mkdir($dir, 0755, true);
 }
 
-// Copy pre-generated cache files to /tmp so Laravel can read/write them
+// Copy pre-generated cache files to /tmp
 $cacheFiles = ['services.php', 'packages.php', 'config.php'];
+$copyLog = [];
 foreach ($cacheFiles as $file) {
     $src = __DIR__ . '/../bootstrap/cache/' . $file;
     $dest = '/tmp/bootstrap/cache/' . $file;
-    if (file_exists($src) && !file_exists($dest)) {
-        copy($src, $dest);
-    }
+    $copyLog[$file] = [
+        'src_exists' => file_exists($src),
+        'dest_exists' => file_exists($dest),
+        'copied' => file_exists($src) ? copy($src, $dest) : false,
+    ];
 }
 
-$app = require_once __DIR__ . '/../bootstrap/app.php';
-
-$kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
-$response = $kernel->handle(
-    $request = Illuminate\Http\Request::capture()
-);
-$response->send();
-$kernel->terminate($request, $response);
+echo json_encode([
+    'step' => 'before_app_load',
+    'copy_log' => $copyLog,
+    'tmp_writable' => is_writable('/tmp'),
+]);
+die();
