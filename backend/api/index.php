@@ -24,10 +24,16 @@ foreach ($cacheFiles as $file) {
 try {
     $app = require_once __DIR__ . '/../bootstrap/app.php';
     $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
-    echo json_encode(['step' => 'kernel_loaded', 'success' => true]);
+    $request = Illuminate\Http\Request::capture();
+    echo json_encode([
+        'step' => 'request_captured',
+        'url' => $request->fullUrl(),
+        'path' => $request->path(),
+        'method' => $request->method(),
+    ]);
 } catch (\Throwable $e) {
     echo json_encode([
-        'step' => 'kernel_failed',
+        'step' => 'request_failed',
         'error' => $e->getMessage(),
         'file' => $e->getFile(),
         'line' => $e->getLine(),
