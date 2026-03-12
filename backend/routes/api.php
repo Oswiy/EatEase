@@ -15,7 +15,6 @@ use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\RestaurantPhotoController;
 use App\Http\Controllers\ReservationController;
-use App\Http\Controllers\BadWordController;
 use App\Http\Controllers\IoTController;
 use Illuminate\Support\Facades\Log;
 
@@ -30,7 +29,8 @@ Route::get('/{any}', function($any) {
     ]);
 })->where('any', '.*');
 Route::get('/test', function() {
-    return response()->json(['message' => 'Laravel is working!']);
+    echo '{"message":"Laravel is working!"}';
+    exit;
 });
 
 // ==================== IOT ROUTES ====================
