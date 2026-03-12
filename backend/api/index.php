@@ -25,15 +25,15 @@ try {
     $app = require_once __DIR__ . '/../bootstrap/app.php';
     $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
     $request = Illuminate\Http\Request::capture();
+    $response = $kernel->handle($request);
     echo json_encode([
-        'step' => 'request_captured',
-        'url' => $request->fullUrl(),
-        'path' => $request->path(),
-        'method' => $request->method(),
+        'step' => 'response_handled',
+        'status' => $response->getStatusCode(),
+        'content' => substr($response->getContent(), 0, 500),
     ]);
 } catch (\Throwable $e) {
     echo json_encode([
-        'step' => 'request_failed',
+        'step' => 'response_failed',
         'error' => $e->getMessage(),
         'file' => $e->getFile(),
         'line' => $e->getLine(),
