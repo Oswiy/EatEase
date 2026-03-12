@@ -5,8 +5,8 @@
 # LARAVEL BACKEND
 # backend/vendor/
 backend/node_modules/
-backend/bootstrap/cache/*
-!backend/bootstrap/cache/.gitkeep
+backend/bootstrap/cache/config.php
+backend/bootstrap/cache/routes-v7.php
 backend/storage/framework/cache/*
 !backend/storage/framework/cache/.gitkeep
 backend/storage/framework/sessions/*
