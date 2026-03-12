@@ -23,9 +23,11 @@ foreach ($cacheFiles as $file) {
 
 try {
     $app = require_once __DIR__ . '/../bootstrap/app.php';
-    $router = $app->make('router');
-    $app->make(Illuminate\Contracts\Http\Kernel::class)->bootstrap();
+    $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
+    $request = Illuminate\Http\Request::capture();
+    $kernel->handle($request);
 
+    $router = $app->make('router');
     echo json_encode([
         'routes_count' => count($router->getRoutes()->getRoutes()),
         'routes' => collect($router->getRoutes()->getRoutes())
@@ -33,10 +35,8 @@ try {
             ->take(20)
             ->values()
     ]);
-    die();
 } catch (\Throwable $e) {
     echo json_encode([
-        'step' => 'response_failed',
         'error' => $e->getMessage(),
         'file' => $e->getFile(),
         'line' => $e->getLine(),
