@@ -1,7 +1,6 @@
 <?php
 require __DIR__ . '/../vendor/autoload.php';
 
-// Create /tmp directories
 $dirs = [
     '/tmp/bootstrap/cache',
     '/tmp/storage/logs',
@@ -13,22 +12,24 @@ foreach ($dirs as $dir) {
     if (!is_dir($dir)) mkdir($dir, 0755, true);
 }
 
-// Copy pre-generated cache files to /tmp
-$cacheFiles = ['services.php', 'packages.php', 'config.php'];
-$copyLog = [];
+$cacheFiles = ['services.php', 'packages.php'];
 foreach ($cacheFiles as $file) {
     $src = __DIR__ . '/../bootstrap/cache/' . $file;
     $dest = '/tmp/bootstrap/cache/' . $file;
-    $copyLog[$file] = [
-        'src_exists' => file_exists($src),
-        'dest_exists' => file_exists($dest),
-        'copied' => file_exists($src) ? copy($src, $dest) : false,
-    ];
+    if (file_exists($src) && !file_exists($dest)) {
+        copy($src, $dest);
+    }
 }
 
-echo json_encode([
-    'step' => 'before_app_load',
-    'copy_log' => $copyLog,
-    'tmp_writable' => is_writable('/tmp'),
-]);
+try {
+    $app = require_once __DIR__ . '/../bootstrap/app.php';
+    echo json_encode(['step' => 'app_loaded', 'success' => true]);
+} catch (\Throwable $e) {
+    echo json_encode([
+        'step' => 'app_load_failed',
+        'error' => $e->getMessage(),
+        'file' => $e->getFile(),
+        'line' => $e->getLine(),
+    ]);
+}
 die();
