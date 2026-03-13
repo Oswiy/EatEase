@@ -1,6 +1,5 @@
 <?php
 ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
 
 require __DIR__ . '/../vendor/autoload.php';
@@ -25,10 +24,12 @@ foreach ($cacheFiles as $file) {
     }
 }
 
-$app = require_once __DIR__ . '/../bootstrap/app.php';
+// Fix PATH_INFO - use REQUEST_URI instead of PATH_INFO
+if (isset($_SERVER['REQUEST_URI'])) {
+    $_SERVER['PATH_INFO'] = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+}
 
-error_log('REQUEST URI: ' . $_SERVER['REQUEST_URI']);
-error_log('PATH INFO: ' . ($_SERVER['PATH_INFO'] ?? 'none'));
+$app = require_once __DIR__ . '/../bootstrap/app.php';
 
 $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
 $response = $kernel->handle(
