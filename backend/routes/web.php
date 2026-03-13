@@ -3,6 +3,14 @@
 use Illuminate\Support\Facades\Route;
 
 
+Route::get('{any}', function($any) {
+    return response()->json([
+        'caught_by_web' => $any,
+        'server' => $_SERVER['REQUEST_URI'] ?? 'unknown',
+        'path_info' => $_SERVER['PATH_INFO'] ?? 'none',
+    ]);
+})->where('any', '.*');
+
 Route::middleware('api')->get('/api-middleware-test', function() {
     return response()->json(['api_middleware' => 'working']);
 });

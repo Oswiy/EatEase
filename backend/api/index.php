@@ -27,6 +27,9 @@ foreach ($cacheFiles as $file) {
 
 $app = require_once __DIR__ . '/../bootstrap/app.php';
 
+error_log('REQUEST URI: ' . $_SERVER['REQUEST_URI']);
+error_log('PATH INFO: ' . ($_SERVER['PATH_INFO'] ?? 'none'));
+
 $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
 $response = $kernel->handle(
     $request = Illuminate\Http\Request::capture()
