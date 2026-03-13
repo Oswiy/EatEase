@@ -23,7 +23,10 @@ foreach ($cacheFiles as $file) {
 
 // Fix PATH_INFO for Vercel
 if (isset($_SERVER['REQUEST_URI'])) {
-    $_SERVER['PATH_INFO'] = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    $_SERVER['PATH_INFO'] = $path;
+    $_SERVER['SCRIPT_NAME'] = '';
+    $_SERVER['PHP_SELF'] = $path;
 }
 
 $app = require_once __DIR__ . '/../bootstrap/app.php';
