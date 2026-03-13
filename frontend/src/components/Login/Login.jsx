@@ -107,7 +107,7 @@ function Login({ onLogin, onSwitchToSignup }) {
           localStorage.removeItem("auth_token");
           localStorage.removeItem("user");
           localStorage.removeItem("token_expires_at");
-          window.location.href = "http://localhost:5177";
+          window.location.href = "https://eatease-restaurant.vercel.app";
           return;
         }
 

@@ -167,7 +167,7 @@ function Signup({ onSignup, onSwitchToLogin }) {
 
       // FIXED URL: Use the correct WAMP URL
       const response = await fetch(
-        "http://localhost/EatEase-Backend/backend/public/api/auth/signup",
+        "https://eatease-backend.vercel.app/api/auth/signup",
         {
           method: "POST",
           headers: {
@@ -397,7 +397,7 @@ function Signup({ onSignup, onSwitchToLogin }) {
             {formData.password_confirmation &&
               formData.password !== formData.password_confirmation && (
                 <div className="password-match-error">
-                  ❌ Passwords do not match
+                  Passwords do not match
                 </div>
               )}
           </div>
