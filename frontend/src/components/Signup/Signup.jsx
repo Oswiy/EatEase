@@ -168,7 +168,7 @@ function Signup({ onSignup, onSwitchToLogin }) {
       };
 
       const response = await fetch(
-        "http://localhost/EatEase-Backend/backend/public/api/auth/signup",
+        "https://eatease-backend.vercel.app/api/auth/signup",
         {
           method: "POST",
           headers: {
