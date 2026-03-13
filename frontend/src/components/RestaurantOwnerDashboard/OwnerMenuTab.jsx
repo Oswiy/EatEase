@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./OwnerMenuTab.css";
+import { BASE_URL } from "../../config";
 
 const OwnerMenuTab = ({ restaurantId }) => {
   const [menuItems, setMenuItems] = useState([]);
@@ -17,7 +18,7 @@ const OwnerMenuTab = ({ restaurantId }) => {
     try {
       const token = localStorage.getItem("auth_token");
       const response = await fetch(
-        `http://localhost/EatEase/backend/public/api/restaurants/${restaurantId}/menu-text`,
+        `${BASE_URL}/api/restaurants/${restaurantId}/menu-text`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -84,7 +85,7 @@ const OwnerMenuTab = ({ restaurantId }) => {
     try {
       const menuText = formatMenuText(menuItems);
       const response = await fetch(
-        `http://localhost/EatEase/backend/public/api/restaurants/${restaurantId}/menu-text`,
+        `${BASE_URL}/api/restaurants/${restaurantId}/menu-text`,
         {
           method: "PUT",
           headers: {

@@ -1,25 +1,26 @@
 import React, { useState, useEffect } from "react";
 import "./AdminPanel.css";
+import { BASE_URL } from "../../config"; // ADD THIS IMPORT
 
 function AdminPanel({ user }) {
   const [activeTab, setActiveTab] = useState("Dashboard");
   const [verificationRequests, setVerificationRequests] = useState([]);
   const [restaurants, setRestaurants] = useState([]);
   const [users, setUsers] = useState([]);
-  const [featureRequests, setFeatureRequests] = useState([]); // NEW
+  const [featureRequests, setFeatureRequests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({
     totalRestaurants: 0,
     pendingVerifications: 0,
     totalUsers: 0,
     suspendedRestaurants: 0,
-    pendingFeatureRequests: 0, // NEW
-    featuredRestaurants: 0, // NEW
+    pendingFeatureRequests: 0,
+    featuredRestaurants: 0,
   });
 
   const token = localStorage.getItem("auth_token");
 
-  const tabs = ["Dashboard", "Verifications", "Feature Requests", "Restaurants", "Users"]; // UPDATED
+  const tabs = ["Dashboard", "Verifications", "Feature Requests", "Restaurants", "Users"];
 
   // Fetch all data
   useEffect(() => {
@@ -27,7 +28,7 @@ function AdminPanel({ user }) {
       fetchDashboardStats();
     } else if (activeTab === "Verifications") {
       fetchVerificationRequests();
-    } else if (activeTab === "Feature Requests") { // NEW
+    } else if (activeTab === "Feature Requests") {
       fetchFeatureRequests();
       fetchFeaturedRestaurantsCount();
     } else if (activeTab === "Restaurants") {
@@ -43,16 +44,16 @@ function AdminPanel({ user }) {
     try {
       // Fetch all data for dashboard
       const [verificationsRes, restaurantsRes, usersRes, featureRes] = await Promise.all([
-        fetch("http://localhost:8000/api/admin/verification-requests", {
+        fetch(`${BASE_URL}/api/admin/verification-requests`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch("http://localhost:8000/api/admin/restaurants", {
+        fetch(`${BASE_URL}/api/admin/restaurants`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch("http://localhost:8000/api/admin/users", {
+        fetch(`${BASE_URL}/api/admin/users`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch("http://localhost:8000/api/admin/feature-requests", { // NEW
+        fetch(`${BASE_URL}/api/admin/feature-requests`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -70,8 +71,8 @@ function AdminPanel({ user }) {
         pendingVerifications: verificationsData.verification_requests?.length || 0,
         totalUsers: usersData.users?.length || 0,
         suspendedRestaurants: restaurantsData.restaurants?.filter(r => r.is_suspended)?.length || 0,
-        pendingFeatureRequests: featureData.feature_requests?.length || 0, // NEW
-        featuredRestaurants: featuredCount, // NEW
+        pendingFeatureRequests: featureData.feature_requests?.length || 0,
+        featuredRestaurants: featuredCount,
       });
     } catch (error) {
       console.error("Error fetching dashboard stats:", error);
@@ -80,11 +81,11 @@ function AdminPanel({ user }) {
     }
   };
 
-  // ========== FEATURE REQUESTS ========== (NEW)
+  // ========== FEATURE REQUESTS ==========
   const fetchFeatureRequests = async () => {
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:8000/api/admin/feature-requests", {
+      const response = await fetch(`${BASE_URL}/api/admin/feature-requests`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
@@ -100,7 +101,7 @@ function AdminPanel({ user }) {
 
   const fetchFeaturedRestaurantsCount = async () => {
     try {
-      const response = await fetch("http://localhost:8000/api/admin/restaurants", {
+      const response = await fetch(`${BASE_URL}/api/admin/restaurants`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
@@ -124,7 +125,7 @@ function AdminPanel({ user }) {
   }
 
   try {
-    const response = await fetch(`http://localhost:8000/api/admin/approve-feature-request/${requestId}`, {
+    const response = await fetch(`${BASE_URL}/api/admin/approve-feature-request/${requestId}`, {
       method: "POST",
       headers: { 
         'Authorization': `Bearer ${token}`,
@@ -153,7 +154,7 @@ const handleRejectFeature = async (requestId) => {
   }
   
   try {
-    const response = await fetch(`http://localhost:8000/api/admin/reject-feature-request/${requestId}`, {
+    const response = await fetch(`${BASE_URL}/api/admin/reject-feature-request/${requestId}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -165,7 +166,7 @@ const handleRejectFeature = async (requestId) => {
     const data = await response.json();
     if (data.success) {
       alert('❌ Feature request rejected.');
-      fetchFeatureRequests(); // Refresh list
+      fetchFeatureRequests();
     } else {
       alert('Failed to reject: ' + (data.message || 'Unknown error'));
     }
@@ -182,12 +183,12 @@ const handleRejectFeature = async (requestId) => {
 
     try {
       // First, get the restaurant
-      const restaurantRes = await fetch(`http://localhost:8000/api/restaurants/${restaurantId}`);
+      const restaurantRes = await fetch(`${BASE_URL}/api/restaurants/${restaurantId}`);
       const restaurantData = await restaurantRes.json();
       
       if (restaurantData.success) {
         // Update restaurant to not be featured
-        const updateRes = await fetch("http://localhost:8000/api/restaurant/save", {
+        const updateRes = await fetch(`${BASE_URL}/api/restaurant/save`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -216,7 +217,7 @@ const handleRejectFeature = async (requestId) => {
   const fetchVerificationRequests = async () => {
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:8000/api/admin/verification-requests", {
+      const response = await fetch(`${BASE_URL}/api/admin/verification-requests`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
@@ -232,7 +233,7 @@ const handleRejectFeature = async (requestId) => {
 
   const handleApproveVerification = async (restaurantId) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/admin/verify-restaurant/${restaurantId}`, {
+      const response = await fetch(`${BASE_URL}/api/admin/verify-restaurant/${restaurantId}`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -251,7 +252,7 @@ const handleRejectFeature = async (requestId) => {
     if (!reason) return;
 
     try {
-      const response = await fetch(`http://localhost:8000/api/admin/reject-verification/${restaurantId}`, {
+      const response = await fetch(`${BASE_URL}/api/admin/reject-verification/${restaurantId}`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -273,7 +274,7 @@ const handleRejectFeature = async (requestId) => {
   const fetchRestaurants = async () => {
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:8000/api/admin/restaurants", {
+      const response = await fetch(`${BASE_URL}/api/admin/restaurants`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
@@ -294,7 +295,7 @@ const handleRejectFeature = async (requestId) => {
     if (!isCurrentlySuspended && !reason) return;
 
     try {
-      const response = await fetch(`http://localhost:8000/api/admin/suspend-restaurant/${restaurantId}`, {
+      const response = await fetch(`${BASE_URL}/api/admin/suspend-restaurant/${restaurantId}`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -319,7 +320,7 @@ const handleRejectFeature = async (requestId) => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:8000/api/admin/users", {
+      const response = await fetch(`${BASE_URL}/api/admin/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();

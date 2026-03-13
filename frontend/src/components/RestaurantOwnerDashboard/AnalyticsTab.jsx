@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./AnalyticsTab.css";
+import { BASE_URL } from "../../config";
 
 const AnalyticsTab = ({ restaurantId, isPremium }) => {
   if (!restaurantId) {
@@ -17,13 +18,13 @@ const AnalyticsTab = ({ restaurantId, isPremium }) => {
       setLoading(true);
       const token = localStorage.getItem("auth_token");
       const response = await fetch(
-        `http://localhost/EatEase-Backend/backend/public/api/restaurants/${restaurantId}/analytics?range=${timeRange}`,
+        `${BASE_URL}/api/restaurants/${restaurantId}/analytics?range=${timeRange}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
             Accept: "application/json",
           },
-        }
+        },
       );
 
       console.log("Analytics API Response Status:", response.status);
@@ -106,20 +107,27 @@ const AnalyticsTab = ({ restaurantId, isPremium }) => {
         <div className="empty-icon"></div>
         <h3>No Analytics Data Yet</h3>
         <p>
-          Your analytics dashboard will show occupancy trends, peak hours,
-          and customer patterns once you start updating your restaurant's occupancy.
+          Your analytics dashboard will show occupancy trends, peak hours, and
+          customer patterns once you start updating your restaurant's occupancy.
         </p>
         <div className="empty-tips">
-          <p><strong>To get started:</strong></p>
+          <p>
+            <strong>To get started:</strong>
+          </p>
           <ol>
-            <li>Go to the <strong>Overview</strong> tab</li>
-            <li>Click <strong>Edit Profile</strong> in the menu</li>
+            <li>
+              Go to the <strong>Overview</strong> tab
+            </li>
+            <li>
+              Click <strong>Edit Profile</strong> in the menu
+            </li>
             <li>Update your current occupancy</li>
             <li>Return here to see your analytics!</li>
           </ol>
         </div>
         <p className="empty-note">
-          Analytics data is automatically collected when you update your restaurant's occupancy.
+          Analytics data is automatically collected when you update your
+          restaurant's occupancy.
         </p>
       </div>
     );
@@ -130,11 +138,13 @@ const AnalyticsTab = ({ restaurantId, isPremium }) => {
   const dailyOccupancy = occupancyData.daily || [];
   const weeklyOccupancy = occupancyData.weekly || [];
   const monthlyOccupancy = occupancyData.monthly || [];
-  
-  const currentOccupancyData = 
-    timeRange === "week" ? dailyOccupancy :
-    timeRange === "month" ? weeklyOccupancy :
-    monthlyOccupancy;
+
+  const currentOccupancyData =
+    timeRange === "week"
+      ? dailyOccupancy
+      : timeRange === "month"
+        ? weeklyOccupancy
+        : monthlyOccupancy;
 
   const peakHours = analyticsData?.peakHours || [];
   const revenueData = analyticsData?.revenue || {};
@@ -185,8 +195,11 @@ const AnalyticsTab = ({ restaurantId, isPremium }) => {
           <div className="kpi-content">
             <h3>{reviewsData.average || 0}</h3>
             <p>Average Rating</p>
-            <span className={`kpi-trend ${(reviewsData.trend || 0) > 0 ? 'positive' : 'negative'}`}>
-              {(reviewsData.trend || 0) > 0 ? '+' : ''}{reviewsData.trend || 0} reviews
+            <span
+              className={`kpi-trend ${(reviewsData.trend || 0) > 0 ? "positive" : "negative"}`}
+            >
+              {(reviewsData.trend || 0) > 0 ? "+" : ""}
+              {reviewsData.trend || 0} reviews
             </span>
           </div>
         </div>
@@ -207,12 +220,24 @@ const AnalyticsTab = ({ restaurantId, isPremium }) => {
                   ></div>
                   <span className="bar-label">
                     {timeRange === "week"
-                      ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][index] || `Day ${index + 1}`
+                      ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][
+                          index
+                        ] || `Day ${index + 1}`
                       : timeRange === "month"
                         ? `Week ${index + 1}`
                         : [
-                            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+                            "Jan",
+                            "Feb",
+                            "Mar",
+                            "Apr",
+                            "May",
+                            "Jun",
+                            "Jul",
+                            "Aug",
+                            "Sep",
+                            "Oct",
+                            "Nov",
+                            "Dec",
                           ][index] || `Month ${index + 1}`}
                   </span>
                 </div>
@@ -238,7 +263,9 @@ const AnalyticsTab = ({ restaurantId, isPremium }) => {
                       style={{ width: `${peak.occupancy || 0}%` }}
                     ></div>
                   </div>
-                  <div className="peak-hour-percent">{peak.occupancy || 0}%</div>
+                  <div className="peak-hour-percent">
+                    {peak.occupancy || 0}%
+                  </div>
                 </div>
               ))
             ) : (
@@ -256,7 +283,8 @@ const AnalyticsTab = ({ restaurantId, isPremium }) => {
           <h3>Insights</h3>
           <div className="insights-content">
             <div className="best-day">
-              <strong>Busiest Day:</strong> {summaryData.best_day || 'No data yet'}
+              <strong>Busiest Day:</strong>{" "}
+              {summaryData.best_day || "No data yet"}
             </div>
           </div>
         </div>
@@ -266,8 +294,9 @@ const AnalyticsTab = ({ restaurantId, isPremium }) => {
       <div className="data-info">
         <p>
           <small>
-            Analytics based on {occupancyData.total_logs || 0} occupancy logs. 
-            Data updates automatically when you update your restaurant occupancy.
+            Analytics based on {occupancyData.total_logs || 0} occupancy logs.
+            Data updates automatically when you update your restaurant
+            occupancy.
           </small>
         </p>
       </div>

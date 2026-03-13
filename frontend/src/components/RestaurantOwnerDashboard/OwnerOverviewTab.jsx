@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react"; // Add useEffect
 import "./OwnerOverviewTab.css";
+import { BASE_URL } from "../../config";
 
 const OwnerOverviewTab = ({
   restaurant,
@@ -60,16 +61,13 @@ const OwnerOverviewTab = ({
   const handleRenewSubscription = async () => {
     try {
       const token = localStorage.getItem("auth_token");
-      const response = await fetch(
-        "http://localhost:8000/api/restaurant/renew-premium",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+      const response = await fetch(`${BASE_URL}/api/restaurant/renew-premium`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
-      );
+      });
 
       const data = await response.json();
       if (data.success) {
@@ -98,20 +96,17 @@ const OwnerOverviewTab = ({
     try {
       const token = localStorage.getItem("auth_token");
       // ✅ FIX: Use correct URL (localhost:8000, not EatEase-Backend)
-      const response = await fetch(
-        "http://localhost/EatEase-Backend/backend/public/api/restaurant/occupancy",
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-            Accept: "application/json",
-          },
-          body: JSON.stringify({
-            current_occupancy: Number(newOccupancy),
-          }),
+      const response = await fetch(`${BASE_URL}/api/restaurant/occupancy`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
         },
-      );
+        body: JSON.stringify({
+          current_occupancy: Number(newOccupancy),
+        }),
+      });
 
       const data = await response.json();
 

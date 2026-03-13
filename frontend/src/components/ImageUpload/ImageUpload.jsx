@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import "./ImageUpload.css";
+import { BASE_URL } from "../../config";
 
 function ImageUpload({ type, currentImage, onUploadSuccess, restaurantId }) {
   const [uploading, setUploading] = useState(false);
@@ -18,7 +19,7 @@ function ImageUpload({ type, currentImage, onUploadSuccess, restaurantId }) {
       // Check if it's already a full URL
       if (url && !url.startsWith("http")) {
         // If it's just a path, prepend with storage URL
-        url = `http://localhost:8000/storage/${url}`;
+        url = `${BASE_URL}/storage/${url}`;
       }
 
       setCurrentImageDisplay(url);

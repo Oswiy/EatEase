@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "./VerificationRequest.css";
+import { BASE_URL } from "../../config";
 
 function VerificationRequest({ restaurant, onRequestSubmitted, onClose }) {
   const [requestText, setRequestText] = useState("");
@@ -12,7 +13,7 @@ function VerificationRequest({ restaurant, onRequestSubmitted, onClose }) {
 
     if (requestText.length < 50) {
       setError(
-        "Please provide at least 50 characters explaining why your restaurant should be verified"
+        "Please provide at least 50 characters explaining why your restaurant should be verified",
       );
       return;
     }
@@ -29,7 +30,7 @@ function VerificationRequest({ restaurant, onRequestSubmitted, onClose }) {
 
     try {
       const response = await fetch(
-        "http://localhost:8000/api/restaurant/request-verification",
+        `${BASE_URL}/api/restaurant/request-verification`,
         {
           method: "POST",
           headers: {
@@ -40,7 +41,7 @@ function VerificationRequest({ restaurant, onRequestSubmitted, onClose }) {
           body: JSON.stringify({
             verification_request: requestText,
           }),
-        }
+        },
       );
 
       const data = await response.json();

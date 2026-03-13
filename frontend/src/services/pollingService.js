@@ -1,6 +1,5 @@
 // EatEase-Restaurant/frontend/src/services/pollingService.js
-
-const API_BASE_URL = "http://localhost:8000";
+import { BASE_URL } from "../../config";
 
 class RestaurantPollingService {
   constructor() {
@@ -82,7 +81,7 @@ class RestaurantPollingService {
       console.log(`🔍 [Owner Polling] Fetching status for ${restaurantId}`);
       
       const response = await fetch(
-        `${API_BASE_URL}/api/restaurants/${restaurantId}/status`
+        `${BASE_URL}/api/restaurants/${restaurantId}/status`
       );
 
       if (response.ok) {

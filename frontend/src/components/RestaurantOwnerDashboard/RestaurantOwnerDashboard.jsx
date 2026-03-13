@@ -12,6 +12,7 @@ import ImageUpload from "../ImageUpload/ImageUpload";
 // Add this with your other imports:
 import SpotHoldManagement from "../SpotHoldManagement/SpotHoldManagement"; // Or the correct path
 import pollingService from "../../services/pollingService"; // Adjust path
+import { BASE_URL } from "../../config"; 
 
 function RestaurantOwnerDashboard({ user }) {
   const [showVerificationForm, setShowVerificationForm] = useState(false);
@@ -52,7 +53,7 @@ function RestaurantOwnerDashboard({ user }) {
     }
 
     // Otherwise, assume it's a local storage path
-    return `http://localhost/EatEase/backend/public/storage/${imagePath}`;
+    return `${BASE_URL}/storage/${imagePath}`;
   };
 
   useEffect(() => {
@@ -112,7 +113,7 @@ function RestaurantOwnerDashboard({ user }) {
     try {
       const token = localStorage.getItem("auth_token");
       const response = await fetch(
-        "http://localhost:8000/api/restaurant/renew-premium",
+        `${BASE_URL}/api/restaurant/renew-premium`,
         {
           method: "POST",
           headers: {
@@ -151,7 +152,7 @@ function RestaurantOwnerDashboard({ user }) {
     try {
       const token = localStorage.getItem("auth_token");
       const response = await fetch(
-        "http://localhost/EatEase-Backend/backend/public/api/restaurant/promo",
+        `${BASE_URL}/api/restaurant/promo`,
         {
           method: "PUT",
           headers: {
@@ -184,7 +185,7 @@ function RestaurantOwnerDashboard({ user }) {
     const token = localStorage.getItem("auth_token");
     try {
       const response = await fetch(
-        "http://localhost:8000/api/subscription/tier",
+        `${BASE_URL}/api/subscription/tier`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -264,7 +265,7 @@ function RestaurantOwnerDashboard({ user }) {
     try {
       const token = localStorage.getItem("auth_token");
       const response = await fetch(
-        "http://localhost:8000/api/restaurant/feature",
+        `${BASE_URL}/api/restaurant/feature`,
         {
           method: "POST",
           headers: {
@@ -294,7 +295,7 @@ function RestaurantOwnerDashboard({ user }) {
     try {
       const token = localStorage.getItem("auth_token");
       const response = await fetch(
-        "http://localhost:8000/api/restaurant/unfeature",
+        `${BASE_URL}/api/restaurant/unfeature`,
         {
           method: "POST",
           headers: {
@@ -330,7 +331,7 @@ function RestaurantOwnerDashboard({ user }) {
     try {
       const token = localStorage.getItem("auth_token");
       const response = await fetch(
-        "http://localhost:8000/api/subscription/upgrade",
+        `${BASE_URL}/api/subscription/upgrade`,
         {
           method: "POST",
           headers: {
@@ -367,7 +368,7 @@ function RestaurantOwnerDashboard({ user }) {
   }, []);
 
   const saveMenuText = async () => {
-    await fetch(`/api/restaurants/${restaurantId}/menu-text`, {
+    await fetch(`${BASE_URL}/api/restaurants/${restaurantId}/menu-text`, {
       method: "POST",
       body: JSON.stringify({ menu_text: menuText }),
     });
@@ -389,7 +390,7 @@ function RestaurantOwnerDashboard({ user }) {
 
     try {
       const response = await fetch(
-        "http://localhost:8000/api/restaurant/request-feature",
+        `${BASE_URL}/api/restaurant/request-feature`,
         {
           method: "POST",
           headers: {
@@ -421,7 +422,7 @@ function RestaurantOwnerDashboard({ user }) {
   const fetchRestaurant = async () => {
     const token = localStorage.getItem("auth_token");
     try {
-      const response = await fetch("http://localhost:8000/api/restaurant/my", {
+      const response = await fetch(`${BASE_URL}/api/restaurant/my`, {
         headers: {
           Authorization: `Bearer ${token}`,
           Accept: "application/json",
@@ -485,7 +486,7 @@ function RestaurantOwnerDashboard({ user }) {
 
     try {
       const response = await fetch(
-        "http://localhost:8000/api/restaurant/save",
+        `${BASE_URL}/api/restaurant/save`,
         {
           method: "POST",
           headers: {

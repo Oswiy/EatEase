@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./OwnerReviewsTab.css";
+import { BASE_URL } from "../../config";
 
 const OwnerReviewsTab = ({ restaurantId, restaurantName }) => {
   const [reviews, setReviews] = useState([]);
@@ -27,7 +28,7 @@ const OwnerReviewsTab = ({ restaurantId, restaurantName }) => {
     setLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:8000/api/restaurants/${restaurantId}/reviews`,
+        `${BASE_URL}/api/restaurants/${restaurantId}/reviews`,
       );
       const data = await response.json();
       console.log("Owner reviews API response:", data);
@@ -87,16 +88,13 @@ const OwnerReviewsTab = ({ restaurantId, restaurantName }) => {
 
     const token = localStorage.getItem("auth_token");
     try {
-      const response = await fetch(
-        `http://localhost:8000/api/reviews/${reviewId}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: "application/json",
-          },
+      const response = await fetch(`${BASE_URL}/api/reviews/${reviewId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
         },
-      );
+      });
 
       const data = await response.json();
       if (data.success) {

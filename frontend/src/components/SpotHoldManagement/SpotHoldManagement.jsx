@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./SpotHoldManagement.css";
+import { BASE_URL } from "../../config";
 
 const SpotHoldManagement = ({ restaurant }) => {
   const [activeHolds, setActiveHolds] = useState([]);
@@ -45,15 +46,12 @@ const SpotHoldManagement = ({ restaurant }) => {
   const fetchFeeSettings = async () => {
     try {
       const token = localStorage.getItem("auth_token");
-      const response = await fetch(
-        "http://localhost:8000/api/restaurant/fee-settings",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: "application/json",
-          },
+      const response = await fetch(`${BASE_URL}/api/restaurant/fee-settings`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
         },
-      );
+      });
 
       const data = await response.json();
 
@@ -73,18 +71,15 @@ const SpotHoldManagement = ({ restaurant }) => {
   const saveFeeSettings = async () => {
     try {
       const token = localStorage.getItem("auth_token");
-      const response = await fetch(
-        "http://localhost:8000/api/restaurant/update-fee",
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify(feeSettings),
+      const response = await fetch(`${BASE_URL}/api/restaurant/update-fee`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
         },
-      );
+        body: JSON.stringify(feeSettings),
+      });
 
       const data = await response.json();
       if (data.success) {
@@ -119,8 +114,7 @@ const SpotHoldManagement = ({ restaurant }) => {
 
   const fetchWithAuth = async (endpoint, options = {}) => {
     const token = localStorage.getItem("auth_token");
-    const baseUrl = "http://localhost:8000";
-    const url = `${baseUrl}/api${endpoint}`;
+    const url = `${BASE_URL}/api${endpoint}`;
 
     console.log("API Call:", url, endpoint);
 
@@ -692,7 +686,7 @@ const ExpiredHoldsView = ({
       const token = localStorage.getItem("auth_token");
 
       const response = await fetch(
-        `http://localhost:8000/api/my-restaurant/expired-holds/${holdId}/hide`,
+        `${BASE_URL}/api/my-restaurant/expired-holds/${holdId}/hide`,
         {
           method: "DELETE",
           headers: {
@@ -764,7 +758,7 @@ const ExpiredHoldsView = ({
             <span className="party-size">{hold.party_size}p</span>
           </div>
           <div className="expired-hold-details">
-            <div>Expired: {formatExpiryDate(hold)}</div> 
+            <div>Expired: {formatExpiryDate(hold)}</div>
             <div>Code: {hold.confirmation_code}</div>
           </div>
         </div>

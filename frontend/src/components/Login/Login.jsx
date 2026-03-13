@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./Login.css";
-import { api } from '../../services/api';
+import { api } from "../../services/api";
+import { BASE_URL } from "../../config";
 
 function Login({ onLogin, onSwitchToSignup }) {
   const [formData, setFormData] = useState({
@@ -105,7 +106,7 @@ function Login({ onLogin, onSwitchToSignup }) {
           localStorage.removeItem("auth_token");
           localStorage.removeItem("user");
           localStorage.removeItem("token_expires_at");
-          window.location.href = "http://localhost:5176";
+          window.location.href = "http://localhost:5176"; // Keep this - it's for local development redirect
           return;
         }
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./OwnerPhotosTab.css";
+import { BASE_URL } from "../../config";
 
 const OwnerPhotosTab = ({ restaurant }) => {
   // Extract restaurantId from restaurant object
@@ -180,7 +181,7 @@ const OwnerPhotosTab = ({ restaurant }) => {
     try {
       const token = localStorage.getItem("auth_token");
       const response = await fetch(
-        `http://localhost/EatEase/backend/public/api/restaurant/${restaurantId}/photos/${photoId}/primary`,
+        `${BASE_URL}/api/restaurant/${restaurantId}/photos/${photoId}/primary`,
         {
           method: "PUT",
           headers: {
@@ -219,7 +220,7 @@ const OwnerPhotosTab = ({ restaurant }) => {
     try {
       const token = localStorage.getItem("auth_token");
       const response = await fetch(
-        `http://localhost/EatEase/backend/public/api/restaurant/${restaurantId}/photos/${photoId}`,
+        `${BASE_URL}/api/restaurant/${restaurantId}/photos/${photoId}`,
         {
           method: "DELETE",
           headers: {
@@ -248,7 +249,7 @@ const OwnerPhotosTab = ({ restaurant }) => {
     try {
       const token = localStorage.getItem("auth_token");
       const response = await fetch(
-        `http://localhost/EatEase/backend/public/api/restaurant/${restaurantId}/photos/${photoId}`,
+        `${BASE_URL}/api/restaurant/${restaurantId}/photos/${photoId}`,
         {
           method: "PUT",
           headers: {
