@@ -2,6 +2,11 @@
 
 use Illuminate\Support\Facades\Route;
 
+
+Route::middleware('api')->get('/api-middleware-test', function() {
+    return response()->json(['api_middleware' => 'working']);
+});
+
 Route::get('/api-test', function() {
     return response()->json(['message' => 'web route working']);
 });
