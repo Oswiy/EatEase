@@ -1,5 +1,5 @@
 // EatEase-Restaurant/frontend/src/services/pollingService.js
-import { BASE_URL } from "../../config";
+import { BASE_URL } from "../config";
 
 class RestaurantPollingService {
   constructor() {
