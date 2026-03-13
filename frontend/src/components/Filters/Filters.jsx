@@ -1,21 +1,22 @@
 import React, { useState, useEffect } from "react";
 import "./Filters.css";
+import API_CONFIG from "../../config";
 
-function Filters({ 
-  filters = {},  // Default to empty object if undefined
-  setFilters, 
-  showFilters, 
-  setShowFilters, 
-  onApplyFilters 
+function Filters({
+  filters = {}, // Default to empty object if undefined
+  setFilters,
+  showFilters,
+  setShowFilters,
+  onApplyFilters,
 }) {
   const [availableCuisines, setAvailableCuisines] = useState([]);
   const [showAllCuisines, setShowAllCuisines] = useState(false);
   const [localFilters, setLocalFilters] = useState({
-    cuisine: 'all',
+    cuisine: "all",
     crowd_status: [],
     min_rating: 0,
-    tier: 'all',
-    featured: false
+    tier: "all",
+    featured: false,
   });
 
   // Fetch available cuisines on mount
@@ -32,7 +33,9 @@ function Filters({
 
   const fetchCuisines = async () => {
     try {
-      const response = await fetch("http://localhost:8000/api/restaurants/cuisines");
+      const response = await fetch(
+        `${API_CONFIG.BASE_URL}/api/restaurants/cuisines`,
+      );
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
@@ -52,13 +55,13 @@ function Filters({
     const currentStatuses = [...(localFilters.crowd_status || [])];
     if (currentStatuses.includes(status)) {
       // Remove if already selected
-      const newStatuses = currentStatuses.filter(s => s !== status);
+      const newStatuses = currentStatuses.filter((s) => s !== status);
       setLocalFilters({ ...localFilters, crowd_status: newStatuses });
     } else {
       // Add if not selected
-      setLocalFilters({ 
-        ...localFilters, 
-        crowd_status: [...currentStatuses, status] 
+      setLocalFilters({
+        ...localFilters,
+        crowd_status: [...currentStatuses, status],
       });
     }
   };
@@ -87,11 +90,11 @@ function Filters({
 
   const handleClear = () => {
     const clearedFilters = {
-      cuisine: 'all',
+      cuisine: "all",
       crowd_status: [],
       min_rating: 0,
-      tier: 'all',
-      featured: false
+      tier: "all",
+      featured: false,
     };
     setLocalFilters(clearedFilters);
     if (onApplyFilters) {
@@ -104,21 +107,31 @@ function Filters({
 
   const getStatusLabel = (status) => {
     switch (status) {
-      case 'green': return 'Low Crowd';
-      case 'yellow': return 'Moderate';
-      case 'orange': return 'Busy';
-      case 'red': return 'Full';
-      default: return status;
+      case "green":
+        return "Low Crowd";
+      case "yellow":
+        return "Moderate";
+      case "orange":
+        return "Busy";
+      case "red":
+        return "Full";
+      default:
+        return status;
     }
   };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'green': return '#51CF66';
-      case 'yellow': return '#FCC419';
-      case 'orange': return '#FF922B';
-      case 'red': return '#FF6B6B';
-      default: return '#666';
+      case "green":
+        return "#51CF66";
+      case "yellow":
+        return "#FCC419";
+      case "orange":
+        return "#FF922B";
+      case "red":
+        return "#FF6B6B";
+      default:
+        return "#666";
     }
   };
 
@@ -126,11 +139,11 @@ function Filters({
   const hasActiveFilters = () => {
     // Use optional chaining and default values
     return (
-      (filters?.cuisine && filters.cuisine !== 'all') || 
-      (filters?.crowd_status && filters.crowd_status.length > 0) || 
-      (filters?.min_rating && filters.min_rating > 0) || 
-      (filters?.tier && filters.tier !== 'all') || 
-      (filters?.featured === true)
+      (filters?.cuisine && filters.cuisine !== "all") ||
+      (filters?.crowd_status && filters.crowd_status.length > 0) ||
+      (filters?.min_rating && filters.min_rating > 0) ||
+      (filters?.tier && filters.tier !== "all") ||
+      filters?.featured === true
     );
   };
 
@@ -171,12 +184,23 @@ function Filters({
         <div className="filters-sidebar">
           <div className="filters-header">
             <h3>Filter Restaurants</h3>
-            <button 
-              className="close-filters-btn" 
+            <button
+              className="close-filters-btn"
               onClick={() => setShowFilters(false)}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -191,7 +215,7 @@ function Filters({
                     type="radio"
                     name="cuisine"
                     value="all"
-                    checked={localFilters.cuisine === 'all'}
+                    checked={localFilters.cuisine === "all"}
                     onChange={handleCuisineChange}
                   />
                   <span>All</span>
@@ -208,25 +232,32 @@ function Filters({
                     <span>{cuisine}</span>
                   </label>
                 ))}
-                
+
                 {/* Show More/Less Button */}
                 {shouldShowMoreButton && (
-                  <button 
+                  <button
                     className="cuisine-show-more-btn"
                     onClick={() => setShowAllCuisines(!showAllCuisines)}
                   >
                     <span className="cuisine-show-more-text">
-                      {showAllCuisines ? 'Show Less' : `+${availableCuisines.length - 3} More`}
+                      {showAllCuisines
+                        ? "Show Less"
+                        : `+${availableCuisines.length - 3} More`}
                     </span>
-                    <svg 
-                      className={`cuisine-show-more-icon ${showAllCuisines ? 'rotated' : ''}`}
-                      width="11" 
-                      height="11" 
-                      viewBox="0 0 24 24" 
-                      fill="white" 
+                    <svg
+                      className={`cuisine-show-more-icon ${showAllCuisines ? "rotated" : ""}`}
+                      width="11"
+                      height="11"
+                      viewBox="0 0 24 24"
+                      fill="white"
                       stroke="currentColor"
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M19 9l-7 7-7-7"
+                      />
                     </svg>
                   </button>
                 )}
@@ -237,22 +268,39 @@ function Filters({
             <div className="filter-section">
               <label className="filter-label">Crowd Status</label>
               <div className="status-options">
-                {['green', 'yellow', 'orange', 'red'].map((status) => (
+                {["green", "yellow", "orange", "red"].map((status) => (
                   <button
                     key={status}
                     className={`status-option ${
-                      (localFilters.crowd_status || []).includes(status) ? 'selected' : ''
+                      (localFilters.crowd_status || []).includes(status)
+                        ? "selected"
+                        : ""
                     }`}
                     onClick={() => handleCrowdStatusChange(status)}
                     style={{
-                      '--status-color': getStatusColor(status)
+                      "--status-color": getStatusColor(status),
                     }}
                   >
-                    <span className="status-dot" style={{ backgroundColor: getStatusColor(status) }}></span>
+                    <span
+                      className="status-dot"
+                      style={{ backgroundColor: getStatusColor(status) }}
+                    ></span>
                     {getStatusLabel(status)}
                     {(localFilters.crowd_status || []).includes(status) && (
-                      <svg className="check-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      <svg
+                        className="check-icon"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="3"
+                          d="M5 13l4 4L19 7"
+                        />
                       </svg>
                     )}
                   </button>
@@ -268,7 +316,7 @@ function Filters({
                   <button
                     key={rating}
                     className={`rating-option ${
-                      localFilters.min_rating === rating ? 'selected' : ''
+                      localFilters.min_rating === rating ? "selected" : ""
                     }`}
                     onClick={() => handleRatingChange(rating)}
                   >
@@ -276,7 +324,7 @@ function Filters({
                       {[1, 2, 3, 4, 5].map((star) => (
                         <span
                           key={star}
-                          className={`star ${star <= rating ? 'filled' : 'empty'}`}
+                          className={`star ${star <= rating ? "filled" : "empty"}`}
                         >
                           ★
                         </span>
@@ -296,8 +344,8 @@ function Filters({
                     type="radio"
                     name="tier"
                     value="all"
-                    checked={localFilters.tier === 'all'}
-                    onChange={() => handleTierChange('all')}
+                    checked={localFilters.tier === "all"}
+                    onChange={() => handleTierChange("all")}
                   />
                   <span>All Restaurants</span>
                 </label>
@@ -306,8 +354,8 @@ function Filters({
                     type="radio"
                     name="tier"
                     value="premium"
-                    checked={localFilters.tier === 'premium'}
-                    onChange={() => handleTierChange('premium')}
+                    checked={localFilters.tier === "premium"}
+                    onChange={() => handleTierChange("premium")}
                   />
                   <span className="premium-badge">Premium</span>
                 </label>
@@ -316,8 +364,8 @@ function Filters({
                     type="radio"
                     name="tier"
                     value="basic"
-                    checked={localFilters.tier === 'basic'}
-                    onChange={() => handleTierChange('basic')}
+                    checked={localFilters.tier === "basic"}
+                    onChange={() => handleTierChange("basic")}
                   />
                   <span>Basic</span>
                 </label>

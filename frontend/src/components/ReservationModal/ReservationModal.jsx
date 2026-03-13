@@ -1,6 +1,7 @@
 // Add these imports if not already
 import React, { useState, useEffect } from "react";
 import "./ReservationModal.css";
+import API_CONFIG from "../../config";
 
 const ReservationModal = ({
   restaurant,
@@ -44,7 +45,7 @@ const ReservationModal = ({
     const fetchFeeSettings = async () => {
       try {
         const response = await fetch(
-          `http://localhost:8000/api/restaurants/${restaurant.id}/fee-settings`,
+          `${API_CONFIG.BASE_URL}/api/restaurants/${restaurant.id}/fee-settings`,
         );
         const data = await response.json();
         if (data.success) {
@@ -121,7 +122,7 @@ const ReservationModal = ({
       });
 
       const response = await fetch(
-        "http://localhost:8000/api/reservations/hold-spot",
+        `${API_CONFIG.BASE_URL}/api/reservations/hold-spot`,
         {
           method: "POST",
           headers: {
@@ -134,7 +135,7 @@ const ReservationModal = ({
             party_size: formData.party_size,
             hold_type: formData.hold_type,
             special_requests: formData.special_requests,
-            hold_fee: feeAmount, // ✅ SEND FEE WITH REQUEST
+            hold_fee: feeAmount,
           }),
         },
       );

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "../RestaurantDetails/RestaurantDetails.css";
+import API_CONFIG from "../../config";
 
 const ReviewsTab = ({ restaurantId, restaurantName }) => {
   const [reviews, setReviews] = useState([]);
@@ -37,7 +38,7 @@ const ReviewsTab = ({ restaurantId, restaurantName }) => {
 
     try {
       const response = await fetch(
-        `http://localhost:8000/api/restaurants/${restaurantId}/reviews`,
+        `${API_CONFIG.BASE_URL}/api/restaurants/${restaurantId}/reviews`,
       );
 
       console.log("Response status:", response.status);
@@ -92,17 +93,18 @@ const ReviewsTab = ({ restaurantId, restaurantName }) => {
     setSubmitting(true);
     const token = localStorage.getItem("auth_token");
 
+    // For posting a review
     try {
       const response = await fetch(
-        `http://localhost:8000/api/restaurants/${restaurantId}/reviews`,
+        `${API_CONFIG.BASE_URL}/api/restaurants/${restaurantId}/reviews`,
         {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
-            Accept: "application/json",
             "Content-Type": "application/json",
+            Accept: "application/json",
           },
-          body: JSON.stringify(newReview),
+          body: JSON.stringify(reviewData),
         },
       );
 
@@ -127,15 +129,18 @@ const ReviewsTab = ({ restaurantId, restaurantName }) => {
     if (!confirm("Are you sure you want to delete your review?")) return;
 
     const token = localStorage.getItem("auth_token");
+    // For updating/deleting a review
     try {
       const response = await fetch(
-        `http://localhost:8000/api/reviews/${reviewId}`,
+        `${API_CONFIG.BASE_URL}/api/reviews/${reviewId}`,
         {
-          method: "DELETE",
+          method: "PUT", // or "DELETE"
           headers: {
             Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
             Accept: "application/json",
           },
+          body: JSON.stringify(updatedData),
         },
       );
 

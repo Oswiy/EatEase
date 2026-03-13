@@ -5,6 +5,7 @@ import FeatureCarousel from "../FeatureCarousel/FeatureCarousel";
 import RestaurantCard from "../RestaurantCard/RestaurantCard";
 import RestaurantDetails from "../RestaurantDetails/RestaurantDetails";
 import "./RestaurantList.css";
+import API_CONFIG from "../../config";
 
 function RestaurantList({
   user,
@@ -75,9 +76,10 @@ function RestaurantList({
       const token = localStorage.getItem("auth_token");
       if (!token) return;
 
+      // For fetching notifications
       try {
         const response = await fetch(
-          "http://localhost:8000/api/notifications",
+          `${API_CONFIG.BASE_URL}/api/notifications`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -137,10 +139,11 @@ function RestaurantList({
         params.append("featured", "true");
       }
 
+      // For fetching restaurants with query params
       const queryString = params.toString();
       const url = queryString
-        ? `http://localhost:8000/api/restaurants?${queryString}`
-        : `http://localhost:8000/api/restaurants`;
+        ? `${API_CONFIG.BASE_URL}/api/restaurants?${queryString}`
+        : `${API_CONFIG.BASE_URL}/api/restaurants`;
 
       const response = await fetch(url);
 
@@ -239,7 +242,7 @@ function RestaurantList({
         return;
       }
 
-      const response = await fetch("http://localhost:8000/api/notifications", {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/notifications`, {
         headers: {
           Authorization: `Bearer ${token}`,
           Accept: "application/json",

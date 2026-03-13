@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "../RestaurantDetails/RestaurantDetails.css";
+import API_CONFIG from "../../config";
 
 const PhotosTab = ({ restaurantId }) => {
   const [photos, setPhotos] = useState([]);
@@ -11,12 +12,12 @@ const PhotosTab = ({ restaurantId }) => {
     if (!imagePath) return null;
 
     // If it's already a full URL (starts with http), use it directly
-    if (imagePath.startsWith('http')) {
+    if (imagePath.startsWith("http")) {
       return imagePath;
     }
 
     // Otherwise, assume it's a local storage path
-    return `http://localhost/EatEase/backend/public/storage/${imagePath}`;
+    return `${API_CONFIG.BASE_URL}/storage/${imagePath}`;
   };
 
   useEffect(() => {
@@ -26,22 +27,23 @@ const PhotosTab = ({ restaurantId }) => {
   const fetchPhotos = async () => {
     try {
       const response = await fetch(
-        `http://localhost:8000/api/restaurants/${restaurantId}/photos`
+        `${API_CONFIG.BASE_URL}/api/restaurants/${restaurantId}/photos`,
       );
       const data = await response.json();
-      
+
       // Use full_image_url if available, otherwise construct from image_url
-      const processedPhotos = Array.isArray(data) 
-        ? data.map(photo => ({
+      const processedPhotos = Array.isArray(data)
+        ? data.map((photo) => ({
             ...photo,
             // Use full_image_url if available, otherwise construct from image_url
-            display_url: photo.full_image_url || 
-                        (photo.image_url ? getImageUrl(photo.image_url) : null),
-            caption: photo.caption || '',
-            is_primary: photo.is_primary || false
+            display_url:
+              photo.full_image_url ||
+              (photo.image_url ? getImageUrl(photo.image_url) : null),
+            caption: photo.caption || "",
+            is_primary: photo.is_primary || false,
           }))
         : [];
-      
+
       setPhotos(processedPhotos);
       setLoading(false);
     } catch (error) {
@@ -119,8 +121,9 @@ const PhotosTab = ({ restaurantId }) => {
               src={photos.find((p) => p.is_primary).display_url}
               alt={photos.find((p) => p.is_primary).caption || "Featured photo"}
               onError={(e) => {
-                console.error('Primary photo failed to load:', e.target.src);
-                e.target.src = 'https://via.placeholder.com/600x400?text=Featured+Photo+Not+Found';
+                console.error("Primary photo failed to load:", e.target.src);
+                e.target.src =
+                  "https://via.placeholder.com/600x400?text=Featured+Photo+Not+Found";
                 e.target.onerror = null; // Prevent infinite loop
               }}
             />
@@ -150,8 +153,9 @@ const PhotosTab = ({ restaurantId }) => {
                     alt={photo.caption || `Restaurant photo ${photo.id}`}
                     loading="lazy"
                     onError={(e) => {
-                      console.error('Grid photo failed to load:', e.target.src);
-                      e.target.src = 'https://via.placeholder.com/300x200?text=Photo+Error';
+                      console.error("Grid photo failed to load:", e.target.src);
+                      e.target.src =
+                        "https://via.placeholder.com/300x200?text=Photo+Error";
                       e.target.onerror = null;
                     }}
                   />
@@ -178,8 +182,9 @@ const PhotosTab = ({ restaurantId }) => {
                     src={photo.display_url}
                     alt={photo.caption || `Restaurant photo ${photo.id}`}
                     onError={(e) => {
-                      console.error('List photo failed to load:', e.target.src);
-                      e.target.src = 'https://via.placeholder.com/100x100?text=Error';
+                      console.error("List photo failed to load:", e.target.src);
+                      e.target.src =
+                        "https://via.placeholder.com/100x100?text=Error";
                       e.target.onerror = null;
                     }}
                   />
@@ -201,18 +206,34 @@ const PhotosTab = ({ restaurantId }) => {
       {/* Full-screen photo viewer modal */}
       {selectedPhoto && (
         <div className="photo-viewer-modal" onClick={closePhotoViewer}>
-          <div className="photo-viewer-content" onClick={(e) => e.stopPropagation()}>
-            <button className="close-viewer-btn" onClick={closePhotoViewer}>×</button>
-            <button className="nav-btn prev" onClick={() => navigatePhoto("prev")}>‹</button>
-            <img 
-              src={selectedPhoto.display_url} 
-              alt={selectedPhoto.caption || "Restaurant photo"} 
+          <div
+            className="photo-viewer-content"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button className="close-viewer-btn" onClick={closePhotoViewer}>
+              ×
+            </button>
+            <button
+              className="nav-btn prev"
+              onClick={() => navigatePhoto("prev")}
+            >
+              ‹
+            </button>
+            <img
+              src={selectedPhoto.display_url}
+              alt={selectedPhoto.caption || "Restaurant photo"}
               className="viewer-image"
               onError={(e) => {
-                e.target.src = 'https://via.placeholder.com/800x600?text=Image+Not+Found';
+                e.target.src =
+                  "https://via.placeholder.com/800x600?text=Image+Not+Found";
               }}
             />
-            <button className="nav-btn next" onClick={() => navigatePhoto("next")}>›</button>
+            <button
+              className="nav-btn next"
+              onClick={() => navigatePhoto("next")}
+            >
+              ›
+            </button>
             {selectedPhoto.caption && (
               <p className="viewer-caption">{selectedPhoto.caption}</p>
             )}

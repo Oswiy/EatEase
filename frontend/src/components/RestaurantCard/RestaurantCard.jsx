@@ -2,13 +2,12 @@ import React, { useState, useEffect } from "react";
 import "./RestaurantCard.css";
 import TierBadge from "../TierBadge/TierBadge";
 import pollingService from "../../services/pollingService";
-
-const API_BASE_URL = "http://localhost/EatEase/backend/public";
+import API_CONFIG from "../../config";
 
 function RestaurantCard({
   restaurant,
   onRestaurantClick,
-  allNotifications = [], // ADD THIS PROP
+  allNotifications = [],
 }) {
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
@@ -26,7 +25,7 @@ function RestaurantCard({
     }
 
     // Otherwise, assume it's a local storage path
-    const fullUrl = `http://localhost/EatEase/backend/public${imagePath}`;
+    const fullUrl = `${API_CONFIG.BASE_URL}${imagePath}`;
     console.log("⚠️ Using local URL:", fullUrl);
     return fullUrl;
   };
@@ -34,7 +33,6 @@ function RestaurantCard({
   console.log("Image URL Debug:", {
     original: restaurant.banner_image,
     processed: getImageUrl(restaurant.banner_image),
-    backendBase: API_BASE_URL,
   });
 
   // ========== IMAGE URLS (MUST BE BEFORE HOOKS) ==========
@@ -47,17 +45,17 @@ function RestaurantCard({
     : null;
 
   // ========== STATE VARIABLES ==========
-  const [currentRestaurant, setCurrentRestaurant] = useState(restaurant); // ✅ ADD THIS
-  const [isUpdating, setIsUpdating] = useState(false); // ✅ ADD THIS
+  const [currentRestaurant, setCurrentRestaurant] = useState(restaurant);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [loading, setLoading] = useState(false);
   // ========== NOTIFICATION STATE ==========
-  const [userHasNotification, setUserHasNotification] = useState(null); // Preference
-  const [hasUnreadNotification, setHasUnreadNotification] = useState(false); // Sent notification
-  const [unreadNotificationData, setUnreadNotificationData] = useState(null); // Store notification details
+  const [userHasNotification, setUserHasNotification] = useState(null);
+  const [hasUnreadNotification, setHasUnreadNotification] = useState(false);
+  const [unreadNotificationData, setUnreadNotificationData] = useState(null);
 
-  // ========== POLLING FOR REAL-TIME UPDATES ========== ✅ ADD THIS SECTION
+  // ========== POLLING FOR REAL-TIME UPDATES ==========
   useEffect(() => {
     // Subscribe to real-time updates for this restaurant
     const unsubscribe = pollingService.subscribe(
@@ -110,7 +108,7 @@ function RestaurantCard({
 
   useEffect(() => {
     checkBookmarks();
-  }, [currentRestaurant.id]); // ✅ Use currentRestaurant.id
+  }, [currentRestaurant.id]);
 
   // ========== FETCH NOTIFICATION PREFERENCES ==========
   useEffect(() => {
@@ -120,7 +118,7 @@ function RestaurantCard({
 
       try {
         const response = await fetch(
-          "http://localhost:8000/api/notifications",
+          `${API_CONFIG.BASE_URL}/api/notifications`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -154,7 +152,7 @@ function RestaurantCard({
 
     try {
       const response = await fetch(
-        "http://localhost:8000/api/user-notifications",
+        `${API_CONFIG.BASE_URL}/api/user-notifications`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -173,11 +171,6 @@ function RestaurantCard({
         if (unread) {
           setHasUnreadNotification(true);
           setUnreadNotificationData(unread);
-
-          // OPTIONAL: Auto-remove the preference when notification is sent?
-          // If you want the green indicator to disappear when notification is sent,
-          // uncomment this line:
-          // setUserHasNotification(null);
         } else {
           setHasUnreadNotification(false);
           setUnreadNotificationData(null);
@@ -202,7 +195,7 @@ function RestaurantCard({
     if (!token) return;
 
     try {
-      const bookmarksRes = await fetch(`${API_BASE_URL}/api/bookmarks`, {
+      const bookmarksRes = await fetch(`${API_CONFIG.BASE_URL}/api/bookmarks`, {
         headers: {
           Authorization: `Bearer ${token}`,
           Accept: "application/json",
@@ -213,7 +206,7 @@ function RestaurantCard({
         const bookmarksData = await bookmarksRes.json();
         if (bookmarksData.success && bookmarksData.bookmarks) {
           const bookmarked = bookmarksData.bookmarks.some(
-            (b) => b.restaurant_id === currentRestaurant.id, // ✅ Use currentRestaurant
+            (b) => b.restaurant_id === currentRestaurant.id,
           );
           setIsBookmarked(bookmarked);
         }
@@ -224,7 +217,7 @@ function RestaurantCard({
   };
 
   const handleClick = () => {
-    onRestaurantClick(currentRestaurant); // ✅ Use currentRestaurant
+    onRestaurantClick(currentRestaurant);
   };
 
   const handleBookmarkClick = async (e) => {
@@ -240,7 +233,7 @@ function RestaurantCard({
 
     try {
       const response = await fetch(
-        `${API_BASE_URL}/api/bookmarks/${currentRestaurant.id}`, // ✅ Use currentRestaurant
+        `${API_CONFIG.BASE_URL}/api/bookmarks/${currentRestaurant.id}`,
         {
           method: "POST",
           headers: {
@@ -284,7 +277,7 @@ function RestaurantCard({
 
     try {
       const response = await fetch(
-        `http://localhost:8000/api/notifications/${currentRestaurant.id}`,
+        `${API_CONFIG.BASE_URL}/api/notifications/${currentRestaurant.id}`,
         {
           method: "POST",
           headers: {
@@ -304,7 +297,7 @@ function RestaurantCard({
         // Force refresh preferences
         setTimeout(() => {
           const fetchPrefs = async () => {
-            const res = await fetch("http://localhost:8000/api/notifications", {
+            const res = await fetch(`${API_CONFIG.BASE_URL}/api/notifications`, {
               headers: { Authorization: `Bearer ${token}` },
             });
             const prefData = await res.json();
@@ -341,7 +334,7 @@ function RestaurantCard({
 
     try {
       // First, get the notification preference ID
-      const prefsRes = await fetch("http://localhost:8000/api/notifications", {
+      const prefsRes = await fetch(`${API_CONFIG.BASE_URL}/api/notifications`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const prefsData = await prefsRes.json();
@@ -352,7 +345,7 @@ function RestaurantCard({
 
       if (pref) {
         const deleteRes = await fetch(
-          `http://localhost:8000/api/notifications/${pref.id}`,
+          `${API_CONFIG.BASE_URL}/api/notifications/${pref.id}`,
           {
             method: "DELETE",
             headers: {
@@ -388,7 +381,7 @@ function RestaurantCard({
 
     try {
       const response = await fetch(
-        `http://localhost:8000/api/user-notifications/${unreadNotificationData.id}`,
+        `${API_CONFIG.BASE_URL}/api/user-notifications/${unreadNotificationData.id}`,
         {
           method: "DELETE",
           headers: {
@@ -437,7 +430,7 @@ function RestaurantCard({
     }
   };
 
-  const shortAddress = currentRestaurant.address // ✅ Use currentRestaurant
+  const shortAddress = currentRestaurant.address
     ? currentRestaurant.address.split(",")[0].trim()
     : "Location not available";
 
@@ -623,7 +616,6 @@ function RestaurantCard({
         {hasUnreadNotification && unreadNotificationData && (
           <div className="current-notification sent">
             <small>
-              <span className="notification-icon">🔔</span>
               <span className={`status-${unreadNotificationData.status}`}>
                 {unreadNotificationData.message}
               </span>
@@ -654,7 +646,6 @@ function RestaurantCard({
               onClick={async (e) => {
                 e.stopPropagation();
                 await handleRemoveNotification();
-                // Force UI update
                 setUserHasNotification(null);
               }}
             >

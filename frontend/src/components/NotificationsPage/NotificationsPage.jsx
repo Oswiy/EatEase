@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./NotificationsPage.css";
 import ReservationModal from "../ReservationModal/ReservationModal";
+import API_CONFIG from "../../config"; // Adjust path as needed
 
 function NotificationsPage({ user, onBack }) {
   const [notifications, setNotifications] = useState([]);
@@ -8,9 +9,8 @@ function NotificationsPage({ user, onBack }) {
   const [error, setError] = useState("");
   const [showReservationModal, setShowReservationModal] = useState(false);
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
-  const [restaurantCurrentStatus, setRestaurantCurrentStatus] = useState({}); // Track restaurant current status
-  const [notificationPreferences, setNotificationPreferences] = useState([]); // ADD THIS LINE
-  // Add this with other state variables:
+  const [restaurantCurrentStatus, setRestaurantCurrentStatus] = useState({});
+  const [notificationPreferences, setNotificationPreferences] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
@@ -30,7 +30,7 @@ function NotificationsPage({ user, onBack }) {
       setError("");
 
       const response = await fetch(
-        "http://localhost:8000/api/user-notifications",
+        `${API_CONFIG.BASE_URL}/api/user-notifications`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -46,15 +46,10 @@ function NotificationsPage({ user, onBack }) {
       const data = await response.json();
 
       if (data.success) {
-        // Set actual notifications
         const notificationsList = data.notifications || [];
         setNotifications(notificationsList);
-
-        // Calculate unread count
         const unread = notificationsList.filter((n) => !n.is_read).length;
         setUnreadCount(unread);
-
-        // Keep preferences if needed
         setNotificationPreferences(data.preferences || []);
       } else {
         setError(data.message || "Failed to load notifications");
@@ -73,7 +68,7 @@ function NotificationsPage({ user, onBack }) {
       if (!token) return;
 
       const response = await fetch(
-        `http://localhost:8000/api/notifications/${notificationId}/mark-read`,
+        `${API_CONFIG.BASE_URL}/api/notifications/${notificationId}/mark-read`,
         {
           method: "PUT",
           headers: {
@@ -84,13 +79,11 @@ function NotificationsPage({ user, onBack }) {
       );
 
       if (response.ok) {
-        // Update local state
         setNotifications((prev) =>
           prev.map((n) =>
             n.id === notificationId ? { ...n, is_read: true } : n,
           ),
         );
-        // Decrease unread count
         setUnreadCount((prev) => Math.max(0, prev - 1));
       }
     } catch (error) {
@@ -98,24 +91,20 @@ function NotificationsPage({ user, onBack }) {
     }
   };
 
-  // Add these new functions to your component:
-
   const deleteNotification = async (notificationId) => {
     if (!window.confirm("Delete this notification?")) return;
 
     try {
       const token = localStorage.getItem("auth_token");
 
-      // METHOD 1: Try with CSRF token
       // First get CSRF cookie from Laravel
-      await fetch("http://localhost:8000/sanctum/csrf-cookie", {
+      await fetch(`${API_CONFIG.BASE_URL}/sanctum/csrf-cookie`, {
         method: "GET",
-        credentials: "include", // Important!
+        credentials: "include",
       });
 
-      // Then make the DELETE request
       const response = await fetch(
-        `http://localhost:8000/api/user-notifications/${notificationId}`,
+        `${API_CONFIG.BASE_URL}/api/user-notifications/${notificationId}`,
         {
           method: "DELETE",
           headers: {
@@ -124,16 +113,15 @@ function NotificationsPage({ user, onBack }) {
             "Content-Type": "application/json",
             "X-Requested-With": "XMLHttpRequest",
           },
-          credentials: "include", // CRITICAL: Include cookies
+          credentials: "include",
         },
       );
 
-      // If 419, try METHOD 2 without CSRF (for API-only routes)
       if (response.status === 419) {
         console.log("CSRF failed, trying API-only method...");
 
         const apiResponse = await fetch(
-          `http://localhost:8000/api/user-notifications/${notificationId}`,
+          `${API_CONFIG.BASE_URL}/api/user-notifications/${notificationId}`,
           {
             method: "DELETE",
             headers: {
@@ -141,18 +129,15 @@ function NotificationsPage({ user, onBack }) {
               Accept: "application/json",
               "Content-Type": "application/json",
             },
-            // No credentials for API-only
           },
         );
 
         if (apiResponse.ok) {
           const data = await apiResponse.json();
           if (data.success) {
-            // Remove from local state
             setNotifications((prev) =>
               prev.filter((n) => n.id !== notificationId),
             );
-            // Update unread count
             if (
               notifications.find((n) => n.id === notificationId)?.is_read ===
               false
@@ -165,7 +150,6 @@ function NotificationsPage({ user, onBack }) {
         }
       }
 
-      // Handle original response
       const data = await response.json();
       if (data.success) {
         setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
@@ -193,7 +177,7 @@ function NotificationsPage({ user, onBack }) {
     try {
       const token = localStorage.getItem("auth_token");
       const response = await fetch(
-        "http://localhost:8000/api/user-notifications", // NEW ENDPOINT
+        `${API_CONFIG.BASE_URL}/api/user-notifications`,
         {
           method: "DELETE",
           headers: {
@@ -230,12 +214,11 @@ function NotificationsPage({ user, onBack }) {
       const token = localStorage.getItem("auth_token");
       const statusMap = {};
 
-      // Fetch current status for each restaurant in notifications
       for (const notification of notifications) {
         if (notification.restaurant_id) {
           try {
             const response = await fetch(
-              `http://localhost:8000/api/restaurants/${notification.restaurant_id}`,
+              `${API_CONFIG.BASE_URL}/api/restaurants/${notification.restaurant_id}`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`,
@@ -270,27 +253,21 @@ function NotificationsPage({ user, onBack }) {
     const currentStatus = restaurantCurrentStatus[notification.restaurant_id];
     const preferredStatus = notification.notify_when_status;
 
-    // Map statuses to values for comparison
     const statusPriority = {
-      green: 0, // Low crowd
-      yellow: 1, // Moderate
-      orange: 2, // Busy
-      red: 3, // Full
+      green: 0,
+      yellow: 1,
+      orange: 2,
+      red: 3,
       unknown: -1,
     };
 
-    // If we don't know current status, don't show button
     if (!currentStatus || currentStatus === "unknown") {
       return false;
     }
 
-    // Show Book Now if current crowd is EQUAL TO or BETTER THAN preferred
-    // (e.g., if user wants "low", show when it's low OR even lower)
     const currentPriority = statusPriority[currentStatus] || -1;
     const preferredPriority = statusPriority[preferredStatus] || -1;
 
-    // For crowd level notifications: lower number = better (less crowded)
-    // Show button when current crowd is <= preferred crowd level
     return currentPriority <= preferredPriority;
   };
 
@@ -298,7 +275,7 @@ function NotificationsPage({ user, onBack }) {
     try {
       const token = localStorage.getItem("auth_token");
       const response = await fetch(
-        `http://localhost:8000/api/restaurants/${notification.restaurant_id}`,
+        `${API_CONFIG.BASE_URL}/api/restaurants/${notification.restaurant_id}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -311,7 +288,6 @@ function NotificationsPage({ user, onBack }) {
         const data = await response.json();
         const restaurant = data.restaurant || data;
 
-        // Set restaurant and show modal
         setSelectedRestaurant(restaurant);
         setShowReservationModal(true);
       }
@@ -325,7 +301,7 @@ function NotificationsPage({ user, onBack }) {
     const token = localStorage.getItem("auth_token");
     try {
       const response = await fetch(
-        `http://localhost:8000/api/notifications/${notificationId}/snooze`, // ✅ FIXED
+        `${API_CONFIG.BASE_URL}/api/notifications/${notificationId}/snooze`,
         {
           method: "POST",
           headers: {
@@ -337,7 +313,7 @@ function NotificationsPage({ user, onBack }) {
 
       if (response.ok) {
         alert("Notification snoozed for 1 hour");
-        fetchNotifications(); // Refresh list
+        fetchNotifications();
       }
     } catch (error) {
       console.error("Error snoozing notification:", error);
@@ -348,7 +324,7 @@ function NotificationsPage({ user, onBack }) {
     const token = localStorage.getItem("auth_token");
     try {
       const response = await fetch(
-        `http://localhost:8000/api/notifications/${notificationId}`,
+        `${API_CONFIG.BASE_URL}/api/notifications/${notificationId}`,
         {
           method: "DELETE",
           headers: {
@@ -360,7 +336,6 @@ function NotificationsPage({ user, onBack }) {
 
       const data = await response.json();
       if (data.success) {
-        // Remove from local state
         setNotifications(notifications.filter((n) => n.id !== notificationId));
       }
     } catch (error) {
@@ -403,12 +378,10 @@ function NotificationsPage({ user, onBack }) {
 
     const date = new Date(dateString);
 
-    // If time is provided separately
     if (timeString) {
       return `${date.toLocaleDateString()} at ${timeString}`;
     }
 
-    // If date includes time
     return date.toLocaleString(undefined, {
       year: "numeric",
       month: "short",
@@ -465,7 +438,6 @@ function NotificationsPage({ user, onBack }) {
 
       {!loading && !error && (
         <>
-          {/* SHOW ACTUAL NOTIFICATIONS */}
           {notifications.length === 0 ? (
             <div className="notifications-empty-state">
               <div className="empty-icon">
@@ -494,7 +466,6 @@ function NotificationsPage({ user, onBack }) {
 
               <div className="notifications-list">
                 {notifications.map((notification) => {
-                  // Determine if this is a crowd alert
                   const isCrowdAlert =
                     notification.type === "crowd_alert" ||
                     notification.notification_type === "crowd_alert";
@@ -533,14 +504,10 @@ function NotificationsPage({ user, onBack }) {
                           </div>
                         </div>
 
-                        {/* "Book Now" button - show for crowd alerts */}
                         {isCrowdAlert && (
                           <button
                             className="hold-action-btn hold-book-now-btn"
-                            onClick={() => {
-                              // You'll need to implement handleBookNow
-                              handleBookNow(notification);
-                            }}
+                            onClick={() => handleBookNow(notification)}
                           >
                             <span role="img" aria-label="plate"></span> Reserve
                             Now
@@ -551,9 +518,7 @@ function NotificationsPage({ user, onBack }) {
                       <div className="notification-actions">
                         <button
                           className="delete-btn"
-                          onClick={() => {
-                            deleteNotification(notification.id);
-                          }}
+                          onClick={() => deleteNotification(notification.id)}
                           title="Delete notification"
                         >
                           ×
@@ -567,7 +532,7 @@ function NotificationsPage({ user, onBack }) {
           )}
         </>
       )}
-      {/* Reservation Modal */}
+
       {showReservationModal && selectedRestaurant && (
         <ReservationModal
           restaurant={selectedRestaurant}
@@ -577,9 +542,8 @@ function NotificationsPage({ user, onBack }) {
           }}
           onSuccess={(reservation) => {
             alert(
-              `✅ Reservation confirmed! Code: ${reservation.confirmation_code}`,
+              `Reservation confirmed! Code: ${reservation.confirmation_code}`,
             );
-            // Optionally mark notification as acted upon
             setShowReservationModal(false);
             setSelectedRestaurant(null);
           }}
@@ -588,46 +552,5 @@ function NotificationsPage({ user, onBack }) {
     </div>
   );
 }
-
-// Helper functions
-const getStatusText = (status) => {
-  switch (status) {
-    case "green":
-      return "Low Crowd";
-    case "yellow":
-      return "Moderate Crowd";
-    case "orange":
-      return "Busy";
-    case "red":
-      return "Full";
-    default:
-      return status;
-  }
-};
-
-const getStatusColor = (status) => {
-  switch (status) {
-    case "green":
-      return "#51CF66";
-    case "yellow":
-      return "#FCC419";
-    case "orange":
-      return "#FF922B";
-    case "red":
-      return "#FF6B6B";
-    default:
-      return "#666";
-  }
-};
-
-const formatDate = (dateString) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
 
 export default NotificationsPage;

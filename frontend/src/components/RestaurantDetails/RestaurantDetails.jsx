@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./RestaurantDetails.css";
-import pollingService from "../../services/pollingService"; // Adjust path
+import pollingService from "../../services/pollingService";
 
 // Tab Components
 import OverviewTab from "../OverviewTab/OverviewTab";
@@ -8,6 +8,7 @@ import MenuTab from "../MenuTab/MenuTab";
 import ReviewsTab from "../ReviewsTab/ReviewsTab";
 import PhotosTab from "../PhotosTab/PhotosTab";
 import ReservationModal from "../ReservationModal/ReservationModal";
+import API_CONFIG from "../../config";
 
 function RestaurantDetails({ restaurantId, onBack }) {
   // ========== HELPER FUNCTION ==========
@@ -27,7 +28,7 @@ function RestaurantDetails({ restaurantId, onBack }) {
     }
 
     // Otherwise, assume it's a local storage path
-    const fullUrl = `http://localhost/EatEase/backend/public${imagePath}`;
+    const fullUrl = `${API_CONFIG.BASE_URL}${imagePath}`;
     console.log("⚠️ Using local URL:", fullUrl);
     return fullUrl;
   };
@@ -51,7 +52,7 @@ function RestaurantDetails({ restaurantId, onBack }) {
   // ========== STATE VARIABLES ==========
   const [activeTab, setActiveTab] = useState("overview");
   const [restaurant, setRestaurant] = useState(null);
-  const [isUpdating, setIsUpdating] = useState(false); // ✅ ADD THIS
+  const [isUpdating, setIsUpdating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
   const [error, setError] = useState(null);
@@ -72,7 +73,7 @@ function RestaurantDetails({ restaurantId, onBack }) {
   const [isNotifying, setIsNotifying] = useState(false);
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
   const [notificationLoading, setNotificationLoading] = useState(false);
-  const [showNotificationModal, setShowNotificationModal] = useState(false); // ADD THIS
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
 
   // ADD THESE FUNCTIONS
   const handleBookmark = async () => {
@@ -81,10 +82,9 @@ function RestaurantDetails({ restaurantId, onBack }) {
     setBookmarkLoading(true);
     try {
       const token = localStorage.getItem("auth_token");
-      const endpoint = isBookmarked ? "remove-bookmark" : "add-bookmark";
 
       const response = await fetch(
-        `http://localhost/EatEase/backend/public/api/bookmarks/${restaurantId}`,
+        `${API_CONFIG.BASE_URL}/api/bookmarks/${restaurantId}`,
         {
           method: "POST",
           headers: {
@@ -117,7 +117,7 @@ function RestaurantDetails({ restaurantId, onBack }) {
 
       // Check if notification already exists for this status
       const checkResponse = await fetch(
-        `http://localhost:8000/api/notifications`,
+        `${API_CONFIG.BASE_URL}/api/notifications`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -139,7 +139,7 @@ function RestaurantDetails({ restaurantId, onBack }) {
         if (existingNotification) {
           // Remove existing notification
           const deleteResponse = await fetch(
-            `http://localhost:8000/api/notifications/${existingNotification.id}`,
+            `${API_CONFIG.BASE_URL}/api/notifications/${existingNotification.id}`,
             {
               method: "DELETE",
               headers: {
@@ -156,7 +156,7 @@ function RestaurantDetails({ restaurantId, onBack }) {
         } else {
           // Add new notification
           const response = await fetch(
-            `http://localhost:8000/api/notifications/${restaurantId}`,
+            `${API_CONFIG.BASE_URL}/api/notifications/${restaurantId}`,
             {
               method: "POST",
               headers: {
@@ -185,7 +185,6 @@ function RestaurantDetails({ restaurantId, onBack }) {
   };
 
   // ADD THIS EFFECT TO CHECK INITIAL BOOKMARK/NOTIFICATION STATUS
-  // ADD THIS EFFECT TO CHECK INITIAL BOOKMARK/NOTIFICATION STATUS
   useEffect(() => {
     if (!restaurantId) return;
 
@@ -196,7 +195,7 @@ function RestaurantDetails({ restaurantId, onBack }) {
       try {
         // Check bookmark status
         const bookmarkResponse = await fetch(
-          `http://localhost:8000/api/bookmarks`,
+          `${API_CONFIG.BASE_URL}/api/bookmarks`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -216,7 +215,7 @@ function RestaurantDetails({ restaurantId, onBack }) {
 
         // Check notification status for ALL statuses
         const notificationResponse = await fetch(
-          `http://localhost:8000/api/notifications`,
+          `${API_CONFIG.BASE_URL}/api/notifications`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -324,7 +323,7 @@ function RestaurantDetails({ restaurantId, onBack }) {
   const fetchReviewsData = async () => {
     try {
       const response = await fetch(
-        `http://localhost:8000/api/restaurants/${restaurantId}/reviews`,
+        `${API_CONFIG.BASE_URL}/api/restaurants/${restaurantId}/reviews`,
       );
 
       if (response.ok) {
@@ -350,7 +349,7 @@ function RestaurantDetails({ restaurantId, onBack }) {
       setError(null);
 
       const response = await fetch(
-        `http://localhost:8000/api/restaurants/${restaurantId}`,
+        `${API_CONFIG.BASE_URL}/api/restaurants/${restaurantId}`,
         {
           headers: {
             Accept: "application/json",
@@ -404,7 +403,7 @@ function RestaurantDetails({ restaurantId, onBack }) {
       // Fetch stats
       try {
         const statsResponse = await fetch(
-          `http://localhost:8000/api/restaurants/${restaurantId}/stats`,
+          `${API_CONFIG.BASE_URL}/api/restaurants/${restaurantId}/stats`,
         );
         if (statsResponse.ok) {
           const statsData = await statsResponse.json();
@@ -555,7 +554,6 @@ function RestaurantDetails({ restaurantId, onBack }) {
               )}
             </button>
 
-            {/* Notification Button */}
             {/* Notification Button - Opens Modal */}
             <button
               className={`action-btn notification-btn ${

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import "./FeatureCarousel.css";
 import pollingService from "../../services/pollingService";
+import API_CONFIG from "../../config"; // ADD THIS IMPORT
 
 function FeatureCarousel({ restaurants, onRestaurantClick }) {
   const [featuredRestaurants, setFeaturedRestaurants] = useState([]);
@@ -123,7 +124,7 @@ function FeatureCarousel({ restaurants, onRestaurantClick }) {
     }
   };
 
-  // ✅ FIXED: Handle both local and Cloudinary URLs
+  // ✅ FIXED: Use API_CONFIG for image URLs
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
 
@@ -132,9 +133,8 @@ function FeatureCarousel({ restaurants, onRestaurantClick }) {
       return imagePath;
     }
 
-    // Otherwise, assume it's a local storage path
-    const backendBase = "http://localhost/EatEase/backend/public";
-    return `${backendBase}${imagePath}`;
+    // Otherwise, assume it's a local storage path and use API_CONFIG
+    return `${API_CONFIG.BASE_URL}${imagePath}`;
   };
 
   const handleImageLoad = (restaurantId) => {

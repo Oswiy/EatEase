@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./MenuTab.css";
+import API_CONFIG from "../../config";
 
 const MenuTab = ({ restaurantId }) => {
   const [menuItems, setMenuItems] = useState([]);
@@ -39,7 +40,7 @@ const MenuTab = ({ restaurantId }) => {
     setLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:8000/api/restaurants/${restaurantId}/menu-text`,
+        `${API_CONFIG.BASE_URL}/api/restaurants/${restaurantId}/menu-text`,
       );
       const data = await response.json();
       console.log("MenuTab API response:", data);

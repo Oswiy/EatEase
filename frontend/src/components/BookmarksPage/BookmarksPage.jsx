@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./BookmarksPage.css";
-
-const API_BASE_URL = "http://localhost/EatEase/backend/public";
+import API_CONFIG from "../../config";
 
 function BookmarksPage({ user, onBack }) {
   const [bookmarks, setBookmarks] = useState([]);
@@ -22,7 +21,7 @@ function BookmarksPage({ user, onBack }) {
 
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/api/bookmarks`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/bookmarks`, {
         headers: {
           Authorization: `Bearer ${token}`,
           Accept: "application/json",
@@ -51,7 +50,7 @@ function BookmarksPage({ user, onBack }) {
     const token = localStorage.getItem("auth_token");
     try {
       const response = await fetch(
-        `${API_BASE_URL}/api/bookmarks/${restaurantId}`,
+        `${API_CONFIG.BASE_URL}/api/bookmarks/${restaurantId}`,
         {
           method: "POST",
           headers: {
@@ -63,7 +62,6 @@ function BookmarksPage({ user, onBack }) {
 
       const data = await response.json();
       if (data.success && !data.isBookmarked) {
-        // Remove from local state
         setBookmarks(bookmarks.filter((b) => b.restaurant_id !== restaurantId));
       }
     } catch (error) {
@@ -103,7 +101,7 @@ function BookmarksPage({ user, onBack }) {
             fill="orange"
           >
             <path d="M713-600 600-713l56-57 57 57 141-142 57 57-198 198ZM200-120v-640q0-33 23.5-56.5T280-840h240v80H280v518l200-86 200 86v-278h80v400L480-240 200-120Zm80-640h240-240Z" />
-          </svg>{" "}
+          </svg>
           My Bookmarks
         </h1>
       </div>
@@ -144,9 +142,7 @@ function BookmarksPage({ user, onBack }) {
               <div className="bookmarks-list">
                 {bookmarks.map((bookmark) => (
                   <div key={bookmark.id} className="bookmark-item">
-                    {/* CHECK IF RESTAURANT IS DELETED */}
                     {bookmark.is_deleted ? (
-                      // DELETED RESTAURANT - SHOW DIFFERENT STYLE
                       <div className="deleted-restaurant">
                         <div className="bookmark-info">
                           <h3 className="deleted-title">
@@ -173,14 +169,12 @@ function BookmarksPage({ user, onBack }) {
                             }
                             title="Remove bookmark"
                           >
-                            Remove
+                            ✕
                           </button>
                         </div>
                       </div>
                     ) : (
-                      // ACTIVE RESTAURANT - NORMAL DISPLAY
                       <div className="active-restaurant">
-                        {/* Add image if available */}
                         {bookmark.profile_image && (
                           <div className="bookmark-image">
                             <img
@@ -222,7 +216,7 @@ function BookmarksPage({ user, onBack }) {
                             }
                             title="Remove bookmark"
                           >
-                            ✕
+                            Remove
                           </button>
                         </div>
                       </div>

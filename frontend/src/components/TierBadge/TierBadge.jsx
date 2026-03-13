@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./TierBadge.css";
+import API_CONFIG from "../../config";
 
 const TierBadge = ({
   restaurantId,
@@ -62,7 +63,7 @@ const TierBadge = ({
       setLoading(true);
       const token = localStorage.getItem("auth_token");
       const response = await fetch(
-        "http://localhost:8000/api/subscription/tier",
+        `${API_CONFIG.BASE_URL}/api/subscription/tier`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

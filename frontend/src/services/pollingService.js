@@ -1,6 +1,4 @@
-// EatEase-Diner/frontend/src/services/pollingService.js
-
-const API_BASE_URL = "http://localhost:8000";
+import API_CONFIG from "../config"; // ADD THIS IMPORT
 
 class PollingService {
   constructor() {
@@ -133,13 +131,13 @@ class PollingService {
     });
   }
 
-  // ✅ SIMPLE FETCH
+  // ✅ SIMPLE FETCH - FIXED URL
   async fetchRestaurantStatus(restaurantId) {
     try {
       console.log(`🔍 [Polling] Fetching status for ${restaurantId}`);
       
       const response = await fetch(
-        `${API_BASE_URL}/api/restaurants/${restaurantId}/status`,
+        `${API_CONFIG.BASE_URL}/api/restaurants/${restaurantId}/status`,
         {
           headers: {
             "Cache-Control": "no-cache",

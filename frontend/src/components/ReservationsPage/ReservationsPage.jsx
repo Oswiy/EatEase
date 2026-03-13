@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./ReservationsPage.css";
+import API_CONFIG from "../../config";
 
 const ReservationsPage = ({ user, onBack }) => {
   const [reservations, setReservations] = useState([]);
@@ -20,16 +21,14 @@ const ReservationsPage = ({ user, onBack }) => {
       return;
     }
 
+    // For fetching reservations
     try {
-      const response = await fetch(
-        "http://localhost/EatEase-Backend/backend/public/api/reservations",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: "application/json",
-          },
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/reservations`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
         },
-      );
+      });
 
       if (response.ok) {
         const data = await response.json();
@@ -261,9 +260,10 @@ const ReservationsPage = ({ user, onBack }) => {
     if (!confirm("Cancel this reservation?")) return;
 
     const token = localStorage.getItem("auth_token");
+    // For deleting a reservation
     try {
       const response = await fetch(
-        `http://localhost/EatEase-Backend/backend/public/api/reservations/${id}`,
+        `${API_CONFIG.BASE_URL}/api/reservations/${id}`,
         {
           method: "DELETE",
           headers: {
@@ -290,9 +290,10 @@ const ReservationsPage = ({ user, onBack }) => {
     if (!confirm("Remove this reservation from your list?")) return;
 
     const token = localStorage.getItem("auth_token");
+    // For removing a reservation from view
     try {
       const response = await fetch(
-        `http://localhost/EatEase-Backend/backend/public/api/reservations/${id}/remove`,
+        `${API_CONFIG.BASE_URL}/api/reservations/${id}/remove`,
         {
           method: "DELETE",
           headers: {

@@ -32,7 +32,7 @@ function App() {
         localStorage.removeItem("user");
 
         // Redirect to Business App
-        window.location.href = "http://localhost:5177";
+        window.location.href = "https://eatease-restaurant.vercel.app";
         return;
       }
 
@@ -78,7 +78,7 @@ function App() {
       alert(
         "This is the Diner App. Please use the Business App for restaurant management.",
       );
-      window.location.href = "http://localhost:5177";
+      window.location.href = "https://eatease-restaurant.vercel.app";
       return;
     }
 
@@ -98,7 +98,7 @@ function App() {
       alert(
         "Diner App only accepts diner signups. Please use the Business App for business accounts.",
       );
-      window.location.href = "http://localhost:5177";
+      window.location.href = "https://eatease-restaurant.vercel.app";
       return;
     }
 
