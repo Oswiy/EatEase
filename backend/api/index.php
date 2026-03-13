@@ -1,4 +1,11 @@
 <?php
+set_exception_handler(function($e) {
+    header('Content-Type: application/json');
+    http_response_code(500);
+    echo json_encode(['error' => $e->getMessage(), 'file' => $e->getFile(), 'line' => $e->getLine()]);
+    exit;
+});
+
 require __DIR__ . '/../vendor/autoload.php';
 
 $dirs = [
@@ -21,7 +28,6 @@ foreach ($cacheFiles as $file) {
     }
 }
 
-// Fix PATH_INFO for Vercel
 if (isset($_SERVER['REQUEST_URI'])) {
     $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
     $_SERVER['PATH_INFO'] = $path;
