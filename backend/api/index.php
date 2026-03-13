@@ -1,7 +1,4 @@
 <?php
-ini_set('display_errors', '1');
-error_reporting(E_ALL);
-
 require __DIR__ . '/../vendor/autoload.php';
 
 $dirs = [
@@ -24,7 +21,7 @@ foreach ($cacheFiles as $file) {
     }
 }
 
-// Fix PATH_INFO - use REQUEST_URI instead of PATH_INFO
+// Fix PATH_INFO for Vercel
 if (isset($_SERVER['REQUEST_URI'])) {
     $_SERVER['PATH_INFO'] = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 }
