@@ -40,12 +40,7 @@ class Kernel extends HttpKernel
         ],
 
         'api' => [
-            // Enable Sanctum for SPA authentication
-
-            // Only ONE throttle middleware
-            // 'throttle:api',
-
-            // Only ONE SubstituteBindings
+            'throttle:api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
 

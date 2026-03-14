@@ -1,10 +1,4 @@
 <?php
-set_exception_handler(function($e) {
-    header('Content-Type: application/json');
-    http_response_code(500);
-    echo json_encode(['error' => $e->getMessage(), 'file' => $e->getFile(), 'line' => $e->getLine()]);
-    exit;
-});
 
 require __DIR__ . '/../vendor/autoload.php';
 
