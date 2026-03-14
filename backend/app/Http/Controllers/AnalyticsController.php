@@ -164,8 +164,8 @@ class AnalyticsController extends Controller
     {
         $logs = OccupancyLog::where('restaurant_id', $restaurant->id)
             ->where('created_at', '>=', $startDate)
-            ->selectRaw('HOUR(created_at) as hour, AVG(occupancy_percentage) as avg_occupancy')
-            ->groupByRaw('HOUR(created_at)')
+            ->selectRaw('EXTRACT(HOUR FROM created_at) as hour, AVG(occupancy_percentage) as avg_occupancy')
+            ->groupByRaw('EXTRACT(HOUR FROM created_at)')
             ->orderBy('avg_occupancy', 'DESC')
             ->limit(6)
             ->get();
@@ -281,8 +281,8 @@ class AnalyticsController extends Controller
     {
         $logs = OccupancyLog::where('restaurant_id', $restaurant->id)
             ->where('created_at', '>=', $this->getStartDateFromRange($range))
-            ->selectRaw('DAYNAME(created_at) as day, AVG(occupancy_percentage) as avg_occupancy')
-            ->groupByRaw('DAYNAME(created_at)')
+            ->selectRaw("TO_CHAR(created_at, 'Day') as day, AVG(occupancy_percentage) as avg_occupancy")
+            ->groupByRaw("TO_CHAR(created_at, 'Day')")
             ->orderBy('avg_occupancy', 'DESC')
             ->first();
 
