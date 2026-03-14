@@ -1097,7 +1097,7 @@ class RestaurantController extends Controller
                 'title' => 'Crowd Level Alert',
                 'message' => $restaurant->name . ' has reached ' . $this->getCrowdLevelText($status) . ' crowd level',
                 'status' => $status,
-                'read' => false,
+                'is_read' => false,
                 'sent_at' => now(),
                 'created_at' => now(),
                 'updated_at' => now()
