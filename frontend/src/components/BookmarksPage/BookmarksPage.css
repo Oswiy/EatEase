@@ -96,6 +96,12 @@
   margin: 0.25rem 0;
   text-align: center;
 }
+.phone {
+  color: #666;
+  font-size: 11px;
+  margin: 0.25rem 0;
+  text-align: center;
+}
 
 .bookmarked-date {
   color: #1d1c1c;

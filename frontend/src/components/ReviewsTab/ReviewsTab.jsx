@@ -104,7 +104,7 @@ const ReviewsTab = ({ restaurantId, restaurantName }) => {
             "Content-Type": "application/json",
             Accept: "application/json",
           },
-          body: JSON.stringify(reviewData),
+          body: JSON.stringify(newReview),
         },
       );
 
@@ -134,13 +134,12 @@ const ReviewsTab = ({ restaurantId, restaurantName }) => {
       const response = await fetch(
         `${API_CONFIG.BASE_URL}/api/reviews/${reviewId}`,
         {
-          method: "PUT", // or "DELETE"
+          method: "DELETE",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
             Accept: "application/json",
           },
-          body: JSON.stringify(updatedData),
         },
       );
 

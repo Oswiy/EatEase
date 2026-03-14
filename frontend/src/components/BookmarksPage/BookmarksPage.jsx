@@ -175,16 +175,6 @@ function BookmarksPage({ user, onBack }) {
                       </div>
                     ) : (
                       <div className="active-restaurant">
-                        {bookmark.profile_image && (
-                          <div className="bookmark-image">
-                            <img
-                              src={bookmark.profile_image}
-                              alt={bookmark.restaurant_name}
-                              onError={(e) => (e.target.style.display = "none")}
-                            />
-                          </div>
-                        )}
-
                         <div className="bookmark-info">
                           <h3>{bookmark.restaurant_name}</h3>
                           <p className="cuisine">Cuisine: {bookmark.cuisine}</p>
