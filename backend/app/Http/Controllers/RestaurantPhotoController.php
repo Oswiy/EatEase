@@ -126,8 +126,13 @@ public function store(Request $request, $restaurantId)
             $uploadedPhotos[] = $restaurantPhoto;
             
         } catch (\Exception $e) {
-            Log::error('Photo upload error: ' . $e->getMessage());
-            continue;
+        Log::error('Photo upload error: ' . $e->getMessage());
+        Log::error('Stack trace: ' . $e->getTraceAsString());
+        // Return error instead of continuing so we can see it
+        return response()->json([
+            'success' => false,
+            'message' => 'Upload failed: ' . $e->getMessage()
+        ], 500);
         }
     }
 
