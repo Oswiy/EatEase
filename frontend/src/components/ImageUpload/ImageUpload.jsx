@@ -66,9 +66,7 @@ function ImageUpload({ type, currentImage, onUploadSuccess, restaurantId }) {
     try {
       const token = localStorage.getItem("auth_token");
       const response = await fetch(
-        `http://127.0.0.1:8000/api/restaurant/upload/${type}`,
-        // OR use your API_BASE_URL if you have one:
-        // `${API_BASE_URL}/api/restaurant/upload/${type}`,
+        `${BASE_URL}/api/restaurant/upload/${type}`,
         {
           method: "POST",
           headers: {

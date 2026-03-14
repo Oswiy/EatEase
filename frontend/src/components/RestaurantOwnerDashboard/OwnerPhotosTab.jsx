@@ -36,7 +36,7 @@ const OwnerPhotosTab = ({ restaurant }) => {
       console.log("Fetching photos with token:", token ? "exists" : "missing");
 
       const response = await fetch(
-        `http://127.0.0.1:8000/api/restaurant/${restaurantId}/photos`,
+        `${BASE_URL}/api/restaurant/${restaurantId}/photos`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -138,12 +138,12 @@ const OwnerPhotosTab = ({ restaurant }) => {
       // DEBUG: Log the request
       console.log(
         "Sending request to:",
-        `http://127.0.0.1:8000/api/restaurant/${restaurantId}/photos`,
+        `${BASE_URL}/api/restaurant/${restaurantId}/photos`,
       );
       console.log("Token exists:", !!token);
 
       const response = await fetch(
-        `http://127.0.0.1:8000/api/restaurant/${restaurantId}/photos`,
+        `${BASE_URL}/api/restaurant/${restaurantId}/photos`,
         {
           method: "POST",
           headers: {
