@@ -785,10 +785,10 @@
 .form-group textarea,
 .form-group select {
   width: 100%;
-  padding: 16px;
+  padding: 11px;
   border: 2px solid #e0e0e0;
   border-radius: 12px;
-  font-size: 16px;
+  font-size: 11px;
   color: #222;
   background: #f8f9fa;
   transition: all 0.3s ease;
@@ -944,10 +944,10 @@
 }
 
 /* Character Count */
-.char-count {
+.setting-char-count {
   display: block;
   text-align: right;
-  font-size: 11px;
+  font-size: 10px;
   color: #666;
   margin-top: 4px;
 }
@@ -1785,11 +1785,11 @@
 
 .phone-prefix {
   font-weight: bold;
-  font-size: 15px;
-  background: #f0f0f0;
+  font-size: 13px;
+  background: none;
   padding: 8px 12px;
   border-radius: 6px;
-  border: 1px solid #ddd;
+  border: none;
 }
 
 .hours-input-row {
@@ -1797,7 +1797,10 @@
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
+  justify-content: center;
 }
+
+
 
 .hours-field {
   display: flex;
@@ -1805,18 +1808,14 @@
   gap: 6px;
 }
 
-.hours-field input {
-  width: 60px !important;
+.hours-field span {
+  font-size: 13px;
 }
 
-.twentyfour-toggle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 10px;
-  cursor: pointer;
-  font-weight: 500;
+.hours-field input {
+  width: 40px !important;
 }
+
 
 .save-spinner {
   width: 14px;
@@ -1830,4 +1829,14 @@
 
 @keyframes saveSpin {
   to { transform: rotate(360deg); }
+}
+
+#twentyfour-toggle {
+  /* display: flex; */
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  cursor: pointer;
+  font-weight: 500;
+  justify-content: center;
 }

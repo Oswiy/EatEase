@@ -454,6 +454,27 @@ function RestaurantOwnerDashboard({ user }) {
   const handleSaveRestaurant = async (e) => {
     e.preventDefault();
     setSaving(true);
+    const phoneDigits = formData.phone
+      ? formData.phone.replace(/^\+63/, "")
+      : "";
+    if (phoneDigits.length !== 10) {
+      alert("Please enter a valid 10-digit phone number after +63");
+      setSaving(false);
+      return;
+    }
+    if (!formData.openHour || !formData.closeHour) {
+      alert("Please enter valid opening and closing hours");
+      setSaving(false);
+      return;
+    }
+    const open = parseInt(formData.openHour);
+    const close = parseInt(formData.closeHour);
+    if (open < 1 || open > 12 || close < 1 || close > 12) {
+      alert("Hours must be between 1 and 12");
+      setSaving(false);
+      return;
+    }
+
     const token = localStorage.getItem("auth_token");
 
     const dataToSend = {
@@ -463,10 +484,7 @@ function RestaurantOwnerDashboard({ user }) {
         : formData.cuisine_type,
       address: formData.address,
       phone: formData.phone,
-      hours:
-        formData.hours === "24/7"
-          ? "24/7"
-          : `${formData.openHour || "8"}${formData.openAmPm || "AM"}-${formData.closeHour || "10"}${formData.closeAmPm || "PM"}`,
+      hours: `${formData.openHour || "8"}${formData.openAmPm || "AM"}-${formData.closeHour || "10"}${formData.closeAmPm || "PM"}`,
       max_capacity: Number(formData.max_capacity) || 50,
       current_occupancy: Number(formData.current_occupancy) || 0,
       features: Array.isArray(formData.features) ? formData.features : [],
@@ -542,7 +560,7 @@ function RestaurantOwnerDashboard({ user }) {
                     : [],
                 address: restaurant.address,
                 phone: restaurant.phone,
-                hours: hoursVal === "24/7" ? "24/7" : "",
+                hours: "",
                 openHour,
                 openAmPm,
                 closeHour,
@@ -608,7 +626,7 @@ function RestaurantOwnerDashboard({ user }) {
                     : [],
                 address: restaurant.address,
                 phone: restaurant.phone,
-                hours: hoursVal === "24/7" ? "24/7" : "",
+                hours: "",
                 openHour,
                 openAmPm,
                 closeHour,
@@ -801,7 +819,7 @@ function RestaurantOwnerDashboard({ user }) {
                                 : [],
                             address: restaurant.address,
                             phone: restaurant.phone,
-                            hours: hoursVal === "24/7" ? "24/7" : "",
+                            hours: "",
                             openHour,
                             openAmPm,
                             closeHour,
@@ -1060,7 +1078,7 @@ function RestaurantOwnerDashboard({ user }) {
                   maxLength={50}
                   required
                 />
-                <small className="char-count">
+                <small className="setting-char-count">
                   {(formData.name || "").length}/50
                 </small>
               </div>
@@ -1166,7 +1184,7 @@ function RestaurantOwnerDashboard({ user }) {
                   maxLength={150}
                   required
                 />
-                <small className="char-count">
+                <small className="setting-char-count">
                   {(formData.address || "").length}/150
                 </small>
               </div>
@@ -1192,7 +1210,7 @@ function RestaurantOwnerDashboard({ user }) {
                     required
                   />
                 </div>
-                <small className="char-count">
+                <small className="setting-char-count">
                   {
                     (formData.phone ? formData.phone.replace(/^\+63/, "") : "")
                       .length
@@ -1211,9 +1229,7 @@ function RestaurantOwnerDashboard({ user }) {
                       type="number"
                       min="1"
                       max="12"
-                      value={
-                        formData.hours === "24/7" ? "" : formData.openHour || ""
-                      }
+                      value={formData.openHour || ""}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
@@ -1222,8 +1238,17 @@ function RestaurantOwnerDashboard({ user }) {
                         })
                       }
                       placeholder="8"
-                      disabled={formData.hours === "24/7"}
                       style={{ width: "60px" }}
+                      onKeyDown={(e) => {
+                        if (
+                          e.key === "e" ||
+                          e.key === "E" ||
+                          e.key === "+" ||
+                          e.key === "-"
+                        ) {
+                          e.preventDefault();
+                        }
+                      }}
                     />
                     <select
                       value={formData.openAmPm || "AM"}
@@ -1234,7 +1259,6 @@ function RestaurantOwnerDashboard({ user }) {
                           hours: "",
                         })
                       }
-                      disabled={formData.hours === "24/7"}
                     >
                       <option>AM</option>
                       <option>PM</option>
@@ -1247,11 +1271,7 @@ function RestaurantOwnerDashboard({ user }) {
                       type="number"
                       min="1"
                       max="12"
-                      value={
-                        formData.hours === "24/7"
-                          ? ""
-                          : formData.closeHour || ""
-                      }
+                      value={formData.closeHour || ""}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
@@ -1260,8 +1280,17 @@ function RestaurantOwnerDashboard({ user }) {
                         })
                       }
                       placeholder="10"
-                      disabled={formData.hours === "24/7"}
                       style={{ width: "60px" }}
+                      onKeyDown={(e) => {
+                        if (
+                          e.key === "e" ||
+                          e.key === "E" ||
+                          e.key === "+" ||
+                          e.key === "-"
+                        ) {
+                          e.preventDefault();
+                        }
+                      }}
                     />
                     <select
                       value={formData.closeAmPm || "PM"}
@@ -1272,26 +1301,12 @@ function RestaurantOwnerDashboard({ user }) {
                           hours: "",
                         })
                       }
-                      disabled={formData.hours === "24/7"}
                     >
                       <option>AM</option>
                       <option>PM</option>
                     </select>
                   </div>
                 </div>
-                <label className="twentyfour-toggle">
-                  <input
-                    type="checkbox"
-                    checked={formData.hours === "24/7"}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        hours: e.target.checked ? "24/7" : "",
-                      })
-                    }
-                  />
-                  <span>24/7</span>
-                </label>
               </div>
 
               {/* Max Capacity */}
@@ -1310,6 +1325,16 @@ function RestaurantOwnerDashboard({ user }) {
                   }}
                   placeholder="Maximum number of customers"
                   min="0"
+                  onKeyDown={(e) => {
+                    if (
+                      e.key === "e" ||
+                      e.key === "E" ||
+                      e.key === "+" ||
+                      e.key === "-"
+                    ) {
+                      e.preventDefault();
+                    }
+                  }}
                   required
                 />
               </div>
@@ -1330,6 +1355,16 @@ function RestaurantOwnerDashboard({ user }) {
                   }}
                   placeholder="Current number of customers"
                   min="0"
+                  onKeyDown={(e) => {
+                    if (
+                      e.key === "e" ||
+                      e.key === "E" ||
+                      e.key === "+" ||
+                      e.key === "-"
+                    ) {
+                      e.preventDefault();
+                    }
+                  }}
                 />
               </div>
 
@@ -1418,21 +1453,6 @@ function RestaurantOwnerDashboard({ user }) {
               Get premium visibility on the homepage! Featured restaurants get
               3x more views.
             </p>
-
-            <div className="form-group">
-              <label>Why should your restaurant be featured? *</label>
-              <textarea
-                value={featuredDescription}
-                onChange={(e) => setFeaturedDescription(e.target.value)}
-                placeholder="Tell diners what makes your restaurant special..."
-                rows="6"
-                maxLength="300"
-                required
-              />
-              <small className="char-count">
-                {featuredDescription.length}/300 characters
-              </small>
-            </div>
 
             <div className="benefits-list">
               <h4>Featured Benefits:</h4>
