@@ -12,7 +12,7 @@ import ImageUpload from "../ImageUpload/ImageUpload";
 // Add this with your other imports:
 import SpotHoldManagement from "../SpotHoldManagement/SpotHoldManagement"; // Or the correct path
 import pollingService from "../../services/pollingService"; // Adjust path
-import { BASE_URL } from "../../config"; 
+import { BASE_URL } from "../../config";
 
 function RestaurantOwnerDashboard({ user }) {
   const [showVerificationForm, setShowVerificationForm] = useState(false);
@@ -23,6 +23,7 @@ function RestaurantOwnerDashboard({ user }) {
   const [featuredDescription, setFeaturedDescription] = useState("");
   const [activeTab, setActiveTab] = useState("overview");
   const [menuText, setMenuText] = useState("");
+  const [saving, setSaving] = useState(false);
   const [showCreateRestaurant, setShowCreateRestaurant] = useState(false);
   const [tier, setTier] = useState("basic");
   const [showMenu, setShowMenu] = useState(false); // Toggle hamburger menu
@@ -112,17 +113,14 @@ function RestaurantOwnerDashboard({ user }) {
   const handleRenewSubscription = async () => {
     try {
       const token = localStorage.getItem("auth_token");
-      const response = await fetch(
-        `${BASE_URL}/api/restaurant/renew-premium`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
+      const response = await fetch(`${BASE_URL}/api/restaurant/renew-premium`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
         },
-      );
+      });
 
       const data = await response.json();
       if (data.success) {
@@ -151,21 +149,18 @@ function RestaurantOwnerDashboard({ user }) {
 
     try {
       const token = localStorage.getItem("auth_token");
-      const response = await fetch(
-        `${BASE_URL}/api/restaurant/promo`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({
-            promo_text: promoText,
-            show_promo: showPromo,
-          }),
+      const response = await fetch(`${BASE_URL}/api/restaurant/promo`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
         },
-      );
+        body: JSON.stringify({
+          promo_text: promoText,
+          show_promo: showPromo,
+        }),
+      });
 
       const data = await response.json();
       if (data.success) {
@@ -184,16 +179,13 @@ function RestaurantOwnerDashboard({ user }) {
   const fetchTier = async () => {
     const token = localStorage.getItem("auth_token");
     try {
-      const response = await fetch(
-        `${BASE_URL}/api/subscription/tier`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: "application/json",
-          },
-          credentials: "include",
+      const response = await fetch(`${BASE_URL}/api/subscription/tier`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
         },
-      );
+        credentials: "include",
+      });
 
       const data = await response.json();
       console.log("Tier API Response:", data);
@@ -264,17 +256,14 @@ function RestaurantOwnerDashboard({ user }) {
   const featureRestaurant = async () => {
     try {
       const token = localStorage.getItem("auth_token");
-      const response = await fetch(
-        `${BASE_URL}/api/restaurant/feature`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-            Accept: "application/json",
-          },
+      const response = await fetch(`${BASE_URL}/api/restaurant/feature`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
         },
-      );
+      });
 
       const data = await response.json();
       if (data.success) {
@@ -294,17 +283,14 @@ function RestaurantOwnerDashboard({ user }) {
   const unfeatureRestaurant = async () => {
     try {
       const token = localStorage.getItem("auth_token");
-      const response = await fetch(
-        `${BASE_URL}/api/restaurant/unfeature`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-            Accept: "application/json",
-          },
+      const response = await fetch(`${BASE_URL}/api/restaurant/unfeature`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
         },
-      );
+      });
 
       const data = await response.json();
       if (data.success) {
@@ -330,17 +316,14 @@ function RestaurantOwnerDashboard({ user }) {
 
     try {
       const token = localStorage.getItem("auth_token");
-      const response = await fetch(
-        `${BASE_URL}/api/subscription/upgrade`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
+      const response = await fetch(`${BASE_URL}/api/subscription/upgrade`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+          "Content-Type": "application/json",
         },
-      );
+      });
 
       const data = await response.json();
       if (data.success) {
@@ -470,14 +453,20 @@ function RestaurantOwnerDashboard({ user }) {
 
   const handleSaveRestaurant = async (e) => {
     e.preventDefault();
+    setSaving(true);
     const token = localStorage.getItem("auth_token");
 
     const dataToSend = {
       name: formData.name,
-      cuisine_type: formData.cuisine_type,
+      cuisine_type: Array.isArray(formData.cuisine_type)
+        ? formData.cuisine_type.join(", ")
+        : formData.cuisine_type,
       address: formData.address,
       phone: formData.phone,
-      hours: formData.hours,
+      hours:
+        formData.hours === "24/7"
+          ? "24/7"
+          : `${formData.openHour || "8"}${formData.openAmPm || "AM"}-${formData.closeHour || "10"}${formData.closeAmPm || "PM"}`,
       max_capacity: Number(formData.max_capacity) || 50,
       current_occupancy: Number(formData.current_occupancy) || 0,
       features: Array.isArray(formData.features) ? formData.features : [],
@@ -485,18 +474,15 @@ function RestaurantOwnerDashboard({ user }) {
     };
 
     try {
-      const response = await fetch(
-        `${BASE_URL}/api/restaurant/save`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-            Accept: "application/json",
-          },
-          body: JSON.stringify(dataToSend),
+      const response = await fetch(`${BASE_URL}/api/restaurant/save`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
         },
-      );
+        body: JSON.stringify(dataToSend),
+      });
 
       const data = await response.json();
 
@@ -516,6 +502,8 @@ function RestaurantOwnerDashboard({ user }) {
       }
     } catch (error) {
       console.error("Error:", error);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -531,12 +519,34 @@ function RestaurantOwnerDashboard({ user }) {
             tier={tier} // Add this prop
             handleUpgrade={handleUpgrade}
             onEdit={() => {
+              const hoursVal = restaurant.hours || "";
+              let openHour = "8",
+                openAmPm = "AM",
+                closeHour = "10",
+                closeAmPm = "PM";
+              if (hoursVal !== "24/7") {
+                const match = hoursVal.match(/^(\d+)(AM|PM)-(\d+)(AM|PM)$/i);
+                if (match) {
+                  openHour = match[1];
+                  openAmPm = match[2].toUpperCase();
+                  closeHour = match[3];
+                  closeAmPm = match[4].toUpperCase();
+                }
+              }
               setFormData({
                 name: restaurant.name,
-                cuisine_type: restaurant.cuisine_type,
+                cuisine_type: Array.isArray(restaurant.cuisine_type)
+                  ? restaurant.cuisine_type
+                  : restaurant.cuisine_type
+                    ? restaurant.cuisine_type.split(", ").filter(Boolean)
+                    : [],
                 address: restaurant.address,
                 phone: restaurant.phone,
-                hours: restaurant.hours,
+                hours: hoursVal === "24/7" ? "24/7" : "",
+                openHour,
+                openAmPm,
+                closeHour,
+                closeAmPm,
                 max_capacity: restaurant.max_capacity,
                 current_occupancy: restaurant.current_occupancy,
                 features: restaurant.features || [],
@@ -575,12 +585,34 @@ function RestaurantOwnerDashboard({ user }) {
           <OwnerOverviewTab
             restaurant={restaurant}
             onEdit={() => {
+              const hoursVal = restaurant.hours || "";
+              let openHour = "8",
+                openAmPm = "AM",
+                closeHour = "10",
+                closeAmPm = "PM";
+              if (hoursVal !== "24/7") {
+                const match = hoursVal.match(/^(\d+)(AM|PM)-(\d+)(AM|PM)$/i);
+                if (match) {
+                  openHour = match[1];
+                  openAmPm = match[2].toUpperCase();
+                  closeHour = match[3];
+                  closeAmPm = match[4].toUpperCase();
+                }
+              }
               setFormData({
                 name: restaurant.name,
-                cuisine_type: restaurant.cuisine_type,
+                cuisine_type: Array.isArray(restaurant.cuisine_type)
+                  ? restaurant.cuisine_type
+                  : restaurant.cuisine_type
+                    ? restaurant.cuisine_type.split(", ").filter(Boolean)
+                    : [],
                 address: restaurant.address,
                 phone: restaurant.phone,
-                hours: restaurant.hours,
+                hours: hoursVal === "24/7" ? "24/7" : "",
+                openHour,
+                openAmPm,
+                closeHour,
+                closeAmPm,
                 max_capacity: restaurant.max_capacity,
                 current_occupancy: restaurant.current_occupancy,
                 features: restaurant.features || [],
@@ -742,12 +774,38 @@ function RestaurantOwnerDashboard({ user }) {
                       <button
                         className="dropdown-item edit-item"
                         onClick={() => {
+                          const hoursVal = restaurant.hours || "";
+                          let openHour = "8",
+                            openAmPm = "AM",
+                            closeHour = "10",
+                            closeAmPm = "PM";
+                          if (hoursVal !== "24/7") {
+                            const match = hoursVal.match(
+                              /^(\d+)(AM|PM)-(\d+)(AM|PM)$/i,
+                            );
+                            if (match) {
+                              openHour = match[1];
+                              openAmPm = match[2].toUpperCase();
+                              closeHour = match[3];
+                              closeAmPm = match[4].toUpperCase();
+                            }
+                          }
                           setFormData({
                             name: restaurant.name,
-                            cuisine_type: restaurant.cuisine_type,
+                            cuisine_type: Array.isArray(restaurant.cuisine_type)
+                              ? restaurant.cuisine_type
+                              : restaurant.cuisine_type
+                                ? restaurant.cuisine_type
+                                    .split(", ")
+                                    .filter(Boolean)
+                                : [],
                             address: restaurant.address,
                             phone: restaurant.phone,
-                            hours: restaurant.hours,
+                            hours: hoursVal === "24/7" ? "24/7" : "",
+                            openHour,
+                            openAmPm,
+                            closeHour,
+                            closeAmPm,
                             max_capacity: restaurant.max_capacity,
                             current_occupancy: restaurant.current_occupancy,
                             features: restaurant.features || [],
@@ -986,76 +1044,262 @@ function RestaurantOwnerDashboard({ user }) {
             <h3>{restaurant ? "Edit Restaurant" : "Setup Restaurant"}</h3>
 
             <form onSubmit={handleSaveRestaurant}>
+              {/* Restaurant Name */}
               <div className="form-group">
                 <label>Restaurant Name *</label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
+                    setFormData({
+                      ...formData,
+                      name: e.target.value.slice(0, 50),
+                    })
                   }
                   placeholder="Enter restaurant name"
+                  maxLength={50}
                   required
                 />
+                <small className="char-count">
+                  {(formData.name || "").length}/50
+                </small>
               </div>
 
+              {/* Cuisine Type - Tag Style */}
               <div className="form-group">
-                <label>Cuisine Type *</label>
-                <input
-                  type="text"
-                  value={formData.cuisine_type}
-                  onChange={(e) =>
-                    setFormData({ ...formData, cuisine_type: e.target.value })
-                  }
-                  placeholder="e.g., Fast Food, Cafe, Filipino"
-                  required
-                />
+                <label>Cuisine Type * (max 5)</label>
+                <div className="cuisine-tags">
+                  {(Array.isArray(formData.cuisine_type)
+                    ? formData.cuisine_type
+                    : formData.cuisine_type
+                      ? [formData.cuisine_type]
+                      : []
+                  ).map((tag, index) => (
+                    <span key={index} className="cuisine-tag">
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const tags = Array.isArray(formData.cuisine_type)
+                            ? formData.cuisine_type
+                            : [formData.cuisine_type];
+                          setFormData({
+                            ...formData,
+                            cuisine_type: tags.filter((_, i) => i !== index),
+                          });
+                        }}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+                {(Array.isArray(formData.cuisine_type)
+                  ? formData.cuisine_type
+                  : formData.cuisine_type
+                    ? [formData.cuisine_type]
+                    : []
+                ).length < 5 && (
+                  <div className="cuisine-input-row">
+                    <input
+                      type="text"
+                      id="cuisine-input"
+                      placeholder="e.g., Filipino, Cafe, Asian"
+                      maxLength={50}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          const val = e.target.value.trim();
+                          if (!val) return;
+                          const current = Array.isArray(formData.cuisine_type)
+                            ? formData.cuisine_type
+                            : formData.cuisine_type
+                              ? [formData.cuisine_type]
+                              : [];
+                          if (current.length >= 5) return;
+                          setFormData({
+                            ...formData,
+                            cuisine_type: [...current, val],
+                          });
+                          e.target.value = "";
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const input = document.getElementById("cuisine-input");
+                        const val = input.value.trim();
+                        if (!val) return;
+                        const current = Array.isArray(formData.cuisine_type)
+                          ? formData.cuisine_type
+                          : formData.cuisine_type
+                            ? [formData.cuisine_type]
+                            : [];
+                        if (current.length >= 5) return;
+                        setFormData({
+                          ...formData,
+                          cuisine_type: [...current, val],
+                        });
+                        input.value = "";
+                      }}
+                    >
+                      +
+                    </button>
+                  </div>
+                )}
               </div>
 
+              {/* Address */}
               <div className="form-group">
                 <label>Address *</label>
                 <input
+                  type="text"
                   value={formData.address}
                   onChange={(e) =>
-                    setFormData({ ...formData, address: e.target.value })
+                    setFormData({
+                      ...formData,
+                      address: e.target.value.slice(0, 150),
+                    })
                   }
                   placeholder="Full address"
+                  maxLength={150}
                   required
-                  rows="3"
                 />
+                <small className="char-count">
+                  {(formData.address || "").length}/150
+                </small>
               </div>
 
+              {/* Phone Number */}
               <div className="form-group">
                 <label>Phone Number *</label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) =>
-                    setFormData({ ...formData, phone: e.target.value })
+                <div className="phone-input-row">
+                  <span className="phone-prefix">+63</span>
+                  <input
+                    type="tel"
+                    value={
+                      formData.phone ? formData.phone.replace(/^\+63/, "") : ""
+                    }
+                    onChange={(e) => {
+                      const digits = e.target.value
+                        .replace(/\D/g, "")
+                        .slice(0, 10);
+                      setFormData({ ...formData, phone: "+63" + digits });
+                    }}
+                    placeholder="9XX XXX XXXX"
+                    maxLength={10}
+                    required
+                  />
+                </div>
+                <small className="char-count">
+                  {
+                    (formData.phone ? formData.phone.replace(/^\+63/, "") : "")
+                      .length
                   }
-                  placeholder="(555) 123-4567"
-                  required
-                />
+                  /10 digits
+                </small>
               </div>
 
+              {/* Operating Hours */}
               <div className="form-group">
                 <label>Operating Hours *</label>
-                <input
-                  type="text"
-                  value={formData.hours}
-                  onChange={(e) =>
-                    setFormData({ ...formData, hours: e.target.value })
-                  }
-                  placeholder="e.g., 9AM-10PM, Mon-Sun"
-                  required
-                />
+                <div className="hours-input-row">
+                  <div className="hours-field">
+                    <span>Opens</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="12"
+                      value={
+                        formData.hours === "24/7" ? "" : formData.openHour || ""
+                      }
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          openHour: e.target.value,
+                          hours: "",
+                        })
+                      }
+                      placeholder="8"
+                      disabled={formData.hours === "24/7"}
+                      style={{ width: "60px" }}
+                    />
+                    <select
+                      value={formData.openAmPm || "AM"}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          openAmPm: e.target.value,
+                          hours: "",
+                        })
+                      }
+                      disabled={formData.hours === "24/7"}
+                    >
+                      <option>AM</option>
+                      <option>PM</option>
+                    </select>
+                  </div>
+                  <span>—</span>
+                  <div className="hours-field">
+                    <span>Closes</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="12"
+                      value={
+                        formData.hours === "24/7"
+                          ? ""
+                          : formData.closeHour || ""
+                      }
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          closeHour: e.target.value,
+                          hours: "",
+                        })
+                      }
+                      placeholder="10"
+                      disabled={formData.hours === "24/7"}
+                      style={{ width: "60px" }}
+                    />
+                    <select
+                      value={formData.closeAmPm || "PM"}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          closeAmPm: e.target.value,
+                          hours: "",
+                        })
+                      }
+                      disabled={formData.hours === "24/7"}
+                    >
+                      <option>AM</option>
+                      <option>PM</option>
+                    </select>
+                  </div>
+                </div>
+                <label className="twentyfour-toggle">
+                  <input
+                    type="checkbox"
+                    checked={formData.hours === "24/7"}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        hours: e.target.checked ? "24/7" : "",
+                      })
+                    }
+                  />
+                  <span>24/7</span>
+                </label>
               </div>
 
+              {/* Max Capacity */}
               <div className="form-group">
                 <label>Max Capacity *</label>
                 <input
                   type="number"
-                  value={formData.max_capacity || ""} // Show empty string for 0
+                  value={formData.max_capacity || ""}
                   onChange={(e) => {
                     const val = e.target.value;
                     setFormData({
@@ -1070,11 +1314,12 @@ function RestaurantOwnerDashboard({ user }) {
                 />
               </div>
 
+              {/* Current Occupancy */}
               <div className="form-group">
                 <label>Current Occupancy</label>
                 <input
                   type="number"
-                  value={formData.current_occupancy || ""} // Show empty string for 0
+                  value={formData.current_occupancy || ""}
                   onChange={(e) => {
                     const val = e.target.value;
                     setFormData({
@@ -1088,6 +1333,7 @@ function RestaurantOwnerDashboard({ user }) {
                 />
               </div>
 
+              {/* Features */}
               <div className="form-group">
                 <label>Features (optional)</label>
                 <div className="features-checkboxes">
@@ -1103,8 +1349,6 @@ function RestaurantOwnerDashboard({ user }) {
                       key={`feature-${index}`}
                       className="feature-checkbox"
                     >
-                      {" "}
-                      {/* ✅ ADD KEY HERE */}
                       <input
                         type="checkbox"
                         checked={formData.features.includes(feature)}
@@ -1120,11 +1364,27 @@ function RestaurantOwnerDashboard({ user }) {
                   ))}
                 </div>
               </div>
+
               <div className="form-actions">
                 <button type="button" onClick={() => setIsEditing(false)}>
                   Cancel
                 </button>
-                <button type="submit">Save</button>
+                <button type="submit" disabled={saving}>
+                  {saving ? (
+                    <span
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                      }}
+                    >
+                      <span className="save-spinner"></span>
+                      Saving...
+                    </span>
+                  ) : (
+                    "Save"
+                  )}
+                </button>
               </div>
             </form>
           </div>
