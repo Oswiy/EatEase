@@ -7,7 +7,6 @@
 /* ===== BASE STYLES ===== */
 .restaurant-details-page .mobile-back-btn,
 .restaurant-list:has(.restaurant-details-page) .mobile-back-btn {
-  display: none; /* Hidden by default on desktop */
   position: fixed;
   top: 16px;
   left: 0px;
@@ -68,11 +67,6 @@
 
 /* Desktop styles */
 @media (min-width: 769px) {
-  .restaurant-details-page .mobile-back-btn,
-  .restaurant-list:has(.restaurant-details-page) .mobile-back-btn {
-    display: none; /* Hide on desktop */
-  }
-
   /* On desktop, show the header even in detail view */
   .restaurant-list-header {
     display: flex;
@@ -2319,13 +2313,6 @@ body {
   .banner-action-buttons .action-btn {
     width: 36px;
     height: 36px;
-  }
-}
-
-/* Desktop styles (hide mobile back button) */
-@media (min-width: 769px) {
-  .mobile-back-btn {
-    display: none; /* Hide on desktop */
   }
 }
 

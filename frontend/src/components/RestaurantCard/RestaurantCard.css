@@ -616,14 +616,6 @@ button.bookmark-btn-icon.active.loading,
   height: 20px;
 }
 
-/* Banner Image */
-.restaurant-banner {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-}
-
 /* Ensure banner placeholder also has relative positioning */
 .banner-placeholder {
   position: relative;
@@ -764,7 +756,7 @@ button.bookmark-btn-icon.active.loading,
 
 @media screen and (min-width: 768px) {
   .restaurant-banner-container{
-    height: 200px;
+    height: 180px;
   }
 }
 /* Make sure profile placeholder is ready */
