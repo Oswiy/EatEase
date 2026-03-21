@@ -304,3 +304,24 @@
 .restaurant-list-header .back-button-detail-view {
   display: none !important;
 }
+
+/* Desktop grid layout */
+@media (min-width: 769px) {
+  .restaurants-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem 2rem;
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    margin-top: 15px;
+  }
+
+  .restaurant-card {
+    margin-bottom: 0.5rem;
+  }
+
+  .restaurant-banner-container {
+    height: 200px;
+  }
+}
