@@ -39,7 +39,14 @@ function Filters({
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          setAvailableCuisines(data.cuisines || []);
+          const cuisines = data.cuisines || [];
+          // Split any comma-separated cuisine strings into individual cuisines
+          const expanded = cuisines
+            .flatMap((c) => c.split(",").map((s) => s.trim()))
+            .filter(Boolean);
+          // Remove duplicates
+          const unique = [...new Set(expanded)];
+          setAvailableCuisines(unique);
         }
       }
     } catch (error) {
