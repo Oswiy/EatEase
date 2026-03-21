@@ -823,7 +823,7 @@ class RestaurantController extends Controller
             // Apply filters if provided
             // 1. CUISINE FILTER
             if ($request->has('cuisine') && $request->cuisine !== 'all' && $request->cuisine !== '') {
-                $query->where('cuisine_type', $request->cuisine);
+                $query->where('cuisine_type', 'ILIKE', '%' . $request->cuisine . '%');
             }
 
             // 2. CROWD STATUS FILTER
