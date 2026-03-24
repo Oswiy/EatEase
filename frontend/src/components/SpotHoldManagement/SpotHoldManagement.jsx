@@ -13,7 +13,7 @@ const SpotHoldManagement = ({ restaurant }) => {
     max: restaurant?.max_capacity || 100,
   });
 
-  // ✅ ADD FEE STATE
+  //   ADD FEE STATE
   const [showFeeModal, setShowFeeModal] = useState(false);
   const [feeSettings, setFeeSettings] = useState({
     hold_fee: 0,
@@ -35,14 +35,14 @@ const SpotHoldManagement = ({ restaurant }) => {
         max: restaurant.max_capacity || 100,
       });
       fetchData();
-      fetchFeeSettings(); // ✅ ADD THIS
+      fetchFeeSettings(); //   ADD THIS
 
       const interval = setInterval(fetchData, 30000);
       return () => clearInterval(interval);
     }
   }, [activeTab, restaurant]);
 
-  // ✅ ADD FETCH FEE SETTINGS
+  //   ADD FETCH FEE SETTINGS
   const fetchFeeSettings = async () => {
     try {
       const token = localStorage.getItem("auth_token");
@@ -67,7 +67,7 @@ const SpotHoldManagement = ({ restaurant }) => {
       console.error("Error fetching fee settings:", error);
     }
   };
-  // ✅ ADD SAVE FEE SETTINGS
+  //   ADD SAVE FEE SETTINGS
   const saveFeeSettings = async () => {
     try {
       const token = localStorage.getItem("auth_token");
@@ -83,7 +83,7 @@ const SpotHoldManagement = ({ restaurant }) => {
 
       const data = await response.json();
       if (data.success) {
-        alert("✅ Fee settings saved!");
+        alert("  Fee settings saved!");
         setShowFeeModal(false);
       } else {
         alert("Failed to save: " + data.message);
@@ -305,7 +305,7 @@ const SpotHoldManagement = ({ restaurant }) => {
             Available: {calculateAvailableCapacity()} seats
           </div>
 
-          {/* ✅ ADD FEE SETTINGS BUTTON */}
+          {/*   ADD FEE SETTINGS BUTTON */}
           <button
             className="fee-settings-btn"
             onClick={() => setShowFeeModal(true)}
@@ -372,7 +372,7 @@ const SpotHoldManagement = ({ restaurant }) => {
                 holds={activeHolds}
                 getHoldTypeLabel={getHoldTypeLabel}
                 onRemoveExpired={handleRemoveExpired}
-                setActiveHolds={setActiveHolds} // ✅ Pass this down
+                setActiveHolds={setActiveHolds} //   Pass this down
               />
             )}
           </>
@@ -492,7 +492,7 @@ const ActiveHoldsView = ({
   return (
     <div className="holds-list">
       {holds.map((hold) => {
-        // ✅ FIXED: Calculate isExpired based on hold_status
+        //   FIXED: Calculate isExpired based on hold_status
         let isExpired = false;
         let timeRemainingText = "";
 

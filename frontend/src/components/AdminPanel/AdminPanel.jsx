@@ -136,7 +136,7 @@ function AdminPanel({ user }) {
     
     const data = await response.json();
     if (data.success) {
-      alert("✅ Feature request approved! Restaurant is now featured.");
+      alert("Feature request approved! Restaurant is now featured.");
       fetchFeatureRequests();
       fetchFeaturedRestaurantsCount();
     } else {
@@ -203,7 +203,7 @@ const handleRejectFeature = async (requestId) => {
         
         const updateData = await updateRes.json();
         if (updateData.success) {
-          alert("✅ Restaurant removed from featured section.");
+          alert("Restaurant removed from featured section.");
           fetchFeatureRequests();
           fetchFeaturedRestaurantsCount();
         }
@@ -239,7 +239,7 @@ const handleRejectFeature = async (requestId) => {
       });
       const data = await response.json();
       if (data.success) {
-        alert("✅ Verification approved!");
+        alert("Verification approved!");
         fetchVerificationRequests();
       }
     } catch (error) {
@@ -308,7 +308,7 @@ const handleRejectFeature = async (requestId) => {
       });
       const data = await response.json();
       if (data.success) {
-        alert(`✅ Restaurant ${action}ed.`);
+        alert(`Restaurant ${action}ed.`);
         fetchRestaurants();
       }
     } catch (error) {
@@ -470,7 +470,7 @@ const handleRejectFeature = async (requestId) => {
                         {/* Show if restaurant is already featured */}
                         {request.restaurant_is_featured && (
                           <div className="already-featured-badge">
-                            <span className="badge-icon">✅</span>
+                            <span className="badge-icon"></span>
                             <span className="badge-text">CURRENTLY FEATURED</span>
                           </div>
                         )}
@@ -609,7 +609,7 @@ const handleRejectFeature = async (requestId) => {
               <div className="restaurants-list">
                 {restaurants.map((restaurant) => (
                   <div key={restaurant.id} className="restaurant-card">
-                    <h4>{restaurant.name} {restaurant.is_verified && "✅"}</h4>
+                    <h4>{restaurant.name} {restaurant.is_verified && ""}</h4>
                     <p>Owner: {restaurant.owner_name}</p>
                     <p>Cuisine: {restaurant.cuisine_type}</p>
                     <p>Status: <span className={`status-${restaurant.crowd_status}`}>{restaurant.crowd_status}</span></p>

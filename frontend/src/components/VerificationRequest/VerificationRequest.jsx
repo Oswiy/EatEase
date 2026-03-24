@@ -66,7 +66,7 @@ function VerificationRequest({ restaurant, onRequestSubmitted, onClose }) {
   if (success) {
     return (
       <div className="verification-request success-modal">
-        <div className="success-icon">✅</div>
+        <div className="success-icon"> </div>
         <h3>Verification Request Submitted!</h3>
         <p>Your request has been sent to our admin team for review.</p>
         <p>You'll be notified once your restaurant is verified.</p>

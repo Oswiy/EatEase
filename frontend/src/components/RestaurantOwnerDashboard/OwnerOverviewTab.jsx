@@ -15,12 +15,12 @@ const OwnerOverviewTab = ({
   );
   const [loading, setLoading] = useState(false);
 
-  // ✅ ADD THESE STATE VARIABLES
+  // ADD THESE STATE VARIABLES
   const [expiryStatus, setExpiryStatus] = useState(null);
   const [expiryDate, setExpiryDate] = useState(null);
   const [remainingDays, setRemainingDays] = useState(null);
 
-  // ✅ ADD THIS USEEFFECT FOR EXPIRY CALCULATION
+  // ADD THIS USEEFFECT FOR EXPIRY CALCULATION
   useEffect(() => {
     if (
       restaurant &&
@@ -71,7 +71,7 @@ const OwnerOverviewTab = ({
 
       const data = await response.json();
       if (data.success) {
-        alert(`✅ Premium renewed! New expiry: ${data.expires_at}`);
+        alert(`  Premium renewed! New expiry: ${data.expires_at}`);
         // Trigger a refresh of restaurant data
         if (window.location.reload) {
           window.location.reload(); // Simple refresh
@@ -95,7 +95,7 @@ const OwnerOverviewTab = ({
 
     try {
       const token = localStorage.getItem("auth_token");
-      // ✅ FIX: Use correct URL (localhost:8000, not EatEase-Backend)
+      //   FIX: Use correct URL (localhost:8000, not EatEase-Backend)
       const response = await fetch(`${BASE_URL}/api/restaurant/occupancy`, {
         method: "PUT",
         headers: {
@@ -111,10 +111,10 @@ const OwnerOverviewTab = ({
       const data = await response.json();
 
       if (response.ok) {
-        alert("✅ Occupancy updated successfully!");
+        alert("Occupancy updated successfully!");
         setIsEditingOccupancy(false);
 
-        // ✅ DON'T refresh page - polling will update automatically
+        // DON'T refresh page - polling will update automatically
         // Instead, update local state
         if (onUpdateOccupancy) {
           onUpdateOccupancy(newOccupancy);
@@ -193,7 +193,7 @@ const OwnerOverviewTab = ({
               <div className="premium-tier-info">
                 <span className="tier-badge premium">Premium</span>
 
-                {/* ✅ ADD EXPIRY DISPLAY HERE */}
+                {/*   ADD EXPIRY DISPLAY HERE */}
                 {expiryDate && (
                   <div className={`premium-expiry-display ${expiryStatus}`}>
                     <div className="expiry-row">
@@ -212,7 +212,7 @@ const OwnerOverviewTab = ({
                               {remainingDays === 1 ? "day" : "days"} left
                             </span>
 
-                            {/* ✅ Show Renew button only when ≤ 7 days AND > 0 days */}
+                            {/*   Show Renew button only when ≤ 7 days AND > 0 days */}
                             {remainingDays <= 7 && remainingDays > 0 && (
                               <button
                                 className="renew-now-btn"

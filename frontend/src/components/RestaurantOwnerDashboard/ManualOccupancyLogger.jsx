@@ -30,7 +30,7 @@ const ManualOccupancyLogger = ({ restaurant, onLogSuccess }) => {
       const data = await response.json();
 
       if (data.success) {
-        alert("✅ Occupancy logged successfully!");
+        alert("Occupancy logged successfully!");
         setNotes("");
         if (onLogSuccess) onLogSuccess(data);
       } else {

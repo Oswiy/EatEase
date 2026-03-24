@@ -124,7 +124,7 @@ function RestaurantOwnerDashboard({ user }) {
 
       const data = await response.json();
       if (data.success) {
-        alert("✅ Premium subscription renewed for 30 days!");
+        alert("  Premium subscription renewed for 30 days!");
         setShowRenewModal(false);
         fetchRestaurant(); // Refresh restaurant data
       } else {
@@ -164,7 +164,7 @@ function RestaurantOwnerDashboard({ user }) {
 
       const data = await response.json();
       if (data.success) {
-        alert("✅ Promo text saved!");
+        alert("  Promo text saved!");
         fetchRestaurant(); // Refresh restaurant data
         if (showPromoModal) setShowPromoModal(false); // Close modal if open
       } else {
@@ -268,7 +268,7 @@ function RestaurantOwnerDashboard({ user }) {
       const data = await response.json();
       if (data.success) {
         alert(
-          "✅ Your restaurant is now featured! It will appear in the featured carousel.",
+          "  Your restaurant is now featured! It will appear in the featured carousel.",
         );
         fetchRestaurant(); // Refresh restaurant data
       } else {
@@ -294,7 +294,7 @@ function RestaurantOwnerDashboard({ user }) {
 
       const data = await response.json();
       if (data.success) {
-        alert("✅ Your restaurant is no longer featured.");
+        alert("  Your restaurant is no longer featured.");
         fetchRestaurant(); // Refresh restaurant data
       } else {
         alert("Failed to unfeature: " + (data.message || "Unknown error"));
@@ -389,7 +389,7 @@ function RestaurantOwnerDashboard({ user }) {
 
       const data = await response.json();
       if (response.ok) {
-        alert("✅ Feature request submitted! Our team will review it shortly.");
+        alert("  Feature request submitted! Our team will review it shortly.");
         setShowFeatureModal(false);
         setFeaturedDescription("");
         fetchRestaurant();
@@ -1507,20 +1507,20 @@ function RestaurantOwnerDashboard({ user }) {
               type={editingImageType}
               currentImage={
                 editingImageType === "profile"
-                  ? restaurant.profile_image || null // ✅ Pass raw URL, don't use getImageUrl
-                  : restaurant.banner_image || null // ✅ Pass raw URL, don't use getImageUrl
+                  ? restaurant.profile_image || null //   Pass raw URL, don't use getImageUrl
+                  : restaurant.banner_image || null //   Pass raw URL, don't use getImageUrl
               }
               onUploadSuccess={(url, path) => {
-                // ✅ IMPORTANT: Use 'url' from the response, not 'path'
+                //   IMPORTANT: Use 'url' from the response, not 'path'
                 if (editingImageType === "profile") {
                   setRestaurant((prev) => ({
                     ...prev,
-                    profile_image: url, // ✅ Save the Cloudinary URL
+                    profile_image: url, //   Save the Cloudinary URL
                   }));
                 } else {
                   setRestaurant((prev) => ({
                     ...prev,
-                    banner_image: url, // ✅ Save the Cloudinary URL
+                    banner_image: url, //   Save the Cloudinary URL
                   }));
                 }
                 setEditingImageType(null);
