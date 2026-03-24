@@ -16,11 +16,11 @@ const OwnerPhotosTab = ({ restaurant }) => {
   const fileInputRef = useRef(null);
 
   useEffect(() => {
-    console.log("OwnerPhotosTab mounted with restaurant:", restaurant);
-    console.log("Extracted restaurantId:", restaurantId);
+    // console.log("OwnerPhotosTab mounted with restaurant:", restaurant);
+    // console.log("Extracted restaurantId:", restaurantId);
 
     if (restaurantId) {
-      console.log("Fetching photos for restaurantId:", restaurantId);
+      // console.log("Fetching photos for restaurantId:", restaurantId);
       fetchPhotos();
     } else {
       console.error("No restaurantId provided to OwnerPhotosTab");
@@ -33,7 +33,7 @@ const OwnerPhotosTab = ({ restaurant }) => {
     try {
       setError(null);
       const token = localStorage.getItem("auth_token");
-      console.log("Fetching photos with token:", token ? "exists" : "missing");
+      // console.log("Fetching photos with token:", token ? "exists" : "missing");
 
       const response = await fetch(
         `${BASE_URL}/api/restaurant/${restaurantId}/photos`,
@@ -45,11 +45,11 @@ const OwnerPhotosTab = ({ restaurant }) => {
         },
       );
 
-      console.log("Photos API response status:", response.status);
+      // console.log("Photos API response status:", response.status);
 
       if (response.ok) {
         const data = await response.json();
-        console.log("Photos API response data:", data);
+        // console.log("Photos API response data:", data);
         setPhotos(Array.isArray(data) ? data : []);
       } else {
         const errorText = await response.text();
@@ -127,20 +127,20 @@ const OwnerPhotosTab = ({ restaurant }) => {
     });
 
     // DEBUG: Log FormData
-    console.log("FormData entries:");
-    for (let pair of formData.entries()) {
-      console.log(pair[0], pair[1]);
-    }
+    // console.log("FormData entries:");
+    // for (let pair of formData.entries()) {
+    //   // console.log(pair[0], pair[1]);
+    // }
 
     try {
       const token = localStorage.getItem("auth_token");
 
       // DEBUG: Log the request
-      console.log(
-        "Sending request to:",
-        `${BASE_URL}/api/restaurant/${restaurantId}/photos`,
-      );
-      console.log("Token exists:", !!token);
+      // console.log(
+      //   "Sending request to:",
+      //   `${BASE_URL}/api/restaurant/${restaurantId}/photos`,
+      // );
+      // console.log("Token exists:", !!token);
 
       const response = await fetch(
         `${BASE_URL}/api/restaurant/${restaurantId}/photos`,
@@ -155,10 +155,10 @@ const OwnerPhotosTab = ({ restaurant }) => {
         },
       );
 
-      console.log("Response status:", response.status);
+      // console.log("Response status:", response.status);
 
       const data = await response.json();
-      console.log("Response data:", data);
+      // console.log("Response data:", data);
 
       if (data.success) {
         alert(data.message);

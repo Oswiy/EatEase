@@ -27,11 +27,11 @@ const AnalyticsTab = ({ restaurantId, isPremium }) => {
         },
       );
 
-      console.log("Analytics API Response Status:", response.status);
+      // console.log("Analytics API Response Status:", response.status);
 
       if (response.ok) {
         const data = await response.json();
-        console.log("Analytics API Data:", data);
+        // console.log("Analytics API Data:", data);
 
         if (data.success && data.analytics) {
           setAnalyticsData(data.analytics);

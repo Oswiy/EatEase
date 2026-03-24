@@ -11,7 +11,7 @@ class RestaurantPollingService {
 
   // Subscribe to restaurant updates
   subscribe(restaurantId, callback) {
-    console.log(`🏪 [Owner Polling] Subscribing to restaurant ${restaurantId}`);
+    // console.log(`[Owner Polling] Subscribing to restaurant ${restaurantId}`);
 
     // Store callback
     if (!this.subscribers.has(restaurantId)) {
@@ -23,7 +23,7 @@ class RestaurantPollingService {
     if (!this.intervals.has(restaurantId)) {
       this.startPolling(restaurantId);
     } else {
-      console.log(`🏪 [Owner Polling] Using existing interval for ${restaurantId}`);
+      // console.log(`[Owner Polling] Using existing interval for ${restaurantId}`);
     }
 
     // Return unsubscribe function
@@ -46,7 +46,7 @@ class RestaurantPollingService {
 
   // Start polling for a restaurant
   startPolling(restaurantId) {
-    console.log(`⏱️ [Owner Polling] Setting up 15s interval for ${restaurantId}`);
+    // console.log(`[Owner Polling] Setting up 15s interval for ${restaurantId}`);
 
     // Clear any existing interval first
     this.stopPolling(restaurantId);
@@ -54,7 +54,7 @@ class RestaurantPollingService {
     // Create the interval
     const intervalId = setInterval(() => {
       if (this.isTabActive) {
-        console.log(`🔄 [Owner Polling] Interval tick for ${restaurantId}`);
+        // console.log(`[Owner Polling] Interval tick for ${restaurantId}`);
         this.fetchRestaurantStatus(restaurantId);
       }
     }, this.pollingInterval);
@@ -62,14 +62,14 @@ class RestaurantPollingService {
     this.intervals.set(restaurantId, intervalId);
     
     // Fetch immediately
-    console.log(`🔍 [Owner Polling] Initial fetch for ${restaurantId}`);
+    // console.log(`[Owner Polling] Initial fetch for ${restaurantId}`);
     this.fetchRestaurantStatus(restaurantId);
   }
 
   // Stop polling for a restaurant
   stopPolling(restaurantId) {
     if (this.intervals.has(restaurantId)) {
-      console.log(`⏹️ [Owner Polling] Stopping interval for ${restaurantId}`);
+      // console.log(`[Owner Polling] Stopping interval for ${restaurantId}`);
       clearInterval(this.intervals.get(restaurantId));
       this.intervals.delete(restaurantId);
     }
@@ -78,7 +78,7 @@ class RestaurantPollingService {
   // Fetch restaurant status from API
   async fetchRestaurantStatus(restaurantId) {
     try {
-      console.log(`🔍 [Owner Polling] Fetching status for ${restaurantId}`);
+      // console.log(`[Owner Polling] Fetching status for ${restaurantId}`);
       
       const response = await fetch(
         `${BASE_URL}/api/restaurants/${restaurantId}/status`
@@ -87,15 +87,15 @@ class RestaurantPollingService {
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.restaurant) {
-          console.log(`✅ [Owner Polling] Update for ${restaurantId}:`, 
-            data.restaurant.crowd_status, 
-            `(${data.restaurant.current_occupancy}/${data.restaurant.max_capacity})`
-          );
+          // console.log(`[Owner Polling] Update for ${restaurantId}:`, 
+          //   data.restaurant.crowd_status, 
+          //   `(${data.restaurant.current_occupancy}/${data.restaurant.max_capacity})`
+          // );
           this.notifySubscribers(restaurantId, data.restaurant);
         }
       }
     } catch (error) {
-      console.error(`❌ [Owner Polling] Error fetching ${restaurantId}:`, error);
+      // console.error(`[Owner Polling] Error fetching ${restaurantId}:`, error);
     }
   }
 
@@ -103,7 +103,7 @@ class RestaurantPollingService {
   notifySubscribers(restaurantId, restaurantData) {
     if (this.subscribers.has(restaurantId)) {
       const callbacks = this.subscribers.get(restaurantId);
-      console.log(`📢 [Owner Polling] Notifying ${callbacks.size} subscribers for ${restaurantId}`);
+      // console.log(`[Owner Polling] Notifying ${callbacks.size} subscribers for ${restaurantId}`);
       callbacks.forEach((callback) => {
         try {
           callback(restaurantData);
@@ -116,7 +116,7 @@ class RestaurantPollingService {
 
   // Pause polling when tab inactive
   pausePolling() {
-    console.log("⏸️ [Owner Polling] Pausing all intervals");
+    // console.log("[Owner Polling] Pausing all intervals");
     this.intervals.forEach((intervalId) => {
       clearInterval(intervalId);
     });
@@ -124,7 +124,7 @@ class RestaurantPollingService {
 
   // Resume polling when tab active
   resumePolling() {
-    console.log("▶️ [Owner Polling] Resuming all intervals");
+    // console.log("[Owner Polling] Resuming all intervals");
     this.subscribers.forEach((callbacks, restaurantId) => {
       if (callbacks.size > 0) {
         this.startPolling(restaurantId);

@@ -33,10 +33,10 @@ function App() {
     const interval = setInterval(() => {
       const currentToken = localStorage.getItem("auth_token");
       if (lastToken !== currentToken) {
-        console.log("🔍 TOKEN CHANGED!");
-        console.log("Was:", lastToken ? "Exists" : "Missing");
-        console.log("Now:", currentToken ? "Exists" : "Missing");
-        console.log("Stack trace:", new Error().stack);
+        // console.log("TOKEN CHANGED!");
+        // console.log("Was:", lastToken ? "Exists" : "Missing");
+        // console.log("Now:", currentToken ? "Exists" : "Missing");
+        // console.log("Stack trace:", new Error().stack);
         lastToken = currentToken;
       }
     }, 1000);
@@ -46,22 +46,22 @@ function App() {
 
   // Handle successful login
   const handleLogin = (userData) => {
-    console.log("✅ Login successful:", {
-      name: userData.name,
-      user_type: userData.user_type,
-      is_admin: userData.is_admin
-    });
+    // console.log("Login successful:", {
+    //   name: userData.name,
+    //   user_type: userData.user_type,
+    //   is_admin: userData.is_admin
+    // });
     setUser(userData);
     setCurrentPage("restaurantList");
   };
 
   // Handle successful signup
   const handleSignup = (userData) => {
-    console.log("✅ Signup successful:", {
-      name: userData.name,
-      user_type: userData.user_type,
-      is_admin: userData.is_admin
-    });
+    // console.log("Signup successful:", {
+    //   name: userData.name,
+    //   user_type: userData.user_type,
+    //   is_admin: userData.is_admin
+    // });
     setUser(userData);
     setCurrentPage("restaurantList");
   };
@@ -98,17 +98,17 @@ function App() {
   }
 
   // LOGGED IN - Show debug info
-  console.log("🎯 APP ROUTING WITH USER:", {
-    id: user.id,
-    name: user.name,
-    user_type: user.user_type,
-    is_admin: user.is_admin,
-    currentPage: currentPage
-  });
+  // console.log("APP ROUTING WITH USER:", {
+  //   id: user.id,
+  //   name: user.name,
+  //   user_type: user.user_type,
+  //   is_admin: user.is_admin,
+  //   currentPage: currentPage
+  // });
 
   // 1. ADMIN USERS - Go to AdminPanel
   if (user.is_admin === true || user.is_admin === 1) {
-    console.log("🛡️ Routing: ADMIN → AdminPanel");
+    // console.log("Routing: ADMIN → AdminPanel");
     return (
       <div className="app">
         <AdminPanel user={user} />
@@ -118,7 +118,7 @@ function App() {
 
   // 2. RESTAURANT OWNERS - Go to RestaurantOwnerDashboard
   if (user.user_type === "restaurant_owner") {
-    console.log("🏪 Routing: RESTAURANT OWNER → RestaurantOwnerDashboard");
+    // console.log("Routing: RESTAURANT OWNER → RestaurantOwnerDashboard");
     return (
       <div className="app">
         <RestaurantOwnerDashboard user={user} />
@@ -128,7 +128,7 @@ function App() {
 
   // 3. DINERS - Show navigation with pages
   if (user.user_type === "diner") {
-    console.log("🍽️ Routing: DINER → " + currentPage);
+    // console.log("Routing: DINER → " + currentPage);
     
     switch (currentPage) {
       case "bookmarks":
@@ -159,7 +159,7 @@ function App() {
   }
 
   // 4. FALLBACK - If user_type is unknown, show RestaurantList
-  console.log("⚠️ Unknown user_type, defaulting to RestaurantList:", user.user_type);
+  // console.log("Unknown user_type, defaulting to RestaurantList:", user.user_type);
   return (
     <div className="app">
       <RestaurantList

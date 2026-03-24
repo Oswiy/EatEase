@@ -1813,7 +1813,11 @@
 }
 
 .hours-field input {
-  width: 40px !important;
+    width: 60px !important;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    justify-items: center;
 }
 
 

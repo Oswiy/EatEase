@@ -8,7 +8,7 @@ app.use(cors());
 app.use(express.json());
 
 app.get("/", (req, res) => {
-  res.send("✅ Test server is running!");
+  res.send("Test server is running!");
 });
 
 app.get("/api/test", (req, res) => {
@@ -16,5 +16,5 @@ app.get("/api/test", (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Test server running on http://localhost:${PORT}`);
+  console.log(`Test server running on http://localhost:${PORT}`);
 });

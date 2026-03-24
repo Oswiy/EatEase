@@ -17,10 +17,10 @@ const OwnerReviewsTab = ({ restaurantId, restaurantName }) => {
   const [filter, setFilter] = useState("all"); // 'all', 'recent', '5', '4', etc.
 
   useEffect(() => {
-    console.log(
-      "OwnerReviewsTab: Loading reviews for restaurant",
-      restaurantId,
-    );
+    // console.log(
+    //   "OwnerReviewsTab: Loading reviews for restaurant",
+    //   restaurantId,
+    // );
     fetchReviews();
   }, [restaurantId]);
 
@@ -31,7 +31,7 @@ const OwnerReviewsTab = ({ restaurantId, restaurantName }) => {
         `${BASE_URL}/api/restaurants/${restaurantId}/reviews`,
       );
       const data = await response.json();
-      console.log("Owner reviews API response:", data);
+      // console.log("Owner reviews API response:", data);
 
       if (data.success) {
         setReviews(data.reviews || []);
@@ -70,7 +70,7 @@ const OwnerReviewsTab = ({ restaurantId, restaurantName }) => {
 
   const handleSendResponse = async (reviewId) => {
     // TODO: Implement backend API for responses
-    console.log("Sending response to review:", reviewId, responseText);
+    // console.log("Sending response to review:", reviewId, responseText);
 
     // For now, just show success message
     alert("Response sent! (Backend integration needed)");

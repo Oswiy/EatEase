@@ -116,7 +116,7 @@ const SpotHoldManagement = ({ restaurant }) => {
     const token = localStorage.getItem("auth_token");
     const url = `${BASE_URL}/api${endpoint}`;
 
-    console.log("API Call:", url, endpoint);
+    // console.log("API Call:", url, endpoint);
 
     const defaultHeaders = {
       Authorization: `Bearer ${token}`,
@@ -133,7 +133,7 @@ const SpotHoldManagement = ({ restaurant }) => {
         },
       });
 
-      console.log("Response Status:", response.status);
+      // console.log("Response Status:", response.status);
 
       if (!response.ok) {
         console.error("API Error:", response.status, response.statusText);
@@ -149,9 +149,9 @@ const SpotHoldManagement = ({ restaurant }) => {
 
   const fetchActiveHolds = async () => {
     try {
-      console.log("Fetching active holds...");
+      // console.log("Fetching active holds...");
       const data = await fetchWithAuth("/my-restaurant/spot-holds");
-      console.log("Active holds response:", data);
+      // console.log("Active holds response:", data);
 
       if (data.success) {
         setActiveHolds(data.spot_holds || []);
@@ -186,7 +186,7 @@ const SpotHoldManagement = ({ restaurant }) => {
   };
 
   const handleAcceptHold = async (holdId) => {
-    console.log("Accepting hold ID:", holdId);
+    // console.log("Accepting hold ID:", holdId);
 
     if (
       !window.confirm(
@@ -204,10 +204,10 @@ const SpotHoldManagement = ({ restaurant }) => {
         },
       );
 
-      console.log("Accept hold response:", data);
+      // console.log("Accept hold response:", data);
 
       if (data.success) {
-        alert("✅ Spot hold accepted! Reservation confirmed.");
+        alert("Spot hold accepted! Reservation confirmed.");
         fetchData();
 
         if (data.restaurant_occupancy) {

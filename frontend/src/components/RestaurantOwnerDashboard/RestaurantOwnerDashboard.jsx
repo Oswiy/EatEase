@@ -68,15 +68,15 @@ function RestaurantOwnerDashboard({ user }) {
   useEffect(() => {
     if (!restaurant || !restaurant.id) return;
 
-    console.log(
-      `🏪 [Owner Dashboard] Setting up polling for restaurant ${restaurant.id}`,
-    );
+    // console.log(
+    //   `[Owner Dashboard] Setting up polling for restaurant ${restaurant.id}`,
+    // );
 
     // Subscribe to restaurant updates
     const unsubscribe = pollingService.subscribe(
       restaurant.id,
       (updatedData) => {
-        console.log(`🔄 [Owner Dashboard] Received update:`, updatedData);
+        // console.log(`[Owner Dashboard] Received update:`, updatedData);
 
         // Update restaurant state with new data
         setRestaurant((prev) => ({
@@ -91,9 +91,9 @@ function RestaurantOwnerDashboard({ user }) {
 
     // Cleanup on unmount
     return () => {
-      console.log(
-        `🏪 [Owner Dashboard] Cleaning up polling for restaurant ${restaurant.id}`,
-      );
+      // console.log(
+      //   `🏪 [Owner Dashboard] Cleaning up polling for restaurant ${restaurant.id}`,
+      // );
       unsubscribe();
     };
   }, [restaurant?.id]); // Only re-run if restaurant ID changes
@@ -188,7 +188,7 @@ function RestaurantOwnerDashboard({ user }) {
       });
 
       const data = await response.json();
-      console.log("Tier API Response:", data);
+      // console.log("Tier API Response:", data);
 
       if (data.success) {
         setTier(data.tier);
@@ -196,7 +196,7 @@ function RestaurantOwnerDashboard({ user }) {
 
         // Handle case where user needs to create restaurant first
         if (data.needs_setup) {
-          console.log("User needs to create a restaurant first");
+          // console.log("User needs to create a restaurant first");
           setShowCreateRestaurant(true);
         }
       } else {
@@ -414,7 +414,7 @@ function RestaurantOwnerDashboard({ user }) {
       });
 
       const data = await response.json();
-      console.log("Restaurant API Response:", data);
+      // console.log("Restaurant API Response:", data);
 
       if (response.status === 404) {
         setRestaurant(null);
@@ -585,7 +585,7 @@ function RestaurantOwnerDashboard({ user }) {
       case "reviews":
         return <OwnerReviewsTab restaurantId={restaurant.id} />;
       case "photos":
-        console.log("Photos tab - restaurant object:", restaurant);
+        // console.log("Photos tab - restaurant object:", restaurant);
         return <OwnerPhotosTab restaurant={restaurant} />;
       // ADD THIS NEW CASE
       case "reservations":
