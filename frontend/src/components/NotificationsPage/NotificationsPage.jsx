@@ -118,7 +118,7 @@ function NotificationsPage({ user, onBack }) {
       );
 
       if (response.status === 419) {
-        console.log("CSRF failed, trying API-only method...");
+        // console.log("CSRF failed, trying API-only method...");
 
         const apiResponse = await fetch(
           `${API_CONFIG.BASE_URL}/api/user-notifications/${notificationId}`,

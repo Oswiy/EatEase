@@ -17,19 +17,19 @@ function RestaurantDetails({ restaurantId, onBack }) {
 
     // If it's already a full URL (starts with http), use it directly
     if (imagePath.startsWith("http")) {
-      console.log("✅ Using full URL:", imagePath);
+      // console.log("✅ Using full URL:", imagePath);
       return imagePath;
     }
 
     // If it's a Cloudinary URL without protocol? (unlikely but check)
     if (imagePath.includes("cloudinary.com")) {
-      console.log("✅ Cloudinary URL detected:", imagePath);
+      // console.log("✅ Cloudinary URL detected:", imagePath);
       return imagePath;
     }
 
     // Otherwise, assume it's a local storage path
     const fullUrl = `${API_CONFIG.BASE_URL}${imagePath}`;
-    console.log("⚠️ Using local URL:", fullUrl);
+    // console.log("⚠️ Using local URL:", fullUrl);
     return fullUrl;
   };
 
@@ -257,16 +257,16 @@ function RestaurantDetails({ restaurantId, onBack }) {
   useEffect(() => {
     if (!restaurantId) return;
 
-    console.log(`🏪 [Details] MOUNTED for restaurant ${restaurantId}`);
+    // console.log(`[Details] MOUNTED for restaurant ${restaurantId}`);
 
     const unsubscribe = pollingService.subscribe(
       restaurantId,
       (updatedData) => {
-        console.log(
-          `🔄 [Details] RECEIVED UPDATE for ${restaurantId}:`,
-          updatedData.crowd_status,
-          `at ${new Date().toLocaleTimeString()}`,
-        );
+        // console.log(
+        //   // `[Details] RECEIVED UPDATE for ${restaurantId}:`,
+        //   updatedData.crowd_status,
+        //   `at ${new Date().toLocaleTimeString()}`,
+        // );
 
         setIsUpdating(true);
 
@@ -295,7 +295,7 @@ function RestaurantDetails({ restaurantId, onBack }) {
     );
 
     return () => {
-      console.log(`[Details] UNMOUNTING for restaurant ${restaurantId}`);
+      // console.log(`[Details] UNMOUNTING for restaurant ${restaurantId}`);
       unsubscribe();
     };
   }, [restaurantId]);
@@ -328,7 +328,7 @@ function RestaurantDetails({ restaurantId, onBack }) {
 
       if (response.ok) {
         const data = await response.json();
-        console.log("Reviews data for header:", data);
+        // console.log("Reviews data for header:", data);
 
         if (data.success) {
           setReviewsData({
@@ -363,7 +363,7 @@ function RestaurantDetails({ restaurantId, onBack }) {
       }
 
       const result = await response.json();
-      console.log("API Response:", result);
+      // console.log("API Response:", result);
 
       // EXTRACT THE RESTAURANT OBJECT FROM THE RESPONSE
       const data = result.restaurant || result;
@@ -397,7 +397,7 @@ function RestaurantDetails({ restaurantId, onBack }) {
         profile_image: data.profile_image || null,
       };
 
-      console.log("Transformed data:", transformedData);
+      // console.log("Transformed data:", transformedData);
       setRestaurant(transformedData);
 
       // Fetch stats
@@ -410,7 +410,7 @@ function RestaurantDetails({ restaurantId, onBack }) {
           setStats(statsData);
         }
       } catch (statsError) {
-        console.log("Stats using defaults");
+        // console.log("Stats using defaults");
         setStats({
           average_rating: 0,
           total_reviews: 0,

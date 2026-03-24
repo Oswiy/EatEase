@@ -29,7 +29,6 @@ function FeatureCarousel({ restaurants, onRestaurantClick }) {
     };
     
     const randomizedFeatured = shuffleArray(featured);
-    console.log("Randomized featured restaurants on load:", randomizedFeatured.map(r => r.name));
     
     setFeaturedRestaurants(randomizedFeatured);
     
@@ -48,17 +47,13 @@ function FeatureCarousel({ restaurants, onRestaurantClick }) {
   useEffect(() => {
     if (featuredRestaurants.length === 0) return;
 
-    console.log("Setting up polling for featured restaurants:", featuredRestaurants.map(r => r.id));
-
     const unsubscribeCallbacks = [];
 
     // Subscribe each restaurant to polling
     featuredRestaurants.forEach(restaurant => {
       const unsubscribe = pollingService.subscribe(
         restaurant.id,
-        (updatedData) => {
-          console.log(`🔄 FeatureCarousel received update for ${restaurant.name}:`, updatedData);
-          
+        (updatedData) => {          
           // Update the specific restaurant's data
           setUpdatedRestaurants(prev => ({
             ...prev,
@@ -76,7 +71,6 @@ function FeatureCarousel({ restaurants, onRestaurantClick }) {
 
     // Cleanup: unsubscribe from all when component unmounts
     return () => {
-      console.log("Cleaning up polling subscriptions for featured restaurants");
       unsubscribeCallbacks.forEach(unsubscribe => unsubscribe());
     };
   }, [featuredRestaurants]);
@@ -138,13 +132,13 @@ function FeatureCarousel({ restaurants, onRestaurantClick }) {
   };
 
   const handleImageLoad = (restaurantId) => {
-    console.log(`✅ Image loaded for restaurant ${restaurantId}`);
+    // console.log(`Image loaded for restaurant ${restaurantId}`);
     setLoadedImages((prev) => ({ ...prev, [restaurantId]: true }));
   };
 
   const handleImageError = (restaurantId, url) => {
     console.error(
-      `❌ Image failed to load for restaurant ${restaurantId}:`,
+      // `Image failed to load for restaurant ${restaurantId}:`,
       url,
     );
     setLoadedImages((prev) => ({ ...prev, [restaurantId]: false }));
@@ -187,12 +181,12 @@ function FeatureCarousel({ restaurants, onRestaurantClick }) {
           const imageUrl = getImageUrl(restaurant.banner_image);
           const hasLoaded = loadedImages[restaurant.id];
 
-          console.log(`Rendering ${restaurant.name}:`, {
-            currentStatus: currentData.crowd_status,
-            originalStatus: restaurant.crowd_status,
-            hasUpdate: !!updatedRestaurants[restaurant.id],
-            imageUrl: imageUrl
-          });
+          // console.log(`Rendering ${restaurant.name}:`, {
+          //   currentStatus: currentData.crowd_status,
+          //   originalStatus: restaurant.crowd_status,
+          //   hasUpdate: !!updatedRestaurants[restaurant.id],
+          //   imageUrl: imageUrl
+          // });
 
           return (
             <div

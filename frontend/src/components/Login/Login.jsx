@@ -60,14 +60,13 @@ function Login({ onLogin, onSwitchToSignup }) {
     setError("");
 
     try {
-      console.log("SECURE LOGIN ATTEMPT");
 
       // CORRECT: Use api service
       const response = await api.post("/api/auth/login", formData, {
         "X-Requested-App": "diner-app",
       });
 
-      console.log("RESPONSE STATUS:", response.status);
+      // console.log("RESPONSE STATUS:", response.status);
       const data = await response.json();
 
       // Handle different error cases
@@ -92,7 +91,7 @@ function Login({ onLogin, onSwitchToSignup }) {
 
       // Handle successful login
       if (response.ok && data.user && data.token) {
-        console.log("SECURE LOGIN SUCCESS");
+        // console.log("SECURE LOGIN SUCCESS");
 
         localStorage.setItem("auth_token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));

@@ -14,26 +14,26 @@ function RestaurantCard({
 
     // If it's already a full URL (starts with http), use it directly
     if (imagePath.startsWith("http")) {
-      console.log("✅ Using full URL:", imagePath);
+      // console.log("✅ Using full URL:", imagePath);
       return imagePath;
     }
 
     // If it's a Cloudinary URL without protocol? (unlikely but check)
     if (imagePath.includes("cloudinary.com")) {
-      console.log("✅ Cloudinary URL detected:", imagePath);
+      // console.log("✅ Cloudinary URL detected:", imagePath);
       return imagePath;
     }
 
     // Otherwise, assume it's a local storage path
     const fullUrl = `${API_CONFIG.BASE_URL}${imagePath}`;
-    console.log("⚠️ Using local URL:", fullUrl);
+    // console.log("⚠️ Using local URL:", fullUrl);
     return fullUrl;
   };
 
-  console.log("Image URL Debug:", {
-    original: restaurant.banner_image,
-    processed: getImageUrl(restaurant.banner_image),
-  });
+  // console.log("Image URL Debug:", {
+  //   original: restaurant.banner_image,
+  //   processed: getImageUrl(restaurant.banner_image),
+  // });
 
   // ========== IMAGE URLS (MUST BE BEFORE HOOKS) ==========
   const bannerImageUrl = restaurant.banner_image
@@ -61,7 +61,7 @@ function RestaurantCard({
     const unsubscribe = pollingService.subscribe(
       restaurant.id,
       (updatedData) => {
-        console.log(`Real-time update for ${restaurant.name}:`, updatedData);
+        // console.log(`Real-time update for ${restaurant.name}:`, updatedData);
 
         // Show updating indicator
         setIsUpdating(true);

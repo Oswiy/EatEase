@@ -8,7 +8,7 @@ const MenuTab = ({ restaurantId }) => {
   const [restaurantName, setRestaurantName] = useState("");
 
   useEffect(() => {
-    console.log("MenuTab: Loading menu for restaurant", restaurantId);
+    // console.log("MenuTab: Loading menu for restaurant", restaurantId);
     fetchMenu();
   }, [restaurantId]);
 
@@ -43,7 +43,7 @@ const MenuTab = ({ restaurantId }) => {
         `${API_CONFIG.BASE_URL}/api/restaurants/${restaurantId}/menu-text`,
       );
       const data = await response.json();
-      console.log("MenuTab API response:", data);
+      // console.log("MenuTab API response:", data);
 
       if (data.success) {
         const menuText = data.menu_description || "";

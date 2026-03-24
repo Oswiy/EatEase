@@ -65,9 +65,9 @@ function RestaurantList({
     // Cleanup polling on unmount
     return () => {
       // You can add cleanup if needed, but pollingService manages its own cleanup
-      console.log(
-        "RestaurantList unmounting - polling cleanup handled by service",
-      );
+      // console.log(
+      //   "RestaurantList unmounting - polling cleanup handled by service",
+      // );
     }; // ADD THIS
   }, []); // Empty dependency array means this runs once on mount
 
@@ -157,17 +157,17 @@ function RestaurantList({
       const randomizedRestaurants = randomizeRestaurants(
         data.restaurants || [],
       );
-      console.log(
-        "Randomized restaurants on fetch:",
-        "Premium count:",
-        randomizedRestaurants.filter(
-          (r) => r.subscription_tier === "premium" || r.isPremium,
-        ).length,
-        "Basic count:",
-        randomizedRestaurants.filter(
-          (r) => !(r.subscription_tier === "premium" || r.isPremium),
-        ).length,
-      );
+      // console.log(
+      //   "Randomized restaurants on fetch:",
+      //   "Premium count:",
+      //   randomizedRestaurants.filter(
+      //     (r) => r.subscription_tier === "premium" || r.isPremium,
+      //   ).length,
+      //   "Basic count:",
+      //   randomizedRestaurants.filter(
+      //     (r) => !(r.subscription_tier === "premium" || r.isPremium),
+      //   ).length,
+      // );
 
       setRestaurants(randomizedRestaurants);
 
@@ -238,7 +238,7 @@ function RestaurantList({
     try {
       const token = localStorage.getItem("auth_token");
       if (!token) {
-        console.log("No auth token, user might not be logged in");
+        // console.log("No auth token, user might not be logged in");
         return;
       }
 
@@ -252,7 +252,7 @@ function RestaurantList({
 
       if (response.ok) {
         const data = await response.json();
-        console.log("Notifications API response:", data);
+        // console.log("Notifications API response:", data);
 
         if (data.success) {
           setAllNotifications(data.notifications || []); // UPDATE THIS
@@ -313,13 +313,13 @@ function RestaurantList({
 
   const handleSettings = () => {
     setShowMenu(false);
-    console.log("Navigate to Settings");
+    // console.log("Navigate to Settings");
     // TODO: Implement settings navigation
   };
 
   const handleRateApp = () => {
     setShowMenu(false);
-    console.log("Navigate to Rate App");
+    // console.log("Navigate to Rate App");
     // TODO: Implement rate app functionality
   };
 
@@ -547,7 +547,6 @@ function RestaurantList({
                   {showOnlyPremium ? (
                     <>
                       <p>No Premium restaurants available.</p>
-                      <p>Try showing all restaurants instead.</p>
                       <button
                         className="show-all-btn"
                         onClick={() => setShowOnlyPremium(false)}
@@ -557,11 +556,7 @@ function RestaurantList({
                     </>
                   ) : (
                     <>
-                      <p>No restaurants available yet.</p>
-                      <p>
-                        Restaurant owners can add their restaurants to appear
-                        here.
-                      </p>
+                      <p>No restaurants found.</p>
                     </>
                   )}
                 </div>

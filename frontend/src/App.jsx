@@ -22,7 +22,6 @@ function App() {
 
       // If user is NOT a diner, redirect to Business App
       if (parsedUser.user_type !== "diner") {
-        console.log("🚫 Wrong app detected! User is:", parsedUser.user_type);
         alert(
           "This is the Diner App. Please use the Business App for restaurant management.",
         );
@@ -68,11 +67,6 @@ function App() {
 
   // Handle successful login
   const handleLogin = (userData) => {
-    console.log("✅ Diner login successful:", {
-      name: userData.name,
-      user_type: userData.user_type,
-    });
-
     // Verify this is a diner
     if (userData.user_type !== "diner") {
       alert(
@@ -88,10 +82,6 @@ function App() {
 
   // Handle successful signup
   const handleSignup = (userData) => {
-    console.log("✅ Diner signup successful:", {
-      name: userData.name,
-      user_type: userData.user_type,
-    });
 
     // Verify this is a diner (should be from signup)
     if (userData.user_type !== "diner") {
@@ -159,13 +149,6 @@ function App() {
     );
   }
 
-  // LOGGED IN AS DINER - Show debug info
-  console.log("🍽️ DINER APP - Current User:", {
-    id: user.id,
-    name: user.name,
-    user_type: user.user_type,
-    currentPage: currentPage,
-  });
 
   // DINER Navigation
   switch (currentPage) {

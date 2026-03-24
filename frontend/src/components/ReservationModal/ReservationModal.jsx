@@ -114,12 +114,12 @@ const ReservationModal = ({
 
     try {
       const token = localStorage.getItem("auth_token");
-      console.log("DEBUG: Making hold-spot request with:", {
-        restaurant_id: restaurant.id,
-        party_size: formData.party_size,
-        hold_type: formData.hold_type,
-        token_exists: !!token,
-      });
+      // console.log("DEBUG: Making hold-spot request with:", {
+      //   restaurant_id: restaurant.id,
+      //   party_size: formData.party_size,
+      //   hold_type: formData.hold_type,
+      //   token_exists: !!token,
+      // });
 
       const response = await fetch(
         `${API_CONFIG.BASE_URL}/api/reservations/hold-spot`,
@@ -140,10 +140,10 @@ const ReservationModal = ({
         },
       );
 
-      console.log("DEBUG: Response status:", response.status);
+      // console.log("DEBUG: Response status:", response.status);
 
       const data = await response.json();
-      console.log("DEBUG: Response data:", data);
+      // console.log("DEBUG: Response data:", data);
 
       if (data.success) {
         setConfirmation(data);

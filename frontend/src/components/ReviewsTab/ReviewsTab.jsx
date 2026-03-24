@@ -15,14 +15,14 @@ const ReviewsTab = ({ restaurantId, restaurantName }) => {
   const [error, setError] = useState(null); // Add error state
 
   useEffect(() => {
-    console.log("ReviewsTab mounted for restaurant:", restaurantId);
+    // console.log("ReviewsTab mounted for restaurant:", restaurantId);
 
     const userData = localStorage.getItem("user");
     if (userData) {
       try {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
-        console.log("User set:", parsedUser.name);
+        // console.log("User set:", parsedUser.name);
       } catch (e) {
         console.error("Error parsing user data:", e);
       }
@@ -32,7 +32,7 @@ const ReviewsTab = ({ restaurantId, restaurantName }) => {
   }, [restaurantId]);
 
   const fetchReviews = async () => {
-    console.log("Fetching reviews...");
+    // console.log("Fetching reviews...");
     setLoading(true);
     setError(null);
 
@@ -41,14 +41,14 @@ const ReviewsTab = ({ restaurantId, restaurantName }) => {
         `${API_CONFIG.BASE_URL}/api/restaurants/${restaurantId}/reviews`,
       );
 
-      console.log("Response status:", response.status);
+      // console.log("Response status:", response.status);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log("Reviews data received:", data);
+      // console.log("Reviews data received:", data);
 
       // Check if API returned success
       if (data.success !== false) {
@@ -65,7 +65,7 @@ const ReviewsTab = ({ restaurantId, restaurantName }) => {
           });
         }
 
-        console.log("Reviews state updated. Count:", data.reviews?.length || 0);
+        // console.log("Reviews state updated. Count:", data.reviews?.length || 0);
       } else {
         setError(data.error || "Failed to load reviews");
         console.error("API error:", data.error);
@@ -75,7 +75,7 @@ const ReviewsTab = ({ restaurantId, restaurantName }) => {
       setError("Failed to load reviews. Please try again.");
     } finally {
       setLoading(false);
-      console.log("Loading set to false");
+      // console.log("Loading set to false");
     }
   };
 
@@ -109,7 +109,7 @@ const ReviewsTab = ({ restaurantId, restaurantName }) => {
       );
 
       const data = await response.json();
-      console.log("Submit review response:", data);
+      // console.log("Submit review response:", data);
 
       if (data.success) {
         await fetchReviews();
@@ -229,14 +229,14 @@ const ReviewsTab = ({ restaurantId, restaurantName }) => {
   };
 
   // Add debug logging
-  console.log("Component state:", {
-    loading,
-    error,
-    reviewsCount: reviews.length,
-    averageRating,
-    totalReviews,
-    user: user?.name,
-  });
+  // console.log("Component state:", {
+  //   loading,
+  //   error,
+  //   reviewsCount: reviews.length,
+  //   averageRating,
+  //   totalReviews,
+  //   user: user?.name,
+  // });
 
   if (loading) {
     return (
