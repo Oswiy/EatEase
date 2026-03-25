@@ -71,7 +71,7 @@
 button[type="submit"] {
   width: 100%;
   padding: 0.75rem;
-  background: #F8F3B7;
+  background: #f8f3b7;
   color: #333;
   border: none;
   border-radius: 8px;
@@ -133,7 +133,7 @@ button[type="submit"]:disabled {
   .login {
     padding: 3rem 2rem;
   }
-  
+
   .login-container {
     padding: 2.5rem;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
@@ -222,7 +222,7 @@ button[type="submit"]:disabled {
 }
 
 .secure-button {
-  background: linear-gradient(135deg, #4d96ff, #6b5b95);
+  background-color: #f8f3b7;
   color: white;
   border: none;
   padding: 12px 24px;
@@ -246,7 +246,7 @@ button[type="submit"]:disabled {
 }
 
 .loading-button {
-  background: linear-gradient(135deg, #cccccc, #999999);
+  background: linear-gradient(135deg, #4d96ff, #6b5b95);
   color: white;
   border: none;
   padding: 12px 24px;
@@ -254,10 +254,28 @@ button[type="submit"]:disabled {
   cursor: not-allowed;
   font-size: 16px;
   width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  opacity: 0.85;
+  font-weight: 600;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .input-error {
@@ -291,7 +309,8 @@ button[type="submit"]:disabled {
   text-decoration: underline;
 }
 
-.security-tips, .security-notice {
+.security-tips,
+.security-notice {
   margin-top: 20px;
   padding: 15px;
   background-color: #f8f9fa;
@@ -299,12 +318,14 @@ button[type="submit"]:disabled {
   border-left: 4px solid #4d96ff;
 }
 
-.security-tips h4, .security-notice h4 {
+.security-tips h4,
+.security-notice h4 {
   margin-top: 0;
   color: #333;
 }
 
-.security-tips ul, .security-notice ul {
+.security-tips ul,
+.security-notice ul {
   margin: 10px 0 0 0;
   padding-left: 20px;
   font-size: 14px;

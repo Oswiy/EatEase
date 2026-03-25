@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./Login.css";
-import { api } from '../../services/api';
+import { api } from "../../services/api";
 
 function Login({ onLogin, onSwitchToSignup }) {
   const [formData, setFormData] = useState({
@@ -60,7 +60,6 @@ function Login({ onLogin, onSwitchToSignup }) {
     setError("");
 
     try {
-
       // CORRECT: Use api service
       const response = await api.post("/api/auth/login", formData, {
         "X-Requested-App": "diner-app",
@@ -222,6 +221,7 @@ function Login({ onLogin, onSwitchToSignup }) {
             {loading ? (
               <>
                 <span className="spinner"></span>
+                <span>Signing in...</span>
               </>
             ) : (
               "Sign In"
