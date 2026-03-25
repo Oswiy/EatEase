@@ -81,7 +81,7 @@
 
 .loading-button {
   width: 100%;
-  padding: 0.75rem;
+  padding: 12px 24px;
   background: #f5ef9e;
   color: #333;
   border: none;
@@ -89,7 +89,6 @@
   font-size: 16px;
   font-weight: 600;
   cursor: not-allowed;
-  margin-bottom: 1.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -97,7 +96,7 @@
   opacity: 0.75;
 }
 
-.spinner {
+.login-spinner {
   width: 16px;
   height: 16px;
   border: 2px solid rgba(0, 0, 0, 0.15);
@@ -105,7 +104,6 @@
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
   flex-shrink: 0;
-  font-size: 16px;
 }
 
 @keyframes spin {

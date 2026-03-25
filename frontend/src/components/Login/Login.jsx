@@ -226,7 +226,7 @@ function Login({ onLogin, onSwitchToSignup }) {
           >
             {loading ? (
               <>
-                <span className="spinner"></span>
+                <span className="login-spinner"></span>
                 <span>Signing in...</span>
               </>
             ) : (

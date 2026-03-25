@@ -426,7 +426,7 @@ function Signup({ onSignup, onSwitchToLogin }) {
           >
             {loading ? (
               <>
-                <span className="spinner"></span>
+                <span className="signup-spinner"></span>
                 <span>Creating account...</span>
               </>
             ) : (
