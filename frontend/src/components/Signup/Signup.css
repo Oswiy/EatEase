@@ -16,6 +16,24 @@
   border: 1px solid #f0f0f0;
 }
 
+.loading-button {
+  width: 100%;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #4d96ff, #6b5b95);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: not-allowed;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  opacity: 0.75;
+}
+
 .signup h2 {
   color: #333;
   text-align: center;
@@ -220,15 +238,15 @@
   fill: #4d96ff;
 }
 
-/* Spinner animation */
 .spinner {
-  animation: spin 1s linear infinite;
-  margin-right: 8px;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+  font-size: 16px;
 }
 
 .password-strength-meter {

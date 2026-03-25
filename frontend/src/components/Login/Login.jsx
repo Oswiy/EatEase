@@ -226,9 +226,8 @@ function Login({ onLogin, onSwitchToSignup }) {
           >
             {loading ? (
               <>
-                <div className="loading-spinner-container">
-                  <div className="loading-spinner"></div>
-                </div>
+                <span className="spinner"></span>
+                <span>Signing in...</span>
               </>
             ) : (
               "Sign In"
