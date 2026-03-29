@@ -646,16 +646,6 @@ function RestaurantCard({
                 {getStatusText(userHasNotification)}
               </span>
             </small>
-            <button
-              className="remove-notification-btn"
-              onClick={async (e) => {
-                e.stopPropagation();
-                await handleRemoveNotification();
-                setUserHasNotification(null);
-              }}
-            >
-              ×
-            </button>
           </div>
         )}
       </div>

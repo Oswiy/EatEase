@@ -1009,12 +1009,6 @@
   padding: 40px 20px;
 }
 
-.owner-reviews-tab.loading {
-  display: flex;
-  justify-content: center;
-  align-content: center;
-}
-
 /* MenuTab CSs */
 /* ===== MENU TAB STYLES ===== */
 .menu-tab {
@@ -1918,7 +1912,7 @@ body {
   }
 }
 
-.photos-tab {
+.photos-tab, .owner-reviews-tab {
   padding: 10px 0px 50px 0px;
   min-height: 300px;
 }
@@ -1950,11 +1944,12 @@ body {
   font-size: 16px;
 }
 
-.reviews-tab.loading,
+.owner-reviews-tab.loading,
 .photos-tab.loading {
   display: flex;
   justify-content: center;
   align-content: center;
+  flex-wrap: wrap;
 }
 
 .loading-spinner {
@@ -2069,7 +2064,7 @@ body {
   height: 40px;
   border-radius: 50%;
   border: none;
-  background: rgba(255, 255, 255, 0.95);
+  background: none;
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -2085,7 +2080,7 @@ body {
 }
 
 .banner-action-buttons .action-btn.active {
-  background: var(--primary-yellow, #f8f3b7);
+  background: var(--primary-yellow, #ffffff);
 }
 
 .bookmark-icon,
