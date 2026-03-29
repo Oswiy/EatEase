@@ -8,7 +8,7 @@ app.use(cors());
 app.use(express.json());
 
 app.get("/", (req, res) => {
-  res.send("✅ Test server is running!");
+  res.send("Test server is running!");
 });
 
 app.get("/api/test", (req, res) => {

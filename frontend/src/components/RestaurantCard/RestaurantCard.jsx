@@ -14,19 +14,19 @@ function RestaurantCard({
 
     // If it's already a full URL (starts with http), use it directly
     if (imagePath.startsWith("http")) {
-      // console.log("✅ Using full URL:", imagePath);
+      // console.log("Using full URL:", imagePath);
       return imagePath;
     }
 
     // If it's a Cloudinary URL without protocol? (unlikely but check)
     if (imagePath.includes("cloudinary.com")) {
-      // console.log("✅ Cloudinary URL detected:", imagePath);
+      // console.log("Cloudinary URL detected:", imagePath);
       return imagePath;
     }
 
     // Otherwise, assume it's a local storage path
     const fullUrl = `${API_CONFIG.BASE_URL}${imagePath}`;
-    // console.log("⚠️ Using local URL:", fullUrl);
+    // console.log("Using local URL:", fullUrl);
     return fullUrl;
   };
 
@@ -34,7 +34,7 @@ function RestaurantCard({
   //   original: restaurant.banner_image,
   //   processed: getImageUrl(restaurant.banner_image),
   // });
-
+  const [selectedNotification, setSelectedNotification] = useState(null);
   // ========== IMAGE URLS (MUST BE BEFORE HOOKS) ==========
   const bannerImageUrl = restaurant.banner_image
     ? getImageUrl(restaurant.banner_image)
@@ -50,6 +50,7 @@ function RestaurantCard({
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [notifLoading, setNotifLoading] = useState(false);
   // ========== NOTIFICATION STATE ==========
   const [userHasNotification, setUserHasNotification] = useState(null);
   const [hasUnreadNotification, setHasUnreadNotification] = useState(false);
@@ -272,7 +273,7 @@ function RestaurantCard({
 
   // ========== HANDLE SET NOTIFICATION ==========
   const handleSetNotification = async (crowdLevel) => {
-    setLoading(true);
+    setNotifLoading(true);
     const token = localStorage.getItem("auth_token");
 
     try {
@@ -297,9 +298,12 @@ function RestaurantCard({
         // Force refresh preferences
         setTimeout(() => {
           const fetchPrefs = async () => {
-            const res = await fetch(`${API_CONFIG.BASE_URL}/api/notifications`, {
-              headers: { Authorization: `Bearer ${token}` },
-            });
+            const res = await fetch(
+              `${API_CONFIG.BASE_URL}/api/notifications`,
+              {
+                headers: { Authorization: `Bearer ${token}` },
+              },
+            );
             const prefData = await res.json();
             if (prefData.success) {
               const pref = prefData.notifications.find(
@@ -323,13 +327,13 @@ function RestaurantCard({
       console.error("Notification error:", error);
       alert("Failed to set notification. Please try again.");
     } finally {
-      setLoading(false);
+      setNotifLoading(false);
     }
   };
 
   // ========== HANDLE REMOVE NOTIFICATION (Preference) ==========
   const handleRemoveNotification = async () => {
-    setLoading(true);
+    setNotifLoading(true);
     const token = localStorage.getItem("auth_token");
 
     try {
@@ -359,6 +363,7 @@ function RestaurantCard({
         const deleteData = await deleteRes.json();
         if (deleteData.success) {
           setUserHasNotification(null);
+          setSelectedNotification(null);
 
           // Refresh notification count if needed
           if (window.refreshNotificationCount) {
@@ -369,7 +374,7 @@ function RestaurantCard({
     } catch (error) {
       console.error("Remove notification error:", error);
     } finally {
-      setLoading(false);
+      setNotifLoading(false);
     }
   };
 
@@ -672,14 +677,20 @@ function RestaurantCard({
                 <button
                   key={status}
                   className={`notification-option ${status} ${
-                    userHasNotification === status ? "selected" : ""
+                    selectedNotification === status
+                      ? "selected"
+                      : userHasNotification === status
+                        ? "selected"
+                        : ""
                   }`}
-                  onClick={() => handleSetNotification(status)}
+                  onClick={() => setSelectedNotification(status)}
                   disabled={loading}
                 >
                   <div className="status-indicator-wrapper">
                     <div className={`status-indicator ${status}`}></div>
-                    {userHasNotification === status && (
+                    {(selectedNotification === status ||
+                      (!selectedNotification &&
+                        userHasNotification === status)) && (
                       <div className="selected-check">✓</div>
                     )}
                   </div>
@@ -695,25 +706,74 @@ function RestaurantCard({
               ))}
             </div>
 
-            {userHasNotification && (
-              <button
-                className="remove-all-btn"
-                onClick={handleRemoveNotification}
-                disabled={loading}
-              >
-                Remove Notification
-              </button>
-            )}
-
             <div className="modal-actions">
               <button
                 className="notification-cancel-btn"
-                onClick={() => setShowNotificationModal(false)}
+                onClick={() => {
+                  setShowNotificationModal(false);
+                  setSelectedNotification(null);
+                }}
                 disabled={loading}
               >
                 Cancel
               </button>
+              {selectedNotification &&
+                selectedNotification !== userHasNotification && (
+                  <button
+                    className="notification-confirm-btn"
+                    onClick={() => {
+                      handleSetNotification(selectedNotification);
+                    }}
+                    disabled={notifLoading}
+                  >
+                    {notifLoading ? (
+                      <span
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <span className="save-spinner"></span>
+                        Saving...
+                      </span>
+                    ) : (
+                      "Confirm"
+                    )}
+                  </button>
+                )}
             </div>
+
+            {userHasNotification && (
+              <button
+                className="remove-all-btn"
+                onClick={async () => {
+                  await handleRemoveNotification();
+                  setSelectedNotification(null);
+                  setShowNotificationModal(false);
+                }}
+                disabled={notifLoading}
+              >
+                {notifLoading ? (
+                  <span
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "8px",
+                    }}
+                  >
+                    <span
+                      className="save-spinner"
+                      style={{ borderLeftColor: "#fc0000" }}
+                    ></span>
+                    Removing...
+                  </span>
+                ) : (
+                  "Remove Notification"
+                )}
+              </button>
+            )}
           </div>
         </div>
       )}

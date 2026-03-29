@@ -40,7 +40,7 @@ const ReservationModal = ({
     );
   }, [formData.hold_type]);
 
-  // ✅ FETCH FEE SETTINGS WHEN COMPONENT MOUNTS
+  // FETCH FEE SETTINGS WHEN COMPONENT MOUNTS
   useEffect(() => {
     const fetchFeeSettings = async () => {
       try {

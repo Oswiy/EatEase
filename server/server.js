@@ -189,7 +189,7 @@ app.get("/api/auth/me", (req, res) => {
 
 // Restaurant endpoints
 app.get("/", (req, res) => {
-  res.send("✅ EatEase API is running successfully!");
+  res.send("EatEase API is running successfully!");
 });
 
 app.get("/api/restaurants", (req, res) => {
@@ -207,7 +207,7 @@ app.post("/api/restaurants/:id/status", (req, res) => {
 
   restaurant.status = status;
   restaurant.crowdLevel = crowdLevel;
-  res.json({ message: "✅ Status updated successfully", restaurant });
+  res.json({ message: "Status updated successfully", restaurant });
 });
 
 app.get("/api/restaurants/:id/occupancy", (req, res) => {
@@ -258,7 +258,7 @@ app.post("/api/restaurants/iot-update", (req, res) => {
     }
   });
   
-  res.json({ message: "✅ IoT data updated for all restaurants", restaurants });
+  res.json({ message: "IoT data updated for all restaurants", restaurants });
 });
 
 // Promotion endpoints

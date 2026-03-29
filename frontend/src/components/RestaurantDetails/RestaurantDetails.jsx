@@ -29,7 +29,7 @@ function RestaurantDetails({ restaurantId, onBack }) {
 
     // Otherwise, assume it's a local storage path
     const fullUrl = `${API_CONFIG.BASE_URL}${imagePath}`;
-    // console.log("⚠️ Using local URL:", fullUrl);
+    // console.log("Using local URL:", fullUrl);
     return fullUrl;
   };
 
@@ -711,7 +711,7 @@ function RestaurantDetails({ restaurantId, onBack }) {
           onClose={() => setShowReservationModal(false)}
           onSuccess={(reservation) => {
             alert(
-              `✅ Reservation confirmed! Your code: ${reservation.confirmation_code}`,
+              `Reservation confirmed! Your code: ${reservation.confirmation_code}`,
             );
             // Optional: Refresh or update UI
           }}

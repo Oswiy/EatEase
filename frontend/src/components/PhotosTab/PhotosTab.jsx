@@ -109,34 +109,6 @@ const PhotosTab = ({ restaurantId }) => {
         <h3 className="photos-title">Photo Gallery</h3>
       </div>
 
-      {/* Primary Photo (if exists) */}
-      {photos.find((p) => p.is_primary) && (
-        <div className="primary-photo-section">
-          <h4 className="section-subtitle">🌟 Featured Photo</h4>
-          <div
-            className="primary-photo"
-            onClick={() => openPhotoViewer(photos.find((p) => p.is_primary))}
-          >
-            <img
-              src={photos.find((p) => p.is_primary).display_url}
-              alt={photos.find((p) => p.is_primary).caption || "Featured photo"}
-              onError={(e) => {
-                console.error("Primary photo failed to load:", e.target.src);
-                e.target.src =
-                  "https://via.placeholder.com/600x400?text=Featured+Photo+Not+Found";
-                e.target.onerror = null; // Prevent infinite loop
-              }}
-            />
-            <div className="primary-badge">Featured</div>
-            {photos.find((p) => p.is_primary).caption && (
-              <p className="photo-caption">
-                {photos.find((p) => p.is_primary).caption}
-              </p>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* All Photos Grid/List */}
       <div className={`photos-container ${viewMode}`}>
         {viewMode === "grid" ? (
@@ -159,9 +131,6 @@ const PhotosTab = ({ restaurantId }) => {
                       e.target.onerror = null;
                     }}
                   />
-                  {photo.is_primary && (
-                    <span className="primary-indicator">⭐</span>
-                  )}
                 </div>
                 {photo.caption && (
                   <p className="photo-caption-small">{photo.caption}</p>
