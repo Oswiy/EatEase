@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import "./Login.css";
 import { api } from "../../services/api";
-import { BASE_URL } from "../../config";
+import { useToast } from "../../context/ToastContext"; // ✅ Add this import
 
 function Login({ onLogin, onSwitchToSignup }) {
+  const { showToast } = useToast(); // ✅ Add this
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -60,7 +61,6 @@ function Login({ onLogin, onSwitchToSignup }) {
     setError("");
 
     try {
-      // FIXED: Use api service instead of hardcoded fetch
       const response = await api.post("/api/auth/login", formData, {
         "X-Requested-App": "restaurant-app",
       });
@@ -82,9 +82,11 @@ function Login({ onLogin, onSwitchToSignup }) {
 
       // Check for wrong-app error
       if (data.error === "wrong_app") {
-        alert(data.message);
+        showToast(data.message, "warning", 4000); // ✅ Replace alert with toast
         if (data.redirect_url) {
-          window.location.href = data.redirect_url;
+          setTimeout(() => {
+            window.location.href = data.redirect_url;
+          }, 1500);
         }
         return;
       }
@@ -102,11 +104,17 @@ function Login({ onLogin, onSwitchToSignup }) {
 
         // Verify this is a restaurant owner account
         if (data.user.user_type !== "restaurant_owner") {
-          alert("This is the Business App. Please use the Diner App.");
+          showToast(
+            "This is the Business App. Please use the Diner App.",
+            "warning",
+            4000,
+          ); // ✅ Replace alert with toast
           localStorage.removeItem("auth_token");
           localStorage.removeItem("user");
           localStorage.removeItem("token_expires_at");
-          window.location.href = "http://localhost:5176"; // Keep this - it's for local development redirect
+          setTimeout(() => {
+            window.location.href = "https://eatease-diner.vercel.app"; // ✅ Fixed URL
+          }, 1500);
           return;
         }
 
@@ -114,6 +122,7 @@ function Login({ onLogin, onSwitchToSignup }) {
         localStorage.removeItem("business_login_attempts");
         localStorage.removeItem("last_business_login_attempt");
 
+        showToast(`Welcome back, ${data.user.name}!`, "success", 3000); // ✅ Add welcome toast
         onLogin(data.user);
       } else {
         setError(data.message || "Invalid email or password");
