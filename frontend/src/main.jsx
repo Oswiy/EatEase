@@ -1,10 +1,15 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import App from './App.jsx'
-import './globals.css'
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App.jsx";
+import { ToastProvider } from "./context/ToastContext"; // ✅ Add this import
+import "./globals.css";
 
-ReactDOM.createRoot(document.getElementById('root')).render(
+ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <App />
+    <ToastProvider>
+      {" "}
+      {/* ✅ Wrap App with ToastProvider */}
+      <App />
+    </ToastProvider>
   </React.StrictMode>,
-)
+);
