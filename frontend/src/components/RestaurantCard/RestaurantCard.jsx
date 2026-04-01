@@ -3,6 +3,7 @@ import "./RestaurantCard.css";
 import TierBadge from "../TierBadge/TierBadge";
 import pollingService from "../../services/pollingService";
 import API_CONFIG from "../../config";
+import { useToast } from "../../context/ToastContext";
 
 function RestaurantCard({
   restaurant,
@@ -17,6 +18,7 @@ function RestaurantCard({
     return fullUrl;
   };
 
+  const { showToast } = useToast();
   const [selectedNotification, setSelectedNotification] = useState(null);
   const bannerImageUrl = restaurant.banner_image
     ? getImageUrl(restaurant.banner_image)
@@ -201,7 +203,7 @@ function RestaurantCard({
 
     const token = localStorage.getItem("auth_token");
     if (!token) {
-      alert("Please login to bookmark restaurants");
+      showToast("Please login to bookmark restaurants", "warning", 3000);
       setLoading(false);
       return;
     }
@@ -222,12 +224,18 @@ function RestaurantCard({
       const data = await response.json();
       if (data.success) {
         setIsBookmarked(data.isBookmarked);
+        showToast(
+          data.isBookmarked ? "Added to bookmarks!" : "Removed from bookmarks!",
+          "success",
+          2000,
+        );
       } else {
         console.error("Bookmark failed:", data.message);
+        showToast(data.message || "Failed to update bookmark", "error", 3000);
       }
     } catch (error) {
       console.error("Bookmark error:", error);
-      alert("Failed to update bookmark. Please try again.");
+      showToast("Failed to update bookmark. Please try again.", "error", 3000);
     } finally {
       setLoading(false);
     }
@@ -237,7 +245,7 @@ function RestaurantCard({
     e.stopPropagation();
     const token = localStorage.getItem("auth_token");
     if (!token) {
-      alert("Please login to set notifications");
+      showToast("Please login to set notifications", "warning", 3000);
       return;
     }
     setShowNotificationModal(true);
@@ -267,6 +275,24 @@ function RestaurantCard({
         setShowNotificationModal(false);
         setSelectedNotification(null);
 
+        // Check if the set preference matches current crowd status
+        const currentStatus = currentRestaurant.crowd_status;
+        const statusText = getStatusText(crowdLevel);
+
+        if (currentStatus === crowdLevel) {
+          showToast(
+            `This restaurant is already ${statusText} right now! You'll be notified when it changes.`,
+            "warning",
+            4000,
+          );
+        } else {
+          showToast(
+            `You'll be notified when ${currentRestaurant.name} has ${statusText} crowd!`,
+            "success",
+            3000,
+          );
+        }
+
         setTimeout(() => {
           const fetchPrefs = async () => {
             const res = await fetch(
@@ -284,13 +310,11 @@ function RestaurantCard({
           fetchPrefs();
         }, 500);
       } else {
-        alert(
-          "Failed to set notification: " + (data.message || "Unknown error"),
-        );
+        showToast(data.message || "Failed to set notification", "error", 3000);
       }
     } catch (error) {
       console.error("Notification error:", error);
-      alert("Failed to set notification. Please try again.");
+      showToast("Failed to set notification. Please try again.", "error", 3000);
     } finally {
       setNotifLoading(false);
     }
@@ -313,7 +337,7 @@ function RestaurantCard({
     const token = localStorage.getItem("auth_token");
 
     if (!token) {
-      alert("Please login to manage notifications");
+      showToast("Please login to manage notifications", "warning", 3000);
       setUserHasNotification(previousNotification);
       setNotifLoading(false);
       isRemovingRef.current = false;
@@ -359,19 +383,31 @@ function RestaurantCard({
         if (!deleteData.success) {
           // If server failed, revert UI back to previous state
           setUserHasNotification(previousNotification);
-          alert(deleteData.message || "Failed to remove notification");
+          showToast(
+            deleteData.message || "Failed to remove notification",
+            "error",
+            3000,
+          );
         } else {
           // Refresh notification count in parent component
           if (window.refreshNotificationCount) {
             window.refreshNotificationCount();
           }
+          showToast("Notification removed successfully!", "success", 2000);
         }
+      } else {
+        // No notification found, UI is already cleared
+        showToast("No notification found for this restaurant", "info", 2000);
       }
     } catch (error) {
       console.error("Remove notification error:", error);
       // Revert UI on error
       setUserHasNotification(previousNotification);
-      alert("Failed to remove notification. Please try again.");
+      showToast(
+        "Failed to remove notification. Please try again.",
+        "error",
+        3000,
+      );
     } finally {
       setNotifLoading(false);
       // Clear removing flag after a short delay to allow parent to update
@@ -400,9 +436,11 @@ function RestaurantCard({
       if (response.ok) {
         setHasUnreadNotification(false);
         setUnreadNotificationData(null);
+        showToast("Notification dismissed", "info", 2000);
       }
     } catch (error) {
       console.error("Error dismissing notification:", error);
+      showToast("Failed to dismiss notification", "error", 3000);
     }
   };
 
