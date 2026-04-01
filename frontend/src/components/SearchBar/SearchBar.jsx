@@ -17,7 +17,7 @@ function SearchBar({ searchQuery, setSearchQuery }) {
         </svg>
         <input
           type="text"
-          placeholder="Search"
+          placeholder="Search restaurants..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="search-input"

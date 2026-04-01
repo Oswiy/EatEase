@@ -15,6 +15,30 @@
   max-width: 90%;
   animation: slideUp 0.3s ease;
   border-left: 4px solid;
+  /* ✅ Add pointer-events to prevent interference */
+  pointer-events: auto;
+}
+
+/* ✅ Add stacking support - multiple toasts stack upward */
+.toast-container {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 10000;
+  pointer-events: none;
+}
+
+.toast {
+  position: relative;
+  bottom: auto;
+  left: auto;
+  transform: none;
+  animation: slideUp 0.3s ease;
+  pointer-events: auto;
 }
 
 .toast-success {
@@ -80,22 +104,22 @@
 @keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateX(-50%) translateY(20px);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
-    transform: translateX(-50%) translateY(0);
+    transform: translateY(0);
   }
 }
 
 @keyframes slideDown {
   from {
     opacity: 1;
-    transform: translateX(-50%) translateY(0);
+    transform: translateY(0);
   }
   to {
     opacity: 0;
-    transform: translateX(-50%) translateY(20px);
+    transform: translateY(20px);
   }
 }
 

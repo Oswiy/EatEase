@@ -1,6 +1,6 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
 
-/* FeatureCarousel.css */
+/* FeatureCarousel.css - Dark Theme */
 .feature-carousel {
   margin: 20px 0 20px 0;
   padding: 0;
@@ -10,30 +10,31 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0px;
+  margin-bottom: 16px;
   padding: 0 10px;
 }
 
 .carousel-header h3 {
   margin: 0;
   font-size: 20px;
-  font-weight: 800;
-  color: #000000;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: -0.3px;
 }
 
 .carousel-header small {
-  color: #666;
-  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
 }
 
 /* Carousel Container */
 .carousel-container {
   display: flex;
-  gap: 15px;
+  gap: 16px;
   overflow-x: auto;
   padding: 5px 0px 10px 0px;
   scrollbar-width: thin;
-  scrollbar-color: #000000 #f0f0f0;
+  scrollbar-color: #203c5e #2a3a4a;
 }
 
 .carousel-container::-webkit-scrollbar {
@@ -41,31 +42,32 @@
 }
 
 .carousel-container::-webkit-scrollbar-track {
-  background: #f0f0f0;
+  background: #2a3a4a;
   border-radius: 3px;
 }
 
 .carousel-container::-webkit-scrollbar-thumb {
-  background: #6b5b95;
+  background: #0f3460;
   border-radius: 3px;
 }
 
 .carousel-container::-webkit-scrollbar-thumb:hover {
-  background: #5a4d7d;
+  background: #1a4a7a;
 }
 
-/* Carousel Item - UPDATED with Banner Image */
+/* Carousel Item */
 .carousel-item {
   flex: 0 0 300px;
   height: 160px;
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
   position: relative;
   cursor: pointer;
   transition:
     transform 0.3s ease,
     box-shadow 0.3s ease;
-  background: #f8f9fa;
+  background: #2a3a4a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 @media screen and (min-width: 760px) {
@@ -77,7 +79,8 @@
 
 .carousel-item:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 /* Banner Image Container */
@@ -99,15 +102,14 @@
 }
 
 /* Banner Placeholder */
-/* In FeatureCarousel.css - Update the placeholder styles */
 .feature-banner-placeholder {
   width: 100%;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #6b5b95, #5a4d7d);
-  color: white;
+  background: linear-gradient(135deg, #1e2a3a, #0f3460);
+  color: rgba(255, 255, 255, 0.8);
   font-size: 18px;
   font-weight: 600;
   position: absolute;
@@ -128,18 +130,18 @@
 /* Featured Badge */
 .featured-badge {
   position: absolute;
-  top: 10px;
-  left: 10px;
-  background: linear-gradient(135deg, #ffd43b, #e6b31e);
-  color: #333;
-  padding: 4px 10px;
+  top: 12px;
+  left: 12px;
+  background: linear-gradient(135deg, #ffd700, #ffb347);
+  color: #1a1a2e;
+  padding: 4px 12px;
   border-radius: 20px;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.5px;
   text-transform: uppercase;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  z-index: 2;
+  z-index: 5;
 }
 
 /* Restaurant Name Overlay (Bottom Left) */
@@ -149,61 +151,66 @@
   left: 0;
   right: 0;
   background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
-  padding: 20px 15px 10px;
+  padding: 20px 15px 12px;
   color: white;
   z-index: 2;
 }
 
 .restaurant-name-overlay h4 {
-  margin: 0 0 5px 0;
-  font-size: 18px;
+  margin: 0 0 6px 0;
+  font-size: 16px;
   font-weight: 600;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   text-align: start;
 }
 
+@media screen and (min-width: 760px) {
+  .restaurant-name-overlay h4 {
+    font-size: 18px;
+  }
+}
+
 .cuisine-badge {
-  display: flex;
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(10px);
-  padding: 3px 10px;
-  border-radius: 12px;
-  font-size: 12px;
+  display: inline-flex;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
   font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
   width: fit-content;
-  align-items: center;
-  justify-content: space-around;
 }
 
 /* Arrow Button (Bottom Right) */
 .arrow-button {
   position: absolute;
-  bottom: 3px;
-  right: 4px;
-  width: 40px;
-  height: 40px;
-  background: none;
-  border: none;
+  bottom: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 50%;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  z-index: 3;
-  color: white;
+  z-index: 5;
 }
 
 .arrow-button:hover {
-  background: none;
+  background: #0f3460;
   transform: scale(1.1);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .arrow-button svg {
-  width: 20px;
-  height: 20px;
-  fill: #ffffff;
+  width: 18px;
+  height: 18px;
+  fill: #fff;
   transition: transform 0.3s ease;
 }
 
@@ -214,17 +221,18 @@
 /* Crowd Status Indicator */
 .crowd-status-indicator {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 12px;
+  right: 12px;
   display: flex;
   align-items: center;
-  gap: 5px;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(10px);
-  padding: 4px 10px;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  padding: 5px 12px;
   border-radius: 20px;
-  font-size: 10px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 500;
+  color: #fff;
   z-index: 5;
 }
 
@@ -235,65 +243,65 @@
 }
 
 .status-dot.green {
-  background: #51cf66;
+  background: #4caf50;
+  box-shadow: 0 0 4px #4caf50;
 }
+
 .status-dot.yellow {
-  background: #fcc419;
+  background: #ffc107;
+  box-shadow: 0 0 4px #ffc107;
 }
+
 .status-dot.orange {
-  background: #ff922b;
+  background: #ff9800;
+  box-shadow: 0 0 4px #ff9800;
 }
+
 .status-dot.red {
   background: #ff6b6b;
+  box-shadow: 0 0 4px #ff6b6b;
 }
 
 /* Empty State */
 .empty-carousel {
   text-align: center;
   padding: 60px 20px;
-  background: #f8f9fa;
-  border-radius: 12px;
-  border: 2px dashed #dee2e6;
+  background: #2a3a4a;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   margin: 20px 0;
 }
 
-.empty-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  margin: 0 auto 15px;
-  position: relative;
-}
-
 .empty-carousel h4 {
-  margin: 0 0 10px 0;
-  color: #333;
-  font-size: 15px;
+  margin: 0 0 12px 0;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .empty-carousel p {
-  color: #666;
+  color: rgba(255, 255, 255, 0.6);
   font-size: 13px;
   max-width: 400px;
   margin: 0 auto;
   line-height: 1.5;
 }
 
-/* PROMO TEXT OVERLAY - POSITIONED ABOVE RESTAURANT NAME */
+/* PROMO TEXT OVERLAY */
 .carousel-promo-overlay {
   position: absolute;
-  top: 73px;
+  top: 70px;
   left: 15px;
-  background: rgb(255 48 48 / 90%);
-  color: #ffffff;
-  padding: 5px 15px;
-  border-radius: 7px;
+  background: linear-gradient(135deg, #ff6b6b, #ff4d4d);
+  color: #fff;
+  padding: 5px 14px;
+  border-radius: 20px;
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   z-index: 5;
   white-space: nowrap;
   text-align: center;
-  width: fit-content;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .promo-text {
@@ -301,9 +309,102 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 180px;
 }
 
-/* Remove the old .carousel-promo styles if they exist */
-.carousel-promo {
-  display: none; /* Hide the old placement */
+/* Responsive */
+@media (max-width: 768px) {
+  .carousel-item {
+    flex: 0 0 260px;
+    height: 140px;
+  }
+
+  .carousel-header h3 {
+    font-size: 18px;
+  }
+
+  .restaurant-name-overlay h4 {
+    font-size: 14px;
+  }
+
+  .cuisine-badge {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+
+  .crowd-status-indicator {
+    font-size: 10px;
+    padding: 4px 10px;
+    top: 8px;
+    right: 8px;
+  }
+
+  .arrow-button {
+    width: 30px;
+    height: 30px;
+    bottom: 8px;
+    right: 8px;
+  }
+
+  .arrow-button svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .carousel-promo-overlay {
+    top: 60px;
+    left: 10px;
+    padding: 4px 10px;
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .carousel-item {
+    flex: 0 0 220px;
+    height: 120px;
+  }
+
+  .carousel-header h3 {
+    font-size: 16px;
+  }
+
+  .restaurant-name-overlay {
+    padding: 12px 12px 8px;
+  }
+
+  .restaurant-name-overlay h4 {
+    font-size: 12px;
+  }
+
+  .cuisine-badge {
+    font-size: 9px;
+    padding: 2px 6px;
+  }
+
+  .crowd-status-indicator {
+    font-size: 9px;
+    padding: 3px 8px;
+  }
+
+  .arrow-button {
+    width: 28px;
+    height: 28px;
+  }
+
+  .arrow-button svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .carousel-promo-overlay {
+    top: 50px;
+    left: 8px;
+    padding: 3px 8px;
+    font-size: 9px;
+  }
+
+  .promo-text {
+    max-width: 140px;
+  }
 }

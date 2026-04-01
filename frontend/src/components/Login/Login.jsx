@@ -14,11 +14,28 @@ function Login({ onLogin, onSwitchToSignup }) {
   const [showPassword, setShowPassword] = useState(false);
   const [loginAttempts, setLoginAttempts] = useState(0);
 
-  // Check for stored login attempts (basic rate limiting on frontend)
+  // Check for stored login attempts - CLEAR THEM ON MOUNT
   useEffect(() => {
-    const attempts = localStorage.getItem("login_attempts");
-    if (attempts) {
-      setLoginAttempts(parseInt(attempts));
+    // Check if there's a timestamp, if it's older than 5 minutes, clear attempts
+    const lastAttempt = localStorage.getItem("last_login_attempt");
+    if (lastAttempt) {
+      const timeSinceLastAttempt = Date.now() - parseInt(lastAttempt);
+      if (timeSinceLastAttempt > 300000) {
+        // More than 5 minutes
+        // Clear old attempts
+        localStorage.removeItem("login_attempts");
+        localStorage.removeItem("last_login_attempt");
+        setLoginAttempts(0);
+      } else {
+        const attempts = localStorage.getItem("login_attempts");
+        if (attempts) {
+          setLoginAttempts(parseInt(attempts));
+        }
+      }
+    } else {
+      // No last attempt, clear any stale data
+      localStorage.removeItem("login_attempts");
+      setLoginAttempts(0);
     }
   }, []);
 
@@ -27,6 +44,8 @@ function Login({ onLogin, onSwitchToSignup }) {
       ...formData,
       [e.target.name]: e.target.value,
     });
+    // Clear error when user starts typing
+    if (error) setError("");
   };
 
   const handleSubmit = async (e) => {
@@ -51,7 +70,6 @@ function Login({ onLogin, onSwitchToSignup }) {
       if (lastAttempt) {
         const timeSinceLastAttempt = Date.now() - parseInt(lastAttempt);
         if (timeSinceLastAttempt < 300000) {
-          // 5 minutes
           setError("Too many login attempts. Please try again in 5 minutes.");
           return;
         }
@@ -62,14 +80,12 @@ function Login({ onLogin, onSwitchToSignup }) {
     setError("");
 
     try {
-      // CORRECT: Use api service
       const response = await api.post("/api/auth/login", formData, {
         "X-Requested-App": "diner-app",
       });
 
       const data = await response.json();
 
-      // Handle different error cases
       if (response.status === 422 && data.errors) {
         const firstError = Object.values(data.errors)[0]?.[0];
         setError(firstError || "Validation failed");
@@ -82,7 +98,6 @@ function Login({ onLogin, onSwitchToSignup }) {
         return;
       }
 
-      // Check for wrong-app error
       if (data.error === "wrong_app") {
         showToast(data.message, "warning", 4000);
         setTimeout(() => {
@@ -91,7 +106,6 @@ function Login({ onLogin, onSwitchToSignup }) {
         return;
       }
 
-      // Handle successful login
       if (response.ok && data.user && data.token) {
         localStorage.setItem("auth_token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
@@ -100,7 +114,6 @@ function Login({ onLogin, onSwitchToSignup }) {
           localStorage.setItem("token_expires_at", data.token_expires_at);
         }
 
-        // Verify this is a diner account
         if (data.user.user_type !== "diner") {
           showToast(
             "This is the Diner App. Please use the Business App.",
@@ -116,8 +129,10 @@ function Login({ onLogin, onSwitchToSignup }) {
           return;
         }
 
+        // Clear login attempts on successful login
         localStorage.removeItem("login_attempts");
         localStorage.removeItem("last_login_attempt");
+        setLoginAttempts(0);
 
         showToast(`Welcome back, ${data.user.name}!`, "success", 3000);
         onLogin(data.user);
@@ -149,12 +164,27 @@ function Login({ onLogin, onSwitchToSignup }) {
     <div className="login">
       <div className="login-container">
         <div className="login-header">
-          <h2>Sign In</h2>
+          <h2>Welcome</h2>
+          <p className="login-subtitle">Sign in to continue</p>
         </div>
 
-        {loginAttempts >= 3 && (
+        {loginAttempts >= 3 && loginAttempts < 5 && (
           <div className="security-warning">
-            <span>Multiple failed login attempts detected.</span>
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M12 9v4M12 17h.01" />
+              <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
+            </svg>
+            <span>
+              Warning: {5 - loginAttempts} login attempts remaining before
+              temporary lockout.
+            </span>
           </div>
         )}
 
@@ -196,40 +226,44 @@ function Login({ onLogin, onSwitchToSignup }) {
               >
                 {showPassword ? (
                   <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    fill="#000000"
-                    viewBox="0 0 256 256"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
                   >
-                    <path d="M228,175a8,8,0,0,1-10.92-3l-19-33.2A123.23,123.23,0,0,1,162,155.46l5.87,35.22a8,8,0,0,1-6.58,9.21A8.4,8.4,0,0,1,160,200a8,8,0,0,1-7.88-6.69l-5.77-34.58a133.06,133.06,0,0,1-36.68,0l-5.77,34.58A8,8,0,0,1,96,200a8.4,8.4,0,0,1-1.32-.11,8,8,0,0,1-6.58-9.21L94,155.46a123.23,123.23,0,0,1-36.06-16.69L39,172A8,8,0,1,1,25.06,164l20-35a153.47,153.47,0,0,1-19.3-20A8,8,0,1,1,38.22,99c16.6,20.54,45.64,45,89.78,45s73.18-24.49,89.78-45A8,8,0,1,1,230.22,109a153.47,153.47,0,0,1-19.3,20l20,35A8,8,0,0,1,228,175Z"></path>
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
                   </svg>
                 ) : (
                   <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    fill="#000000"
-                    viewBox="0 0 256 256"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
                   >
-                    <path d="M247.31,124.76c-.35-.79-8.82-19.58-27.65-38.41C194.57,61.26,162.88,48,128,48S61.43,61.26,36.34,86.35C17.51,105.18,9,124,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208s66.57-13.26,91.66-38.34c18.83-18.83,27.3-37.61,27.65-38.4A8,8,0,0,0,247.31,124.76ZM128,192c-30.78,0-57.67-11.19-79.93-33.25A133.47,133.47,0,0,1,25,128,133.33,133.33,0,0,1,48.07,97.25C70.33,75.19,97.22,64,128,64s57.67,11.19,79.93,33.25A133.46,133.46,0,0,1,231.05,128C223.84,141.46,192.43,192,128,192Zm0-112a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Z"></path>
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                    <line x1="1" y1="1" x2="23" y2="23" />
                   </svg>
                 )}
               </button>
             </div>
           </div>
 
-          {error && <div className="error-message security-error">{error}</div>}
+          {error && <div className="error-message">{error}</div>}
 
           <button
             type="submit"
             disabled={loading}
-            className={loading ? "loading-button" : "secure-button"}
+            className={loading ? "loading-button" : "login-button"}
           >
             {loading ? (
               <>
                 <span className="spinner"></span>
-                <span>Signing in...</span>
+                Signing in...
               </>
             ) : (
               "Sign In"
@@ -241,7 +275,7 @@ function Login({ onLogin, onSwitchToSignup }) {
           <p>
             Don't have an account?{" "}
             <button type="button" onClick={onSwitchToSignup}>
-              Sign Up
+              Sign up
             </button>
           </p>
         </div>

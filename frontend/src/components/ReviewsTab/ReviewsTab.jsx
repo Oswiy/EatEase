@@ -1,38 +1,36 @@
 import React, { useState, useEffect } from "react";
-import "../RestaurantDetails/RestaurantDetails.css";
+import "./ReviewsTab.css";
 import API_CONFIG from "../../config";
+import { useToast } from "../../context/ToastContext";
 
 const ReviewsTab = ({ restaurantId, restaurantName }) => {
+  const { showToast } = useToast();
   const [reviews, setReviews] = useState([]);
   const [averageRating, setAverageRating] = useState(0);
   const [totalReviews, setTotalReviews] = useState(0);
   const [userReview, setUserReview] = useState(null);
-  const [newReview, setNewReview] = useState({ rating: 5, comment: "" });
+  const [editMode, setEditMode] = useState(false);
+  const [editRating, setEditRating] = useState(5);
+  const [editComment, setEditComment] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [user, setUser] = useState(null);
-  const [activeFilter, setActiveFilter] = useState("all");
-  const [error, setError] = useState(null); // Add error state
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // console.log("ReviewsTab mounted for restaurant:", restaurantId);
-
     const userData = localStorage.getItem("user");
     if (userData) {
       try {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
-        // console.log("User set:", parsedUser.name);
       } catch (e) {
         console.error("Error parsing user data:", e);
       }
     }
-
     fetchReviews();
   }, [restaurantId]);
 
   const fetchReviews = async () => {
-    // console.log("Fetching reviews...");
     setLoading(true);
     setError(null);
 
@@ -41,98 +39,113 @@ const ReviewsTab = ({ restaurantId, restaurantName }) => {
         `${API_CONFIG.BASE_URL}/api/restaurants/${restaurantId}/reviews`,
       );
 
-      // console.log("Response status:", response.status);
-
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      // console.log("Reviews data received:", data);
 
-      // Check if API returned success
       if (data.success !== false) {
         setReviews(data.reviews || []);
         setAverageRating(data.average_rating || 0);
         setTotalReviews(data.total_reviews || 0);
-        setUserReview(data.user_review || null);
 
-        // Pre-fill form if user has reviewed
-        if (data.user_review) {
-          setNewReview({
-            rating: data.user_review.rating,
-            comment: data.user_review.comment || "",
-          });
+        const existingUserReview = data.user_review || null;
+        setUserReview(existingUserReview);
+
+        if (existingUserReview) {
+          setEditRating(existingUserReview.rating);
+          setEditComment(existingUserReview.comment || "");
         }
-
-        // console.log("Reviews state updated. Count:", data.reviews?.length || 0);
       } else {
         setError(data.error || "Failed to load reviews");
-        console.error("API error:", data.error);
       }
     } catch (error) {
       console.error("Error fetching reviews:", error);
       setError("Failed to load reviews. Please try again.");
     } finally {
       setLoading(false);
-      // console.log("Loading set to false");
     }
   };
 
   const submitReview = async () => {
     if (!user || user.user_type !== "diner") {
-      alert("Only diners can submit reviews");
+      showToast("Only diners can submit reviews", "warning", 3000);
       return;
     }
 
-    if (!newReview.comment.trim()) {
-      alert("Please add a comment to your review");
+    if (!editComment.trim()) {
+      showToast("Please add a comment to your review", "warning", 3000);
       return;
     }
 
     setSubmitting(true);
     const token = localStorage.getItem("auth_token");
 
-    // For posting a review
     try {
-      const response = await fetch(
-        `${API_CONFIG.BASE_URL}/api/restaurants/${restaurantId}/reviews`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-            Accept: "application/json",
+      let response;
+
+      if (userReview) {
+        // UPDATE existing review
+        response = await fetch(
+          `${API_CONFIG.BASE_URL}/api/reviews/${userReview.id}`,
+          {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            body: JSON.stringify({ rating: editRating, comment: editComment }),
           },
-          body: JSON.stringify(newReview),
-        },
-      );
+        );
+      } else {
+        // CREATE new review
+        response = await fetch(
+          `${API_CONFIG.BASE_URL}/api/restaurants/${restaurantId}/reviews`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            body: JSON.stringify({ rating: editRating, comment: editComment }),
+          },
+        );
+      }
 
       const data = await response.json();
-      // console.log("Submit review response:", data);
 
       if (data.success) {
         await fetchReviews();
-        alert(userReview ? "Review updated!" : "Review submitted!");
+        setEditMode(false);
+        showToast(
+          userReview
+            ? "Review updated successfully!"
+            : "Review submitted successfully!",
+          "success",
+          3000,
+        );
       } else {
-        alert(data.error || "Failed to submit review");
+        showToast(data.error || "Failed to submit review", "error", 3000);
       }
     } catch (error) {
       console.error("Error:", error);
-      alert("Error submitting review");
+      showToast("Error submitting review", "error", 3000);
     } finally {
       setSubmitting(false);
     }
   };
 
-  const deleteReview = async (reviewId) => {
-    if (!confirm("Are you sure you want to delete your review?")) return;
+  const deleteReview = async () => {
+    if (!userReview) return;
 
     const token = localStorage.getItem("auth_token");
-    // For updating/deleting a review
+
     try {
       const response = await fetch(
-        `${API_CONFIG.BASE_URL}/api/reviews/${reviewId}`,
+        `${API_CONFIG.BASE_URL}/api/reviews/${userReview.id}`,
         {
           method: "DELETE",
           headers: {
@@ -146,247 +159,247 @@ const ReviewsTab = ({ restaurantId, restaurantName }) => {
       const data = await response.json();
       if (data.success) {
         await fetchReviews();
-        alert("Review deleted");
+        setEditMode(false);
+        setEditRating(5);
+        setEditComment("");
+        showToast("Review deleted successfully", "success", 3000);
       }
     } catch (error) {
       console.error("Error:", error);
-      alert("Error deleting review");
+      showToast("Error deleting review", "error", 3000);
     }
   };
 
-  const renderStars = (rating, interactive = false, onClick = null) => {
+  const handleRatingClick = (rating) => {
+    setEditRating(rating);
+  };
+
+  const renderStars = (rating, interactive = false, size = "medium") => {
+    const starSize = size === "large" ? "20px" : "16px";
+
     return (
-      <div className="stars">
+      <div className="reviews-tab__stars-container">
         {[1, 2, 3, 4, 5].map((star) => (
           <span
             key={star}
-            className={`star ${star <= rating ? "filled" : ""} ${
-              interactive ? "interactive" : ""
-            }`}
-            onClick={() => interactive && onClick && onClick(star)}
+            className={`reviews-tab__star ${star <= rating ? "reviews-tab__star--filled" : ""} ${interactive ? "reviews-tab__star--interactive" : ""}`}
+            onClick={() => interactive && handleRatingClick(star)}
             style={{
               cursor: interactive ? "pointer" : "default",
-              fontSize: "18px",
-              margin: "0 2px",
-              color: star <= rating ? "#FFD700" : "#ddd",
+              fontSize: starSize,
             }}
           >
-            {star <= rating ? "★" : "☆"}
+            ★
           </span>
         ))}
       </div>
     );
   };
 
-  const getFilteredReviews = () => {
-    if (activeFilter === "all") return reviews;
-    return reviews.filter((review) => review.rating === parseInt(activeFilter));
-  };
-
-  const renderRatingDistribution = () => {
-    const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
-    reviews.forEach((review) => {
-      distribution[review.rating] = (distribution[review.rating] || 0) + 1;
-    });
-
-    return (
-      <div className="rating-distribution">
-        {[5, 4, 3, 2, 1].map((stars) => (
-          <button
-            key={stars}
-            className={`distribution-item ${
-              activeFilter === stars.toString() ? "active" : ""
-            }`}
-            onClick={() => setActiveFilter(stars.toString())}
-          >
-            <span className="stars-count">{stars} ★</span>
-            <div className="distribution-bar">
-              <div
-                className="bar-fill"
-                style={{
-                  width: `${
-                    totalReviews
-                      ? (distribution[stars] / totalReviews) * 100
-                      : 0
-                  }%`,
-                }}
-              ></div>
-            </div>
-            <span className="distribution-count">{distribution[stars]}</span>
-          </button>
-        ))}
-        <button
-          className={`distribution-item ${
-            activeFilter === "all" ? "active" : ""
-          }`}
-          onClick={() => setActiveFilter("all")}
-        >
-          <span className="stars-count">All</span>
-          <span className="distribution-count">{totalReviews}</span>
-        </button>
-      </div>
-    );
-  };
-
-  // Add debug logging
-  // console.log("Component state:", {
-  //   loading,
-  //   error,
-  //   reviewsCount: reviews.length,
-  //   averageRating,
-  //   totalReviews,
-  //   user: user?.name,
-  // });
-
   if (loading) {
     return (
-      <div className="owner-reviews-tab loading">
-        <div className="loading-spinner"></div>
+      <div className="reviews-tab loading">
+        <div className="tab__loading-state">
+          <div className="tab__loading-spinner"></div>
+          <p>Loading reviews...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="reviews-tab error-state">
-        <h3>Could not load reviews</h3>
-        <p>{error}</p>
-        <button onClick={fetchReviews} className="retry-btn">
-          Retry
-        </button>
+      <div className="reviews-tab">
+        <div className="reviews-tab__error-state">
+          <p>{error}</p>
+          <button onClick={fetchReviews} className="reviews-tab__retry-btn">
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }
 
-  const filteredReviews = getFilteredReviews();
-
   return (
     <div className="reviews-tab">
       {/* Rating Summary */}
-      <div className="rating-summary-card">
-        <div className="rating-overview">
-          <div className="menu-average-rating">
-            <span className="rating-number">{averageRating.toFixed(1)}</span>
-            <span className="rating-max">/5</span>
-          </div>
-          {renderStars(Math.round(averageRating))}
-          <p className="total-reviews">
-            {totalReviews} {totalReviews === 1 ? "review" : "reviews"}
-          </p>
+      <div className="reviews-tab__rating-summary">
+        <div className="reviews-tab__rating-score">
+          <span className="reviews-tab__rating-number">
+            {averageRating.toFixed(1)}
+          </span>
+          <span className="reviews-tab__rating-out-of">/5</span>
         </div>
+        {renderStars(Math.round(averageRating), false, "large")}
+        <p className="reviews-tab__rating-count">
+          {totalReviews} {totalReviews === 1 ? "review" : "reviews"}
+        </p>
       </div>
 
-      {/* Reviews List */}
-      <div className="reviews-list-section">
-        <h2>Reviews</h2>
-        <div className="reviews-list">
-          {filteredReviews.length === 0 ? (
-            <div className="no-reviews">
-              <p>No reviews yet. Be the first to review!</p>
+      {/* User's Review Section */}
+      {user && user.user_type === "diner" && (
+        <div className="reviews-tab__user-review-section">
+          <h3 className="reviews-tab__section-title">
+            {userReview ? "Your Review" : "Write a Review"}
+          </h3>
+
+          {!editMode && userReview ? (
+            // Display mode - Show existing review
+            <div className="reviews-tab__user-review-display">
+              <div className="reviews-tab__review-header">
+                <div className="reviews-tab__reviewer-info">
+                  <div className="reviews-tab__reviewer-avatar">
+                    {user.name?.charAt(0)?.toUpperCase() || "U"}
+                  </div>
+                  <div className="reviews-tab__reviewer-details">
+                    <span className="reviews-tab__reviewer-name">
+                      {user.name}
+                    </span>
+                    <span className="reviews-tab__review-date">
+                      {new Date(userReview.created_at).toLocaleDateString(
+                        "en-US",
+                        {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        },
+                      )}
+                    </span>
+                  </div>
+                </div>
+                <div className="reviews-tab__review-rating">
+                  {renderStars(userReview.rating, false, "small")}
+                </div>
+              </div>
+
+              {userReview.comment && (
+                <div className="reviews-tab__review-content">
+                  <p>{userReview.comment}</p>
+                </div>
+              )}
+
+              <div className="reviews-tab__review-actions">
+                <button
+                  onClick={() => setEditMode(true)}
+                  className="reviews-tab__edit-btn"
+                >
+                  Edit Review
+                </button>
+                <button
+                  onClick={deleteReview}
+                  className="reviews-tab__delete-review-btn"
+                >
+                  Delete Review
+                </button>
+              </div>
             </div>
           ) : (
-            filteredReviews.map((review) => (
-              <div key={review.id} className="review-card">
-                {/* Top Row: Avatar + Name + Date + Delete Button */}
-                <div className="review-header">
-                  {/* Left: Avatar and Name */}
-                  <div className="reviewer-info">
-                    <div className="reviewer-avatar">
+            // Edit/Create mode
+            <div className="reviews-tab__review-form">
+              <div className="reviews-tab__form-group">
+                <label>Your Rating</label>
+                {renderStars(editRating, true, "large")}
+                <span className="reviews-tab__rating-value">
+                  {editRating} out of 5
+                </span>
+              </div>
+
+              <div className="reviews-tab__form-group">
+                <label>Your Review</label>
+                <textarea
+                  value={editComment}
+                  onChange={(e) => setEditComment(e.target.value)}
+                  placeholder={`What did you think of ${restaurantName}?`}
+                  rows="4"
+                  maxLength="500"
+                />
+                <span className="reviews-tab__char-count">
+                  {editComment.length}/500
+                </span>
+              </div>
+
+              <div className="reviews-tab__form-actions">
+                <button
+                  onClick={submitReview}
+                  disabled={submitting || !editComment.trim()}
+                  className="reviews-tab__submit-btn"
+                >
+                  {submitting ? (
+                    <>
+                      <span className="reviews-tab__btn-spinner"></span>
+                      {userReview ? "Updating..." : "Submitting..."}
+                    </>
+                  ) : userReview ? (
+                    "Update Review"
+                  ) : (
+                    "Submit Review"
+                  )}
+                </button>
+
+                {userReview && (
+                  <button
+                    onClick={() => setEditMode(false)}
+                    className="reviews-tab__cancel-btn"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Other Customer Reviews */}
+      <div className="reviews-tab__other-reviews">
+        <h3 className="reviews-tab__section-title">Customer Reviews</h3>
+
+        {reviews.filter((r) => !userReview || r.id !== userReview.id).length ===
+        0 ? (
+          <div className="reviews-tab__no-reviews">
+            <p>No other reviews yet.</p>
+          </div>
+        ) : (
+          reviews
+            .filter((r) => !userReview || r.id !== userReview.id)
+            .map((review) => (
+              <div key={review.id} className="reviews-tab__review-item">
+                <div className="reviews-tab__review-header">
+                  <div className="reviews-tab__reviewer-info">
+                    <div className="reviews-tab__reviewer-avatar">
                       {review.user?.name?.charAt(0)?.toUpperCase() || "U"}
                     </div>
-
-                    <div className="reviewer-details">
-                      <div className="reviewer-name-date">
-                        <span className="reviewer-name">
-                          {review.user?.name || "Anonymous"}
-                        </span>
-                        <span className="review-date">
-                          {new Date(review.created_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="review-rating">
-                      {renderStars(review.rating)}
+                    <div className="reviews-tab__reviewer-details">
+                      <span className="reviews-tab__reviewer-name">
+                        {review.user?.name || "Anonymous"}
+                      </span>
+                      <span className="reviews-tab__review-date">
+                        {new Date(review.created_at).toLocaleDateString(
+                          "en-US",
+                          {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          },
+                        )}
+                      </span>
                     </div>
                   </div>
-                  {/* Right: Delete Button (if user's review) */}
-                  {user && review.user_id === user.id && (
-                    <button
-                      onClick={() => deleteReview(review.id)}
-                      className="review-delete-btn"
-                      title="Delete your review"
-                    >
-                      Delete
-                    </button>
-                  )}
+
+                  <div className="reviews-tab__review-rating">
+                    {renderStars(review.rating, false, "small")}
+                  </div>
                 </div>
-                {/* Bottom: Review Comment */}
+
                 {review.comment && (
-                  <div className="review-content">
-                    <p className="review-comment">{review.comment}</p>
+                  <div className="reviews-tab__review-content">
+                    <p>{review.comment}</p>
                   </div>
                 )}
               </div>
             ))
-          )}
-        </div>
+        )}
       </div>
-
-      {/* Review Form for Diners */}
-      {user && user.user_type === "diner" && (
-        <div className="review-form-card">
-          <h3>{userReview ? "Edit Your Review" : "Write a Review"}</h3>
-
-          <div className="review-form-group">
-            <label>Rate:</label>
-            <div className="star-rating-input">
-              {renderStars(newReview.rating, true, (rating) =>
-                setNewReview({ ...newReview, rating }),
-              )}
-              <span className="selected-rating">
-                {newReview.rating} out of 5
-              </span>
-            </div>
-          </div>
-
-          <div className="menu-form-group">
-            <label>Review:</label>
-            <textarea
-              value={newReview.comment}
-              onChange={(e) =>
-                setNewReview({ ...newReview, comment: e.target.value })
-              }
-              placeholder={`Share your experience at ${restaurantName}`}
-              rows="4"
-              maxLength="1000"
-            />
-          </div>
-
-          <div className="form-actions">
-            <button
-              onClick={submitReview}
-              disabled={submitting || !newReview.comment.trim()}
-              className="submit-btn"
-            >
-              {submitting
-                ? "Submitting..."
-                : userReview
-                  ? "Update Review"
-                  : "Submit"}
-            </button>
-
-            {userReview && (
-              <button
-                onClick={() => deleteReview(userReview.id)}
-                className="delete-btn"
-              >
-                Delete
-              </button>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

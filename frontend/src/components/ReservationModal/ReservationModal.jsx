@@ -189,7 +189,7 @@ const ReservationModal = ({
       <div className="reservation-modal-overlay">
         <div className="reservation-modal confirmation-modal">
           <div className="reservation-modal-header">
-            <h2>✓ Spot Reserved!</h2>
+            <h2>Spot Reserved!</h2>
             <button className="close-btn" onClick={onClose}>
               ✕
             </button>
@@ -255,7 +255,7 @@ const ReservationModal = ({
                 <li>The restaurant staff will confirm your hold</li>
               </ul>
               <div className="note important">
-                ⏰ Your spot will be released if you don't arrive before the
+                Your spot will be released if you don't arrive before the
                 arrival deadline.
               </div>
             </div>
@@ -325,9 +325,6 @@ const ReservationModal = ({
             {feeAmount > 0 && (
               <div className="fee-badge">
                 <span>Hold Fee: ₱{feeAmount.toFixed(2)}</span>
-                <span className="fee-note">
-                  (for parties of {minPartyForFee}+)
-                </span>
               </div>
             )}
           </div>

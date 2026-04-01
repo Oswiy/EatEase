@@ -376,50 +376,11 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
     return () => unsubscribe();
   }, [restaurantId]);
 
-  useEffect(() => {
-    if (restaurantId) {
-      fetchRestaurantDetails();
-      fetchReviewsData();
-    } else {
-      setError("No restaurant ID provided");
-      setLoading(false);
-    }
-  }, [restaurantId]);
-
-  // ========== IMAGE URLS ==========
-  const bannerImageUrl = restaurant?.banner_image
-    ? getImageUrl(restaurant.banner_image)
-    : null;
-
-  const profileImageUrl = restaurant?.profile_image
-    ? getImageUrl(restaurant.profile_image)
-    : null;
-
-  const fetchReviewsData = async () => {
-    try {
-      const response = await fetch(
-        `${API_CONFIG.BASE_URL}/api/restaurants/${restaurantId}/reviews`,
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-
-        if (data.success) {
-          setReviewsData({
-            reviews: data.reviews || [],
-            average_rating: data.average_rating || 0,
-            total_reviews: data.total_reviews || 0,
-          });
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching reviews for header:", error);
-    }
-  };
-
+  // ========== FETCH RESTAURANT DETAILS ==========
   const fetchRestaurantDetails = async () => {
     try {
       setError(null);
+      setLoading(true);
 
       const response = await fetch(
         `${API_CONFIG.BASE_URL}/api/restaurants/${restaurantId}`,
@@ -466,6 +427,7 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
 
       setRestaurant(transformedData);
 
+      // Fetch stats after restaurant is loaded
       try {
         const statsResponse = await fetch(
           `${API_CONFIG.BASE_URL}/api/restaurants/${restaurantId}/stats`,
@@ -490,6 +452,48 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
       setLoading(false);
     }
   };
+
+  const fetchReviewsData = async () => {
+    try {
+      const response = await fetch(
+        `${API_CONFIG.BASE_URL}/api/restaurants/${restaurantId}/reviews`,
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+
+        if (data.success) {
+          setReviewsData({
+            reviews: data.reviews || [],
+            average_rating: data.average_rating || 0,
+            total_reviews: data.total_reviews || 0,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching reviews for header:", error);
+    }
+  };
+
+  // ========== FETCH DATA ON MOUNT ==========
+  useEffect(() => {
+    if (restaurantId) {
+      fetchRestaurantDetails();
+      fetchReviewsData();
+    } else {
+      setError("No restaurant ID provided");
+      setLoading(false);
+    }
+  }, [restaurantId]);
+
+  // ========== IMAGE URLS ==========
+  const bannerImageUrl = restaurant?.banner_image
+    ? getImageUrl(restaurant.banner_image)
+    : null;
+
+  const profileImageUrl = restaurant?.profile_image
+    ? getImageUrl(restaurant.profile_image)
+    : null;
 
   const renderTabContent = () => {
     if (!restaurant) return null;
@@ -768,42 +772,55 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
             className="notification-modal"
             onClick={(e) => e.stopPropagation()}
           >
-            <h4>Notify me when {restaurant.name} is:</h4>
+            <div className="notification-modal-header">
+              <h4>Notify me when {restaurant.name} is:</h4>
+              <button
+                className="close-modal-btn"
+                onClick={() => {
+                  setShowNotificationModal(false);
+                  setSelectedNotification(null);
+                }}
+              >
+                ✕
+              </button>
+            </div>
 
             <div className="notification-options">
-              {["green", "yellow", "orange"].map((status) => (
-                <button
-                  key={status}
-                  className={`notification-option ${status} ${
-                    selectedNotification === status
-                      ? "selected"
-                      : notificationStatus[status]
-                        ? "selected"
-                        : ""
-                  }`}
-                  onClick={() => setSelectedNotification(status)}
-                  disabled={notificationLoading[status]}
-                >
-                  <div className="status-indicator-wrapper">
-                    <div className={`status-indicator ${status}`}></div>
-                    {(selectedNotification === status ||
-                      (!selectedNotification &&
-                        notificationStatus[status])) && (
-                      <div className="selected-check">✓</div>
-                    )}
-                  </div>
-                  <div className="option-text">
-                    <span className="option-title">
-                      {getStatusText(status)} Crowd
-                    </span>
-                    <small className="option-desc">
-                      {status === "green" && "Get a table easily"}
-                      {status === "yellow" && "Consider going soon"}
-                      {status === "orange" && "Some wait time"}
-                    </small>
-                  </div>
-                </button>
-              ))}
+              {["green", "yellow", "orange"].map((status) => {
+                const isSelected =
+                  selectedNotification === status ||
+                  (!selectedNotification && notificationStatus[status]);
+
+                return (
+                  <button
+                    key={status}
+                    className={`notification-option ${status} ${isSelected ? "selected" : ""}`}
+                    onClick={() => setSelectedNotification(status)}
+                    disabled={notificationLoading[status]}
+                  >
+                    <div className="notification-option-radio">
+                      <div
+                        className={`radio-outer ${isSelected ? "checked" : ""}`}
+                      >
+                        {isSelected && <div className="radio-inner"></div>}
+                      </div>
+                    </div>
+                    <div className="status-indicator-wrapper">
+                      <div className={`status-indicator ${status}`}></div>
+                    </div>
+                    <div className="option-text">
+                      <span className="option-title">
+                        {getStatusText(status)} Crowd
+                      </span>
+                      <small className="option-desc">
+                        {status === "green" && "Get a table easily"}
+                        {status === "yellow" && "Consider going soon"}
+                        {status === "orange" && "Some wait time"}
+                      </small>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
 
             <div className="modal-actions">
@@ -813,9 +830,9 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
                   setShowNotificationModal(false);
                   setSelectedNotification(null);
                 }}
-                disabled={
-                  notificationLoading[Object.keys(notificationLoading)[0]]
-                }
+                disabled={Object.values(notificationLoading).some(
+                  (v) => v === true,
+                )}
               >
                 Cancel
               </button>
@@ -835,16 +852,10 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
                     disabled={notificationLoading[selectedNotification]}
                   >
                     {notificationLoading[selectedNotification] ? (
-                      <span
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                        }}
-                      >
+                      <>
                         <span className="save-spinner"></span>
                         Saving...
-                      </span>
+                      </>
                     ) : (
                       "Confirm"
                     )}
@@ -878,20 +889,13 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
                 )}
               >
                 {Object.values(notificationLoading).some((v) => v === true) ? (
-                  <span
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "8px",
-                    }}
-                  >
+                  <>
                     <span
                       className="save-spinner"
-                      style={{ borderLeftColor: "#fc0000" }}
+                      style={{ borderLeftColor: "#ff6b6b" }}
                     ></span>
                     Removing...
-                  </span>
+                  </>
                 ) : (
                   "Remove Notification"
                 )}

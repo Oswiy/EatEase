@@ -4,6 +4,9 @@ import Filters from "../Filters/Filters";
 import FeatureCarousel from "../FeatureCarousel/FeatureCarousel";
 import RestaurantCard from "../RestaurantCard/RestaurantCard";
 import RestaurantDetails from "../RestaurantDetails/RestaurantDetails";
+import BookmarksPage from "../BookmarksPage/BookmarksPage"; // Import BookmarksPage
+import NotificationsPage from "../NotificationsPage/NotificationsPage"; // Import if you have it
+import ReservationsPage from "../ReservationsPage/ReservationsPage"; // Import if you have it
 import "./RestaurantList.css";
 import API_CONFIG from "../../config";
 
@@ -33,6 +36,11 @@ function RestaurantList({
   const [showOnlyPremium, setShowOnlyPremium] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [allNotifications, setAllNotifications] = useState([]);
+
+  // Navigation states
+  const [showBookmarks, setShowBookmarks] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showReservations, setShowReservations] = useState(false);
 
   // Cache for restaurants data
   const [lastFetchTime, setLastFetchTime] = useState(null);
@@ -91,7 +99,7 @@ function RestaurantList({
     }
   };
 
-  // ✅ NEW: Function to refresh notifications (to be passed to RestaurantDetails)
+  // Function to refresh notifications (to be passed to RestaurantDetails)
   const refreshNotifications = useCallback(async () => {
     const token = localStorage.getItem("auth_token");
     if (!token) return;
@@ -151,7 +159,6 @@ function RestaurantList({
     setIsRefreshing(true);
 
     try {
-      // Build query string from current filters
       const params = new URLSearchParams();
 
       if (filters.cuisine && filters.cuisine !== "all") {
@@ -192,13 +199,11 @@ function RestaurantList({
         data.restaurants || [],
       );
 
-      // Only update restaurants, nothing else
       setRestaurants(randomizedRestaurants);
       setLastFetchTime(Date.now());
     } catch (err) {
       console.error("Failed to refresh restaurants:", err);
       setError("Failed to refresh restaurants. Please try again.");
-      // Clear error after 3 seconds
       setTimeout(() => setError(""), 3000);
     } finally {
       setIsRefreshing(false);
@@ -210,7 +215,6 @@ function RestaurantList({
       setLoading(true);
       setError("");
 
-      // Build query string from filters
       const params = new URLSearchParams();
 
       if (currentFilters.cuisine && currentFilters.cuisine !== "all") {
@@ -305,14 +309,23 @@ function RestaurantList({
 
   const handleBackToList = () => {
     setSelectedRestaurant(null);
+    // Reset navigation states when going back
+    setShowBookmarks(false);
+    setShowNotifications(false);
+    setShowReservations(false);
   };
 
   const handleRefresh = useCallback(async () => {
     await refreshRestaurantsOnly();
   }, [refreshRestaurantsOnly]);
 
+  // Navigation handlers
   const handleBookmarks = () => {
     setShowMenu(false);
+    setShowBookmarks(true);
+    setShowNotifications(false);
+    setShowReservations(false);
+    setSelectedRestaurant(null);
     if (onNavigateToBookmarks) {
       onNavigateToBookmarks();
     }
@@ -321,9 +334,30 @@ function RestaurantList({
   const handleNotifications = () => {
     setShowMenu(false);
     fetchNotificationCount();
+    setShowNotifications(true);
+    setShowBookmarks(false);
+    setShowReservations(false);
+    setSelectedRestaurant(null);
     if (onNavigateToNotifications) {
       onNavigateToNotifications();
     }
+  };
+
+  const handleReservations = () => {
+    setShowMenu(false);
+    setShowReservations(true);
+    setShowBookmarks(false);
+    setShowNotifications(false);
+    setSelectedRestaurant(null);
+    if (onNavigateToReservations) {
+      onNavigateToReservations();
+    }
+  };
+
+  const handleBookmarkRestaurantClick = (restaurant) => {
+    // Close bookmarks page and show restaurant details
+    setShowBookmarks(false);
+    setSelectedRestaurant(restaurant);
   };
 
   const handleLogout = () => {
@@ -372,106 +406,96 @@ function RestaurantList({
       className={`restaurant-list ${selectedRestaurant ? "detail-view" : ""}`}
     >
       {/* HEADER - Only shown in LIST view */}
-      {!selectedRestaurant && (
-        <div className="restaurant-list-header">
-          <SearchBar
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-          />
+      {!selectedRestaurant &&
+        !showBookmarks &&
+        !showNotifications &&
+        !showReservations && (
+          <div className="restaurant-list-header">
+            <SearchBar
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+            />
 
-          <Filters
-            filters={filters}
-            setFilters={setFilters}
-            showFilters={showFilters}
-            setShowFilters={setShowFilters}
-            onApplyFilters={fetchRestaurants}
-          />
+            <Filters
+              filters={filters}
+              setFilters={setFilters}
+              showFilters={showFilters}
+              setShowFilters={setShowFilters}
+              onApplyFilters={fetchRestaurants}
+            />
 
-          <div className="menu-container" ref={menuRef}>
-            <button
-              className="menu-button"
-              onClick={() => setShowMenu(!showMenu)}
-              aria-label="Toggle menu"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                height="22px"
-                viewBox="0 -960 960 960"
-                width="27px"
-                fill="#e3e3e3"
+            <div className="menu-container" ref={menuRef}>
+              <button
+                className="menu-button"
+                onClick={() => setShowMenu(!showMenu)}
+                aria-label="Toggle menu"
               >
-                <path d="M120-240v-80h720v80H120Zm0-200v-80h720v80H120Zm0-200v-80h720v80H120Z" />
-              </svg>
-            </button>
+                ☰
+              </button>
 
-            {showMenu && (
-              <div className="dropdown-menu">
-                <button
-                  onClick={() => {
-                    setShowMenu(false);
-                    onNavigateToReservations();
-                  }}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    height="20px"
-                    viewBox="0 -960 960 960"
-                    width="20px"
-                    fill="black"
+              {showMenu && (
+                <div className="dropdown-menu">
+                  <button onClick={handleReservations}>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      height="20px"
+                      viewBox="0 -960 960 960"
+                      width="20px"
+                      fill="black"
+                    >
+                      <path d="M320-240h320v-80H320v80Zm0-160h320v-80H320v80ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520ZM240-800v200-200 640-640Z" />
+                    </svg>
+                    Reservations
+                  </button>
+                  <button onClick={handleBookmarks}>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      height="20px"
+                      viewBox="0 -960 960 960"
+                      width="20px"
+                      fill="black"
+                    >
+                      <path d="M160-80v-560q0-33 23.5-56.5T240-720h320q33 0 56.5 23.5T640-640v560L400-200 160-80Zm80-121 160-86 160 86v-439H240v439Zm480-39v-560H280v-80h440q33 0 56.5 23.5T800-800v560h-80ZM240-640h320-320Z" />
+                    </svg>
+                    Bookmarks
+                  </button>
+                  <button
+                    onClick={handleNotifications}
+                    className="notifications-btn"
                   >
-                    <path d="M320-240h320v-80H320v80Zm0-160h320v-80H320v80ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520ZM240-800v200-200 640-640Z" />
-                  </svg>
-                  Reservations
-                </button>
-                <button onClick={handleBookmarks}>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    height="20px"
-                    viewBox="0 -960 960 960"
-                    width="20px"
-                    fill="black"
-                  >
-                    <path d="M160-80v-560q0-33 23.5-56.5T240-720h320q33 0 56.5 23.5T640-640v560L400-200 160-80Zm80-121 160-86 160 86v-439H240v439Zm480-39v-560H280v-80h440q33 0 56.5 23.5T800-800v560h-80ZM240-640h320-320Z" />
-                  </svg>
-                  Bookmarks
-                </button>
-                <button
-                  onClick={handleNotifications}
-                  className="notifications-btn"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    height="20px"
-                    viewBox="0 -960 960 960"
-                    width="20px"
-                    fill="#000000"
-                  >
-                    <path d="M480-489Zm0 409q-33 0-56.5-23.5T400-160h160q0 33-23.5 56.5T480-80ZM160-200v-80h80v-280q0-84 50.5-149T422-793q-10 22-15.5 46t-7.5 49q-35 21-57 57t-22 81v280h320v-122q20 3 40 3t40-3v122h80v80H160Zm480-280-12-60q-12-5-22.5-10.5T584-564l-58 18-40-68 46-40q-2-13-2-26t2-26l-46-40 40-68 58 18q11-8 21.5-13.5T628-820l12-60h80l12 60q12 5 22.5 10.5T776-796l58-18 40 68-46 40q2 13 2 26t-2 26l46 40-40 68-58-18q-11 8-21.5 13.5T732-540l-12 60h-80Zm40-120q33 0 56.5-23.5T760-680q0-33-23.5-56.5T680-760q-33 0-56.5 23.5T600-680q0 33 23.5 56.5T680-600Z" />
-                  </svg>
-                  Notifications
-                  {notificationCount > 0 && (
-                    <span className="notification-badge">
-                      {notificationCount}
-                    </span>
-                  )}
-                </button>
-                <button onClick={handleLogout} className="logout-btn">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    height="20px"
-                    viewBox="0 -960 960 960"
-                    width="20px"
-                    fill="red"
-                  >
-                    <path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h280v80H200Zm440-160-55-58 102-102H360v-80h327L585-622l55-58 200 200-200 200Z" />
-                  </svg>
-                  Log Out
-                </button>
-              </div>
-            )}
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      height="20px"
+                      viewBox="0 -960 960 960"
+                      width="20px"
+                      fill="#000000"
+                    >
+                      <path d="M480-489Zm0 409q-33 0-56.5-23.5T400-160h160q0 33-23.5 56.5T480-80ZM160-200v-80h80v-280q0-84 50.5-149T422-793q-10 22-15.5 46t-7.5 49q-35 21-57 57t-22 81v280h320v-122q20 3 40 3t40-3v122h80v80H160Zm480-280-12-60q-12-5-22.5-10.5T584-564l-58 18-40-68 46-40q-2-13-2-26t2-26l-46-40 40-68 58 18q11-8 21.5-13.5T628-820l12-60h80l12 60q12 5 22.5 10.5T776-796l58-18 40 68-46 40q2 13 2 26t-2 26l46 40-40 68-58-18q-11 8-21.5 13.5T732-540l-12 60h-80Zm40-120q33 0 56.5-23.5T760-680q0-33-23.5-56.5T680-760q-33 0-56.5 23.5T600-680q0 33 23.5 56.5T680-600Z" />
+                    </svg>
+                    Notifications
+                    {notificationCount > 0 && (
+                      <span className="notification-badge">
+                        {notificationCount}
+                      </span>
+                    )}
+                  </button>
+                  <button onClick={handleLogout} className="logout-btn">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      height="20px"
+                      viewBox="0 -960 960 960"
+                      width="20px"
+                      fill="red"
+                    >
+                      <path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h280v80H200Zm440-160-55-58 102-102H360v-80h327L585-622l55-58 200 200-200 200Z" />
+                    </svg>
+                    Log Out
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* ERROR STATE */}
       {error && !loading && (
@@ -486,8 +510,20 @@ function RestaurantList({
         <RestaurantDetails
           restaurantId={selectedRestaurant.id}
           onBack={handleBackToList}
-          onNotificationChange={refreshNotifications} // ✅ Pass the callback
+          onNotificationChange={refreshNotifications}
         />
+      ) : showBookmarks ? (
+        <BookmarksPage
+          user={user}
+          onBack={handleBackToList}
+          onRestaurantClick={handleBookmarkRestaurantClick}
+        />
+      ) : showNotifications ? (
+        // Add NotificationsPage component here if you have it
+        <div>Notifications Page (Coming Soon)</div>
+      ) : showReservations ? (
+        // Add ReservationsPage component here if you have it
+        <div>Reservations Page (Coming Soon)</div>
       ) : (
         !error && (
           <>
@@ -533,7 +569,7 @@ function RestaurantList({
               </button>
             </div>
 
-            {/* MAIN RESTAURANT LIST - ONLY THIS REFRESHES */}
+            {/* MAIN RESTAURANT LIST */}
             <div className="restaurants-container">
               {filteredRestaurants.length === 0 ? (
                 <div className="empty-state">

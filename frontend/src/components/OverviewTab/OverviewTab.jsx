@@ -102,7 +102,9 @@ const OverviewTab = ({ restaurant, stats, reviewsData }) => {
 
       {/* Features/Amenities */}
       {restaurant.features && restaurant.features.length > 0 && (
-        <div className="tab-header">Features:</div>
+        <div className="features-tab-header">
+          <h2>Features:</h2>
+        </div>
       )}
       <div className="features-grid">
         {restaurant.features.map((feature, index) => (

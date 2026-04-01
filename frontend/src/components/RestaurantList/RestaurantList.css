@@ -1,10 +1,18 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
+
+/* ===== BASE STYLES ===== */
+.restaurant-list {
+  min-height: 100vh;
+  background: linear-gradient(19deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  font-family: Inter;
+  padding: 1rem;
+}
 
 /* ===== DETAIL VIEW STYLES ===== */
 .restaurant-list.detail-view {
   padding: 0 !important;
   margin: 0 !important;
-  background: #efedde !important;
+  background: #1a1a2e !important;
 }
 
 .restaurant-list.detail-view .restaurant-details-page {
@@ -16,37 +24,30 @@
   padding-bottom: 15px;
 }
 
-/* ===== BASE STYLES ===== */
-.restaurant-list {
-  padding: 0.8rem;
-  min-height: 100vh;
-  background: #efedde;
-  font-family: Inter;
-}
-
 /* ===== LOADING STATE ===== */
 .loading-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 300px;
+  min-height: 60vh;
   padding: 2rem;
 }
 
 .loading-spinner-large {
-  width: 40px;
-  height: 40px;
-  border: 3px solid #e0e0e0;
-  border-top: 3px solid #ffd700;
+  width: 48px;
+  height: 48px;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-top: 3px solid #fff;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   margin: 0 auto 1rem;
 }
 
 .loading-text {
-  color: #666;
+  color: #fff;
   font-size: 0.9rem;
+  opacity: 0.8;
 }
 
 .loading-state {
@@ -55,35 +56,68 @@
 
 /* ===== ERROR STATE ===== */
 .error-state {
-  margin: 20px 10px;
+  background: rgba(220, 53, 69, 0.1);
+  border: 1px solid rgba(220, 53, 69, 0.3);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px;
+  text-align: center;
 }
 
 .error-state p {
-  font-size: 13px;
+  color: #ff6b6b;
+  font-size: 14px;
+  margin-bottom: 12px;
 }
 
 .error-state button {
-  font-size: 12px;
+  background: #0f3460;
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.error-state button:hover {
+  background: #1a4a7a;
 }
 
 /* ===== HEADER STYLES ===== */
 .restaurant-list-header {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 12px;
   flex-wrap: wrap;
   position: relative;
-  border-radius: 8px;
-  min-height: 45px;
+  border-radius: 16px;
+  padding: 12px 0;
+  margin-bottom: 20px;
 }
 
 .menu-button {
-  padding: 0.5rem 0.6rem;
-  background: black;
-  border: none;
-  border-radius: 8px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
   cursor: pointer;
-  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.menu-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.menu-button svg {
+  fill: #fff;
 }
 
 /* ===== HAMBURGER MENU ===== */
@@ -92,37 +126,43 @@
 }
 
 .dropdown-menu {
-  font-family: Inter;
   position: absolute;
   top: 100%;
   right: 0;
-  background: white;
-  border: none;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: #1e2a3a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
   z-index: 1000;
-  min-width: 180px;
-  margin-top: 0.5rem;
+  min-width: 200px;
+  margin-top: 8px;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
 }
 
 .dropdown-menu button {
   display: flex;
   align-items: center;
   width: 100%;
-  padding: 12px 15px;
+  padding: 12px 16px;
   background: none;
   border: none;
   text-align: left;
   cursor: pointer;
-  font-size: 0.9rem;
-  color: #333;
-  border-bottom: 1px solid #f0f0f0;
-  gap: 7px;
-  position: relative;
+  font-size: 14px;
+  color: #fff;
+  gap: 10px;
+  transition: all 0.2s ease;
 }
 
 .dropdown-menu button:hover {
-  background: #f8f9fa;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dropdown-menu button svg {
+  fill: #fff;
+  width: 18px;
+  height: 18px;
 }
 
 .dropdown-menu button:last-child {
@@ -130,8 +170,11 @@
 }
 
 .logout-btn {
-  color: #dc3545 !important;
-  font-weight: 500;
+  color: #ff6b6b !important;
+}
+
+.logout-btn svg {
+  fill: #ff6b6b !important;
 }
 
 /* Notification badge in hamburger menu */
@@ -141,76 +184,85 @@
 
 .notification-badge {
   position: absolute;
-  right: 10px;
+  right: 16px;
   top: 50%;
   transform: translateY(-50%);
-  background-color: #ff6b6b;
+  background: #ff6b6b;
   color: white;
   border-radius: 50%;
-  width: 20px;
+  min-width: 20px;
   height: 20px;
-  font-size: 12px;
+  font-size: 11px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
+  padding: 0 4px;
 }
 
 /* ===== AVAILABLE RESTAURANTS HEADER ===== */
 .available-restaurants-header {
   display: flex;
   justify-content: space-between;
-  padding: 5px 0px 5px 0px;
-  flex-wrap: wrap;
   align-items: center;
+  padding: 10px 5px;
+  margin: 20px 0 0px;
 }
 
 .available-restaurants-header .available-title {
   font-size: 20px;
-  padding: 5px 0px 0px 5px;
-  font-family: Inter;
   font-weight: 800;
+  color: #fff;
+  margin: 0;
 }
 
 /* ===== REFRESH BUTTON ===== */
 .available-restaurants-header .refresh-button {
   display: flex;
-  border: none;
-  background-color: inherit;
-  gap: 3px;
   align-items: center;
-  color: rgba(0, 0, 0, 0.664);
-  margin-right: 10px;
-  font-size: 12px;
-  align-self: flex-end;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  width: 36px;
+  height: 36px;
   cursor: pointer;
-  padding: 8px;
-  border-radius: 50%;
   transition: all 0.2s ease;
 }
 
 .available-restaurants-header .refresh-button:hover:not(:disabled) {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.2);
   transform: rotate(15deg);
 }
 
 .available-restaurants-header .refresh-button:disabled {
   cursor: not-allowed;
-  opacity: 0.7;
+  opacity: 0.6;
 }
 
 .refresh-spinner.spinning {
   animation: spin 0.6s linear infinite;
 }
 
+.refresh-icon,
+.refresh-spinner {
+  width: 18px;
+  height: 18px;
+  fill: #fff;
+}
+
 /* ===== RESTAURANTS CONTAINER ===== */
+.restaurants-container {
+  margin-top: 0px;
+}
+
 .restaurants-container h2 {
   margin-bottom: 0.5rem;
-  color: #333;
+  color: #fff;
 }
 
 .restaurants-container > p {
-  color: #666;
+  color: rgba(255, 255, 255, 0.7);
   margin-bottom: 1rem;
   font-size: 0.9rem;
 }
@@ -220,25 +272,30 @@
   text-align: center;
   padding: 60px 20px;
   margin: 20px 0;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 24px;
+  backdrop-filter: blur(10px);
 }
 
 .empty-state p {
   font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .empty-state .show-all-btn {
-  background: #4dabf7;
+  background: #0f3460;
   color: white;
   border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  margin-top: 10px;
+  padding: 10px 20px;
+  border-radius: 10px;
+  margin-top: 15px;
   cursor: pointer;
   font-weight: 500;
+  transition: all 0.2s ease;
 }
 
 .empty-state .show-all-btn:hover {
-  background: #339af0;
+  background: #1a4a7a;
 }
 
 /* ===== ANIMATIONS ===== */
@@ -253,8 +310,38 @@
 
 /* ===== MOBILE RESPONSIVE ===== */
 @media (max-width: 768px) {
-  .restaurant-list:has(.restaurant-details-page) .restaurant-list-header {
-    display: none !important;
+  .restaurant-list {
+    padding: 0.5rem;
+  }
+
+  .restaurant-list-header {
+    gap: 8px;
+  }
+
+
+  .dropdown-menu {
+    min-width: 180px;
+  }
+
+  .dropdown-menu button {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .restaurant-list-header {
+    gap: 6px;
+  }
+
+  .menu-button {
+    padding: 8px 12px;
+  }
+
+
+  .available-restaurants-header .refresh-button {
+    width: 32px;
+    height: 32px;
   }
 }
 
@@ -262,17 +349,12 @@
   .restaurants-container {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 2rem 2rem;
+    gap: 1.5rem;
     margin: 0 auto;
-    padding: 0 1rem;
-    margin-top: 15px;
+    margin-top: 20px;
   }
 
   .restaurant-card {
-    margin-bottom: 0.5rem;
-  }
-
-  .restaurant-banner-container {
-    height: 200px;
+    margin-bottom: 0;
   }
 }

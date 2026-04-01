@@ -8,7 +8,6 @@ const MenuTab = ({ restaurantId }) => {
   const [restaurantName, setRestaurantName] = useState("");
 
   useEffect(() => {
-    // console.log("MenuTab: Loading menu for restaurant", restaurantId);
     fetchMenu();
   }, [restaurantId]);
 
@@ -18,15 +17,13 @@ const MenuTab = ({ restaurantId }) => {
 
     lines.forEach((line) => {
       const trimmed = line.trim();
-      // Parse format: Item Name - ₱Price (expecting peso format)
       if (trimmed.includes(" - ")) {
         const parts = trimmed.split(" - ");
         if (parts.length === 2) {
-          // Remove any currency symbol and use peso
           const price = parts[1].trim().replace(/^[₱$\s]+/, "");
           items.push({
             name: parts[0].trim(),
-            price: `₱${price}`, // Always prefix with peso
+            price: `₱${price}`,
             id: Date.now() + Math.random(),
           });
         }
@@ -43,7 +40,6 @@ const MenuTab = ({ restaurantId }) => {
         `${API_CONFIG.BASE_URL}/api/restaurants/${restaurantId}/menu-text`,
       );
       const data = await response.json();
-      // console.log("MenuTab API response:", data);
 
       if (data.success) {
         const menuText = data.menu_description || "";
@@ -67,8 +63,11 @@ const MenuTab = ({ restaurantId }) => {
 
   if (loading) {
     return (
-      <div className="owner-reviews-tab loading">
-        <div className="loading-spinner"></div>
+      <div className="reviews-tab loading">
+        <div className="tab__loading-state">
+          <div className="tab__loading-spinner"></div>
+          <p>Loading menu...</p>
+        </div>
       </div>
     );
   }
@@ -77,7 +76,11 @@ const MenuTab = ({ restaurantId }) => {
     <div className="menu-tab">
       <div className="menu-header-section">
         <h2>{restaurantName ? `${restaurantName} Menu` : "Menu"}</h2>
-        {menuItems.length > 0}
+        {menuItems.length > 0 && (
+          <div className="menu-stats">
+            <span className="stat-count">{menuItems.length} items</span>
+          </div>
+        )}
       </div>
 
       {menuItems.length > 0 ? (
@@ -103,7 +106,7 @@ const MenuTab = ({ restaurantId }) => {
               height="48"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#ccc"
+              stroke="currentColor"
             >
               <path
                 strokeLinecap="round"

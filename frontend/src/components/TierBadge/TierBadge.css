@@ -39,8 +39,7 @@
 /* Premium Tier - Mobile */
 .card-tier-badge.premium {
   background: rgb(255, 217, 0);
-  color: #856404;
-  border: 1px gold;
+  margin-left: 3px;
 }
 
 /* Basic Tier - Mobile */

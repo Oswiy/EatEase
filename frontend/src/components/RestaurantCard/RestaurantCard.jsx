@@ -641,7 +641,7 @@ function RestaurantCard({
                 width="11"
                 height="11"
                 viewBox="0 -960 960 960"
-                fill="black"
+                fill="white"
                 aria-hidden="true"
               >
                 <path d="m175-120-56-56 410-410q-18-42-5-95t57-95q53-53 118-62t106 32q41 41 32 106t-62 118q-42 44-95 57t-95-5l-50 50 304 304-56 56-304-302-304 302Zm118-342L173-582q-54-54-54-129t54-129l248 250-128 128Z" />
@@ -694,40 +694,50 @@ function RestaurantCard({
             className="notification-modal"
             onClick={(e) => e.stopPropagation()}
           >
-            <h4>Notify me when {currentRestaurant.name} is:</h4>
+            <div className="notification-modal-header">
+              <h4>Notify me when {currentRestaurant.name} is:</h4>
+              <button
+                className="close-modal-btn"
+                onClick={() => setShowNotificationModal(false)}
+              >
+                ✕
+              </button>
+            </div>
 
             <div className="notification-options">
-              {["green", "yellow", "orange"].map((status) => (
-                <button
-                  key={status}
-                  className={`notification-option ${status} ${
-                    selectedNotification === status
-                      ? "selected"
-                      : userHasNotification === status
-                        ? "selected"
-                        : ""
-                  }`}
-                  onClick={() => setSelectedNotification(status)}
-                  disabled={loading}
-                >
-                  <div className="status-indicator-wrapper">
-                    <div className={`status-indicator ${status}`}></div>
-                    {(selectedNotification === status ||
-                      (!selectedNotification &&
-                        userHasNotification === status)) && (
-                      <div className="selected-check">✓</div>
-                    )}
-                  </div>
-                  <div className="option-text">
-                    <span className="option-title">
-                      {getStatusText(status)} Crowd
-                    </span>
-                    <small className="option-desc">
-                      {getStatusDescription(status)}
-                    </small>
-                  </div>
-                </button>
-              ))}
+              {["green", "yellow", "orange"].map((status) => {
+                const isSelected =
+                  selectedNotification === status ||
+                  (!selectedNotification && userHasNotification === status);
+
+                return (
+                  <button
+                    key={status}
+                    className={`notification-option ${status} ${isSelected ? "selected" : ""}`}
+                    onClick={() => setSelectedNotification(status)}
+                    disabled={loading}
+                  >
+                    <div className="notification-option-radio">
+                      <div
+                        className={`radio-outer ${isSelected ? "checked" : ""}`}
+                      >
+                        {isSelected && <div className="radio-inner"></div>}
+                      </div>
+                    </div>
+                    <div className="status-indicator-wrapper">
+                      <div className={`status-indicator ${status}`}></div>
+                    </div>
+                    <div className="option-text">
+                      <span className="option-title">
+                        {getStatusText(status)} Crowd
+                      </span>
+                      <small className="option-desc">
+                        {getStatusDescription(status)}
+                      </small>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
 
             <div className="modal-actions">
@@ -751,16 +761,10 @@ function RestaurantCard({
                     disabled={notifLoading}
                   >
                     {notifLoading ? (
-                      <span
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                        }}
-                      >
+                      <>
                         <span className="save-spinner"></span>
                         Saving...
-                      </span>
+                      </>
                     ) : (
                       "Confirm"
                     )}
@@ -778,20 +782,13 @@ function RestaurantCard({
                 disabled={notifLoading}
               >
                 {notifLoading ? (
-                  <span
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "8px",
-                    }}
-                  >
+                  <>
                     <span
                       className="save-spinner"
-                      style={{ borderLeftColor: "#fc0000" }}
+                      style={{ borderLeftColor: "#ff6b6b" }}
                     ></span>
                     Removing...
-                  </span>
+                  </>
                 ) : (
                   "Remove Notification"
                 )}
