@@ -1,47 +1,36 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import "./FeatureCarousel.css";
 import pollingService from "../../services/pollingService";
-import API_CONFIG from "../../config"; // ADD THIS IMPORT
+import API_CONFIG from "../../config";
 
 function FeatureCarousel({ restaurants, onRestaurantClick }) {
   const [featuredRestaurants, setFeaturedRestaurants] = useState([]);
   const [loadedImages, setLoadedImages] = useState({});
   const [updatedRestaurants, setUpdatedRestaurants] = useState({});
 
-  // Randomize ONCE when component mounts or restaurants change
+  // Set featured restaurants WITHOUT randomizing
   useEffect(() => {
     if (!restaurants || restaurants.length === 0) return;
     
-    // Filter featured restaurants
+    // Filter featured restaurants only - keep original order
     const featured = restaurants.filter(
       (restaurant) =>
         restaurant.is_featured === true || restaurant.isFeatured === true,
     );
     
-    // Randomize the order using Fisher-Yates shuffle
-    const shuffleArray = (array) => {
-      const shuffled = [...array];
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-      }
-      return shuffled;
-    };
-    
-    const randomizedFeatured = shuffleArray(featured);
-    
-    setFeaturedRestaurants(randomizedFeatured);
+    // Keep the original order from the API
+    setFeaturedRestaurants(featured);
     
     // Initialize updated restaurants with initial data
     const initialUpdates = {};
-    randomizedFeatured.forEach(restaurant => {
+    featured.forEach(restaurant => {
       initialUpdates[restaurant.id] = {
         crowd_status: restaurant.crowd_status || restaurant.status,
         occupancy_percentage: restaurant.occupancy_percentage || 0
       };
     });
     setUpdatedRestaurants(initialUpdates);
-  }, [restaurants]); // Only re-run when restaurants prop changes
+  }, [restaurants]);
 
   // Set up polling for all featured restaurants
   useEffect(() => {
@@ -118,33 +107,25 @@ function FeatureCarousel({ restaurants, onRestaurantClick }) {
     }
   };
 
-  // ✅ FIXED: Use API_CONFIG for image URLs
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
 
-    // If it's already a full URL (starts with http), use it directly
     if (imagePath.startsWith('http')) {
       return imagePath;
     }
 
-    // Otherwise, assume it's a local storage path and use API_CONFIG
     return `${API_CONFIG.BASE_URL}${imagePath}`;
   };
 
   const handleImageLoad = (restaurantId) => {
-    // console.log(`Image loaded for restaurant ${restaurantId}`);
     setLoadedImages((prev) => ({ ...prev, [restaurantId]: true }));
   };
 
   const handleImageError = (restaurantId, url) => {
-    console.error(
-      // `Image failed to load for restaurant ${restaurantId}:`,
-      url,
-    );
+    console.error(`Image failed to load for restaurant ${restaurantId}:`, url);
     setLoadedImages((prev) => ({ ...prev, [restaurantId]: false }));
   };
 
-  // Helper to get the current status for a restaurant
   const getCurrentRestaurantData = (restaurant) => {
     const updatedData = updatedRestaurants[restaurant.id];
     return {
@@ -180,13 +161,6 @@ function FeatureCarousel({ restaurants, onRestaurantClick }) {
           const currentData = getCurrentRestaurantData(restaurant);
           const imageUrl = getImageUrl(restaurant.banner_image);
           const hasLoaded = loadedImages[restaurant.id];
-
-          // console.log(`Rendering ${restaurant.name}:`, {
-          //   currentStatus: currentData.crowd_status,
-          //   originalStatus: restaurant.crowd_status,
-          //   hasUpdate: !!updatedRestaurants[restaurant.id],
-          //   imageUrl: imageUrl
-          // });
 
           return (
             <div

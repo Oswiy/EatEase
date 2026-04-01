@@ -1,23 +1,7 @@
 .notifications-page {
   padding: 1rem;
   min-height: 100vh;
-  background: #f9f9f9;
-}
-
-.page-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid #e1e1e1;
-}
-
-.page-header h1 {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #333;
+  background: #efedde;
 }
 
 .back-button {
@@ -149,9 +133,8 @@
 .notifications-empty-state {
   text-align: center;
   padding: 3rem 1rem;
-  background: white;
+  background: inherit;
   border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
 .empty-icon {
@@ -177,9 +160,9 @@
 .error-state {
   text-align: center;
   padding: 3rem 1rem;
-  background: white;
+  background: inherit;
   border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  /* box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); */
 }
 
 .error-state button {
@@ -244,14 +227,6 @@
 /* Make notification item responsive */
 .notification-item {
   position: relative;
-}
-
-@media (min-width: 768px) {
-  .notifications-page {
-    padding: 2rem;
-    max-width: 800px;
-    margin: 0 auto;
-  }
 }
 
 /* New styles for actual notifications */

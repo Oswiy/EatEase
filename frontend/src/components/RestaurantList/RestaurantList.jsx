@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import SearchBar from "../SearchBar/SearchBar";
 import Filters from "../Filters/Filters";
 import FeatureCarousel from "../FeatureCarousel/FeatureCarousel";
@@ -14,29 +14,31 @@ function RestaurantList({
   onNavigateToReservations,
 }) {
   // ========== STATE VARIABLES ==========
-  const [searchQuery, setSearchQuery] = useState(""); // Search input value
+  const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({
     cuisine: "all",
     crowd_status: [],
     min_rating: 0,
     tier: "all",
     featured: false,
-  }); // Active filters (cuisine, status, etc.)
-  const [showFilters, setShowFilters] = useState(false); // Toggle filter panel visibility
-  const [selectedRestaurant, setSelectedRestaurant] = useState(null); // Currently selected restaurant for detail view
-  const [showMenu, setShowMenu] = useState(false); // Toggle hamburger menu
-  const [restaurants, setRestaurants] = useState([]); // List of restaurants from API (REPLACES hardcoded data)
-  const [loading, setLoading] = useState(true); // Loading state for API fetch
-  const [error, setError] = useState(""); // Error message for failed fetch
-  const menuRef = useRef(null); // Ref for detecting clicks outside hamburger menu
-  const [notificationCount, setNotificationCount] = useState(0); // ADD THIS
+  });
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedRestaurant, setSelectedRestaurant] = useState(null);
+  const [showMenu, setShowMenu] = useState(false);
+  const [restaurants, setRestaurants] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const menuRef = useRef(null);
+  const [notificationCount, setNotificationCount] = useState(0);
   const [showOnlyPremium, setShowOnlyPremium] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false); // Add this for refresh animation
-  // In RestaurantList function, add with other states:
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [allNotifications, setAllNotifications] = useState([]);
 
+  // Cache for restaurants data
+  const [lastFetchTime, setLastFetchTime] = useState(null);
+  const CACHE_DURATION = 60000; // 1 minute cache
+
   // ========== USE EFFECTS ==========
-  // Effect for closing hamburger menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -49,72 +51,107 @@ function RestaurantList({
   }, []);
 
   useEffect(() => {
-    // Make refresh function available globally for RestaurantCard
     window.refreshNotificationCount = fetchNotificationCount;
-
-    // Cleanup
     return () => {
       window.refreshNotificationCount = null;
     };
   }, []);
 
-  // Effect for fetching restaurants from API on component mount
   useEffect(() => {
     fetchRestaurants();
     fetchNotificationCount();
-    // Cleanup polling on unmount
-    return () => {
-      // You can add cleanup if needed, but pollingService manages its own cleanup
-      // console.log(
-      //   "RestaurantList unmounting - polling cleanup handled by service",
-      // );
-    }; // ADD THIS
-  }, []); // Empty dependency array means this runs once on mount
+  }, []);
 
   useEffect(() => {
-    const fetchAllNotifications = async () => {
-      const token = localStorage.getItem("auth_token");
-      if (!token) return;
-
-      // For fetching notifications
-      try {
-        const response = await fetch(
-          `${API_CONFIG.BASE_URL}/api/notifications`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              Accept: "application/json",
-            },
-          },
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success) {
-            setAllNotifications(data.notifications || []);
-            setNotificationCount(data.count || data.notifications?.length || 0);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching notifications:", error);
-      }
-    };
-
     fetchAllNotifications();
-  }, []); // Empty dependency = runs once on mount
+  }, []);
 
   // ========== API FUNCTIONS ==========
-  /**
-   * Fetches restaurants from the backend API
-   * Replaces hardcoded data with real database records
-   */
-  // In RestaurantList.jsx - update fetchRestaurants function
-  const fetchRestaurants = async (filters = {}) => {
-    try {
-      setLoading(true);
-      setError("");
+  const fetchAllNotifications = async () => {
+    const token = localStorage.getItem("auth_token");
+    if (!token) return;
 
-      // Build query string from filters
+    try {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/notifications`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setAllNotifications(data.notifications || []);
+          setNotificationCount(data.count || data.notifications?.length || 0);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+    }
+  };
+
+  // ✅ NEW: Function to refresh notifications (to be passed to RestaurantDetails)
+  const refreshNotifications = useCallback(async () => {
+    const token = localStorage.getItem("auth_token");
+    if (!token) return;
+
+    try {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/notifications`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setAllNotifications(data.notifications || []);
+          setNotificationCount(data.count || data.notifications?.length || 0);
+        }
+      }
+    } catch (error) {
+      console.error("Error refreshing notifications:", error);
+    }
+  }, []);
+
+  const randomizeRestaurants = (restaurantsList) => {
+    if (!restaurantsList || restaurantsList.length === 0) return [];
+
+    const premiumRestaurants = restaurantsList.filter(
+      (r) => r.subscription_tier === "premium" || r.isPremium === true,
+    );
+    const basicRestaurants = restaurantsList.filter(
+      (r) =>
+        r.subscription_tier === "basic" ||
+        !r.subscription_tier ||
+        (r.subscription_tier !== "premium" && r.isPremium !== true),
+    );
+
+    const shuffleArray = (array) => {
+      const shuffled = [...array];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    };
+
+    const randomizedPremium = shuffleArray(premiumRestaurants);
+    const randomizedBasic = shuffleArray(basicRestaurants);
+
+    return [...randomizedPremium, ...randomizedBasic];
+  };
+
+  // Separate function for refreshing ONLY the restaurant list
+  const refreshRestaurantsOnly = useCallback(async () => {
+    if (isRefreshing) return;
+
+    setIsRefreshing(true);
+
+    try {
+      // Build query string from current filters
       const params = new URLSearchParams();
 
       if (filters.cuisine && filters.cuisine !== "all") {
@@ -139,7 +176,6 @@ function RestaurantList({
         params.append("featured", "true");
       }
 
-      // For fetching restaurants with query params
       const queryString = params.toString();
       const url = queryString
         ? `${API_CONFIG.BASE_URL}/api/restaurants?${queryString}`
@@ -152,28 +188,77 @@ function RestaurantList({
       }
 
       const data = await response.json();
-
-      // ADD RANDOMIZATION LOGIC HERE
       const randomizedRestaurants = randomizeRestaurants(
         data.restaurants || [],
       );
-      // console.log(
-      //   "Randomized restaurants on fetch:",
-      //   "Premium count:",
-      //   randomizedRestaurants.filter(
-      //     (r) => r.subscription_tier === "premium" || r.isPremium,
-      //   ).length,
-      //   "Basic count:",
-      //   randomizedRestaurants.filter(
-      //     (r) => !(r.subscription_tier === "premium" || r.isPremium),
-      //   ).length,
-      // );
+
+      // Only update restaurants, nothing else
+      setRestaurants(randomizedRestaurants);
+      setLastFetchTime(Date.now());
+    } catch (err) {
+      console.error("Failed to refresh restaurants:", err);
+      setError("Failed to refresh restaurants. Please try again.");
+      // Clear error after 3 seconds
+      setTimeout(() => setError(""), 3000);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [filters, isRefreshing]);
+
+  const fetchRestaurants = async (currentFilters = filters) => {
+    try {
+      setLoading(true);
+      setError("");
+
+      // Build query string from filters
+      const params = new URLSearchParams();
+
+      if (currentFilters.cuisine && currentFilters.cuisine !== "all") {
+        params.append("cuisine", currentFilters.cuisine);
+      }
+
+      if (
+        currentFilters.crowd_status &&
+        currentFilters.crowd_status.length > 0
+      ) {
+        currentFilters.crowd_status.forEach((status) => {
+          params.append("crowd_status[]", status);
+        });
+      }
+
+      if (currentFilters.min_rating && currentFilters.min_rating > 0) {
+        params.append("min_rating", currentFilters.min_rating);
+      }
+
+      if (currentFilters.tier && currentFilters.tier !== "all") {
+        params.append("tier", currentFilters.tier);
+      }
+
+      if (currentFilters.featured) {
+        params.append("featured", "true");
+      }
+
+      const queryString = params.toString();
+      const url = queryString
+        ? `${API_CONFIG.BASE_URL}/api/restaurants?${queryString}`
+        : `${API_CONFIG.BASE_URL}/api/restaurants`;
+
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const randomizedRestaurants = randomizeRestaurants(
+        data.restaurants || [],
+      );
 
       setRestaurants(randomizedRestaurants);
+      setLastFetchTime(Date.now());
 
-      // Update active filters
       if (data.filters) {
-        setFilters(filters);
+        setFilters(currentFilters);
       }
     } catch (err) {
       console.error("Failed to fetch restaurants:", err);
@@ -183,64 +268,10 @@ function RestaurantList({
     }
   };
 
-  // ✅ ADD THIS HELPER FUNCTION (outside fetchRestaurants but inside RestaurantList component)
-  const randomizeRestaurants = (restaurantsList) => {
-    if (!restaurantsList || restaurantsList.length === 0) return [];
-
-    // Separate by tier
-    const premiumRestaurants = restaurantsList.filter(
-      (r) => r.subscription_tier === "premium" || r.isPremium === true,
-    );
-    const basicRestaurants = restaurantsList.filter(
-      (r) =>
-        r.subscription_tier === "basic" ||
-        !r.subscription_tier ||
-        (r.subscription_tier !== "premium" && r.isPremium !== true),
-    );
-
-    // Helper function to shuffle array
-    const shuffleArray = (array) => {
-      const shuffled = [...array];
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-      }
-      return shuffled;
-    };
-
-    // Randomize within each tier
-    const randomizedPremium = shuffleArray(premiumRestaurants);
-    const randomizedBasic = shuffleArray(basicRestaurants);
-
-    // Combine: premium first, then basic
-    return [...randomizedPremium, ...randomizedBasic];
-  };
-
-  const filteredRestaurants = restaurants.filter((restaurant) => {
-    // Premium filter
-    if (showOnlyPremium && !restaurant.isPremium) {
-      return false;
-    }
-
-    // Search filter (keep your existing search logic)
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      return (
-        restaurant.name.toLowerCase().includes(query) ||
-        restaurant.cuisine.toLowerCase().includes(query) ||
-        restaurant.address.toLowerCase().includes(query)
-      );
-    }
-    return true;
-  });
-
   const fetchNotificationCount = async () => {
     try {
       const token = localStorage.getItem("auth_token");
-      if (!token) {
-        // console.log("No auth token, user might not be logged in");
-        return;
-      }
+      if (!token) return;
 
       const response = await fetch(`${API_CONFIG.BASE_URL}/api/notifications`, {
         headers: {
@@ -252,20 +283,13 @@ function RestaurantList({
 
       if (response.ok) {
         const data = await response.json();
-        // console.log("Notifications API response:", data);
-
         if (data.success) {
-          setAllNotifications(data.notifications || []); // UPDATE THIS
+          setAllNotifications(data.notifications || []);
           setNotificationCount(data.count || data.notifications?.length || 0);
         } else {
-          console.warn(
-            "Notifications API returned success: false",
-            data.message,
-          );
           setNotificationCount(0);
         }
       } else {
-        console.warn("Failed to fetch notifications:", response.status);
         setNotificationCount(0);
       }
     } catch (error) {
@@ -274,28 +298,19 @@ function RestaurantList({
     }
   };
 
-  // ========== HELPER FUNCTIONS ==========
-  // Filter featured restaurants for the carousel
-  const featuredRestaurants = restaurants.filter(
-    (restaurant) => restaurant.isFeatured,
-  );
-
-  /**
-   * Handles restaurant card click
-   * @param {Object} restaurant - The clicked restaurant object
-   */
+  // ========== HANDLER FUNCTIONS ==========
   const handleRestaurantClick = (restaurant) => {
-    setSelectedRestaurant(restaurant); // Switch to detail view
+    setSelectedRestaurant(restaurant);
   };
 
-  /**
-   * Returns to the restaurant list from detail view
-   */
   const handleBackToList = () => {
-    setSelectedRestaurant(null); // Clear selected restaurant to show list
+    setSelectedRestaurant(null);
   };
 
-  // ========== MENU HANDLERS ==========
+  const handleRefresh = useCallback(async () => {
+    await refreshRestaurantsOnly();
+  }, [refreshRestaurantsOnly]);
+
   const handleBookmarks = () => {
     setShowMenu(false);
     if (onNavigateToBookmarks) {
@@ -305,62 +320,73 @@ function RestaurantList({
 
   const handleNotifications = () => {
     setShowMenu(false);
-    fetchNotificationCount(); // Refresh count before navigating
+    fetchNotificationCount();
     if (onNavigateToNotifications) {
       onNavigateToNotifications();
     }
   };
 
-  const handleSettings = () => {
-    setShowMenu(false);
-    // console.log("Navigate to Settings");
-    // TODO: Implement settings navigation
-  };
-
-  const handleRateApp = () => {
-    setShowMenu(false);
-    // console.log("Navigate to Rate App");
-    // TODO: Implement rate app functionality
-  };
-
   const handleLogout = () => {
     setShowMenu(false);
-    // Clear authentication data
     localStorage.removeItem("auth_token");
     localStorage.removeItem("user");
-    window.location.reload(); // Reload app to redirect to login
+    window.location.reload();
   };
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    await fetchRestaurants(); // Refresh the list
-    setIsRefreshing(false);
-  };
+  // ========== FILTERED RESTAURANTS ==========
+  const filteredRestaurants = restaurants.filter((restaurant) => {
+    if (showOnlyPremium && !restaurant.isPremium) {
+      return false;
+    }
 
-  // ========== RENDER LOGIC ==========
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      return (
+        restaurant.name.toLowerCase().includes(query) ||
+        restaurant.cuisine.toLowerCase().includes(query) ||
+        restaurant.address.toLowerCase().includes(query)
+      );
+    }
+    return true;
+  });
+
+  const featuredRestaurants = restaurants.filter(
+    (restaurant) => restaurant.isFeatured,
+  );
+
+  // ========== RENDER LOADING STATE ==========
+  if (loading) {
+    return (
+      <div className="restaurant-list">
+        <div className="loading-container">
+          <div className="loading-spinner-large"></div>
+          <p className="loading-text">Loading restaurants...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ========== RENDER ==========
   return (
     <div
       className={`restaurant-list ${selectedRestaurant ? "detail-view" : ""}`}
     >
-      {/* HEADER - Only shown in LIST view, NOT in detail view */}
+      {/* HEADER - Only shown in LIST view */}
       {!selectedRestaurant && (
         <div className="restaurant-list-header">
-          {/* Search Bar */}
           <SearchBar
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
           />
 
-          {/* Filters Toggle */}
           <Filters
             filters={filters}
             setFilters={setFilters}
             showFilters={showFilters}
             setShowFilters={setShowFilters}
-            onApplyFilters={fetchRestaurants} // Pass the fetch function
+            onApplyFilters={fetchRestaurants}
           />
 
-          {/* Hamburger Menu with Dropdown */}
           <div className="menu-container" ref={menuRef}>
             <button
               className="menu-button"
@@ -378,12 +404,11 @@ function RestaurantList({
               </svg>
             </button>
 
-            {/* Dropdown Menu */}
             {showMenu && (
               <div className="dropdown-menu">
                 <button
                   onClick={() => {
-                    setShowMenu(false); // Close menu here
+                    setShowMenu(false);
                     onNavigateToReservations();
                   }}
                 >
@@ -424,6 +449,11 @@ function RestaurantList({
                     <path d="M480-489Zm0 409q-33 0-56.5-23.5T400-160h160q0 33-23.5 56.5T480-80ZM160-200v-80h80v-280q0-84 50.5-149T422-793q-10 22-15.5 46t-7.5 49q-35 21-57 57t-22 81v280h320v-122q20 3 40 3t40-3v122h80v80H160Zm480-280-12-60q-12-5-22.5-10.5T584-564l-58 18-40-68 46-40q-2-13-2-26t2-26l-46-40 40-68 58 18q11-8 21.5-13.5T628-820l12-60h80l12 60q12 5 22.5 10.5T776-796l58-18 40 68-46 40q2 13 2 26t-2 26l46 40-40 68-58-18q-11 8-21.5 13.5T732-540l-12 60h-80Zm40-120q33 0 56.5-23.5T760-680q0-33-23.5-56.5T680-760q-33 0-56.5 23.5T600-680q0 33 23.5 56.5T680-600Z" />
                   </svg>
                   Notifications
+                  {notificationCount > 0 && (
+                    <span className="notification-badge">
+                      {notificationCount}
+                    </span>
+                  )}
                 </button>
                 <button onClick={handleLogout} className="logout-btn">
                   <svg
@@ -443,31 +473,22 @@ function RestaurantList({
         </div>
       )}
 
-      {/* LOADING STATE */}
-      {loading && (
-        <div className="loading-state">
-          <p>Loading restaurants...</p>
-        </div>
-      )}
-
       {/* ERROR STATE */}
       {error && !loading && (
         <div className="error-state">
           <p>{error}</p>
-          <button onClick={fetchRestaurants}>Retry</button>
+          <button onClick={() => fetchRestaurants()}>Retry</button>
         </div>
       )}
 
-      {/* MAIN CONTENT: Either Restaurant Details OR Restaurant List */}
+      {/* MAIN CONTENT */}
       {selectedRestaurant ? (
-        // DETAIL VIEW - When a restaurant is selected
         <RestaurantDetails
           restaurantId={selectedRestaurant.id}
           onBack={handleBackToList}
+          onNotificationChange={refreshNotifications} // ✅ Pass the callback
         />
       ) : (
-        // LIST VIEW - When no restaurant is selected AND not loading AND no error
-        !loading &&
         !error && (
           <>
             {/* FEATURED RESTAURANTS CAROUSEL */}
@@ -476,24 +497,21 @@ function RestaurantList({
               onRestaurantClick={handleRestaurantClick}
             />
 
-            {/* ========== NEW: AVAILABLE RESTAURANTS HEADER ========== */}
+            {/* AVAILABLE RESTAURANTS HEADER */}
             <div className="available-restaurants-header">
               <div className="header-left">
                 <h2 className="available-title">Available Restaurants:</h2>
-                {/* <span className="restaurant-count">
-                  ({filteredRestaurants.length} restaurants)
-                </span> */}
               </div>
 
               <button
-                className="refresh-button"
+                className={`refresh-button ${isRefreshing ? "refreshing" : ""}`}
                 onClick={handleRefresh}
                 disabled={isRefreshing}
                 aria-label="Refresh restaurant list"
               >
                 {isRefreshing ? (
                   <svg
-                    className="refresh-spinner"
+                    className="refresh-spinner spinning"
                     width="20"
                     height="20"
                     viewBox="0 -960 960 960"
@@ -515,9 +533,8 @@ function RestaurantList({
               </button>
             </div>
 
-            {/* MAIN RESTAURANT LIST */}
+            {/* MAIN RESTAURANT LIST - ONLY THIS REFRESHES */}
             <div className="restaurants-container">
-              {/* EMPTY STATE - No restaurants in database */}
               {filteredRestaurants.length === 0 ? (
                 <div className="empty-state">
                   {showOnlyPremium ? (
@@ -531,13 +548,10 @@ function RestaurantList({
                       </button>
                     </>
                   ) : (
-                    <>
-                      <p>No restaurants found.</p>
-                    </>
+                    <p>No restaurants found.</p>
                   )}
                 </div>
               ) : (
-                // RESTAURANT CARDS GRID - Use filteredRestaurants instead of restaurants
                 filteredRestaurants.map((restaurant) => (
                   <RestaurantCard
                     key={restaurant.id}

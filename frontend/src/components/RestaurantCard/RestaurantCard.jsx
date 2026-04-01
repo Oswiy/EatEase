@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./RestaurantCard.css";
 import TierBadge from "../TierBadge/TierBadge";
 import pollingService from "../../services/pollingService";
@@ -11,35 +11,16 @@ function RestaurantCard({
 }) {
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
-
-    // If it's already a full URL (starts with http), use it directly
-    if (imagePath.startsWith("http")) {
-      // console.log("Using full URL:", imagePath);
-      return imagePath;
-    }
-
-    // If it's a Cloudinary URL without protocol? (unlikely but check)
-    if (imagePath.includes("cloudinary.com")) {
-      // console.log("Cloudinary URL detected:", imagePath);
-      return imagePath;
-    }
-
-    // Otherwise, assume it's a local storage path
+    if (imagePath.startsWith("http")) return imagePath;
+    if (imagePath.includes("cloudinary.com")) return imagePath;
     const fullUrl = `${API_CONFIG.BASE_URL}${imagePath}`;
-    // console.log("Using local URL:", fullUrl);
     return fullUrl;
   };
 
-  // console.log("Image URL Debug:", {
-  //   original: restaurant.banner_image,
-  //   processed: getImageUrl(restaurant.banner_image),
-  // });
   const [selectedNotification, setSelectedNotification] = useState(null);
-  // ========== IMAGE URLS (MUST BE BEFORE HOOKS) ==========
   const bannerImageUrl = restaurant.banner_image
     ? getImageUrl(restaurant.banner_image)
     : null;
-
   const profileImageUrl = restaurant.profile_image
     ? getImageUrl(restaurant.profile_image)
     : null;
@@ -51,23 +32,19 @@ function RestaurantCard({
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [notifLoading, setNotifLoading] = useState(false);
-  // ========== NOTIFICATION STATE ==========
   const [userHasNotification, setUserHasNotification] = useState(null);
   const [hasUnreadNotification, setHasUnreadNotification] = useState(false);
   const [unreadNotificationData, setUnreadNotificationData] = useState(null);
 
+  // Add a ref to track if we're in the middle of removing
+  const isRemovingRef = useRef(false);
+
   // ========== POLLING FOR REAL-TIME UPDATES ==========
   useEffect(() => {
-    // Subscribe to real-time updates for this restaurant
     const unsubscribe = pollingService.subscribe(
       restaurant.id,
       (updatedData) => {
-        // console.log(`Real-time update for ${restaurant.name}:`, updatedData);
-
-        // Show updating indicator
         setIsUpdating(true);
-
-        // Update the restaurant data
         setCurrentRestaurant((prev) => ({
           ...prev,
           crowd_status: updatedData.crowd_status,
@@ -82,21 +59,17 @@ function RestaurantCard({
                   ? "Busy"
                   : "Full",
         }));
-
-        // Hide indicator after 1 second
         setTimeout(() => setIsUpdating(false), 1000);
       },
     );
-
-    // Cleanup on unmount
-    return () => {
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, [restaurant.id, restaurant.name]);
 
-  // ========== EXISTING EFFECTS (UPDATED TO USE currentRestaurant) ==========
+  // ========== UPDATE FROM allNotifications - SKIP DURING REMOVAL ==========
   useEffect(() => {
-    // Only use allNotifications if we haven't fetched preferences separately
+    // Skip if we're in the middle of removing
+    if (isRemovingRef.current) return;
+
     if (!userHasNotification) {
       const notification = allNotifications.find(
         (n) => n.restaurant_id === currentRestaurant.id,
@@ -114,6 +87,9 @@ function RestaurantCard({
   // ========== FETCH NOTIFICATION PREFERENCES ==========
   useEffect(() => {
     const fetchNotificationPreference = async () => {
+      // Skip if we're removing
+      if (isRemovingRef.current) return;
+
       const token = localStorage.getItem("auth_token");
       if (!token) return;
 
@@ -131,11 +107,13 @@ function RestaurantCard({
         if (response.ok) {
           const data = await response.json();
           if (data.success && data.notifications) {
-            // Find preference for this restaurant
             const pref = data.notifications.find(
               (n) => n.restaurant_id === currentRestaurant.id,
             );
-            setUserHasNotification(pref?.notify_when_status || null);
+            // Only update if not removing
+            if (!isRemovingRef.current) {
+              setUserHasNotification(pref?.notify_when_status || null);
+            }
           }
         }
       } catch (error) {
@@ -164,7 +142,6 @@ function RestaurantCard({
 
       if (response.ok) {
         const data = await response.json();
-        // Find unread notification for this restaurant
         const unread = data.notifications?.find(
           (n) => n.restaurant_id === currentRestaurant.id && !n.is_read,
         );
@@ -182,11 +159,8 @@ function RestaurantCard({
     }
   };
 
-  // Initial fetch and polling for sent notifications
   useEffect(() => {
     fetchSentNotifications();
-
-    // Poll every 30 seconds
     const interval = setInterval(fetchSentNotifications, 30000);
     return () => clearInterval(interval);
   }, [currentRestaurant.id]);
@@ -262,16 +236,13 @@ function RestaurantCard({
   const handleNotificationClick = (e) => {
     e.stopPropagation();
     const token = localStorage.getItem("auth_token");
-
     if (!token) {
       alert("Please login to set notifications");
       return;
     }
-
     setShowNotificationModal(true);
   };
 
-  // ========== HANDLE SET NOTIFICATION ==========
   const handleSetNotification = async (crowdLevel) => {
     setNotifLoading(true);
     const token = localStorage.getItem("auth_token");
@@ -294,18 +265,16 @@ function RestaurantCard({
       if (data.success) {
         setUserHasNotification(crowdLevel);
         setShowNotificationModal(false);
+        setSelectedNotification(null);
 
-        // Force refresh preferences
         setTimeout(() => {
           const fetchPrefs = async () => {
             const res = await fetch(
               `${API_CONFIG.BASE_URL}/api/notifications`,
-              {
-                headers: { Authorization: `Bearer ${token}` },
-              },
+              { headers: { Authorization: `Bearer ${token}` } },
             );
             const prefData = await res.json();
-            if (prefData.success) {
+            if (prefData.success && !isRemovingRef.current) {
               const pref = prefData.notifications.find(
                 (n) => n.restaurant_id === currentRestaurant.id,
               );
@@ -314,10 +283,6 @@ function RestaurantCard({
           };
           fetchPrefs();
         }, 500);
-
-        alert(
-          `You'll be notified when ${currentRestaurant.name} has ${getStatusText(crowdLevel)} crowd!`,
-        );
       } else {
         alert(
           "Failed to set notification: " + (data.message || "Unknown error"),
@@ -331,23 +296,52 @@ function RestaurantCard({
     }
   };
 
-  // ========== HANDLE REMOVE NOTIFICATION (Preference) ==========
+  // ========== HANDLE REMOVE NOTIFICATION ==========
   const handleRemoveNotification = async () => {
+    // Set removing flag to prevent overwrites
+    isRemovingRef.current = true;
+
+    // Store previous state for rollback
+    const previousNotification = userHasNotification;
+
+    // OPTIMISTIC UPDATE - Clear UI immediately
+    setUserHasNotification(null);
+    setSelectedNotification(null);
+    setShowNotificationModal(false);
     setNotifLoading(true);
+
     const token = localStorage.getItem("auth_token");
 
+    if (!token) {
+      alert("Please login to manage notifications");
+      setUserHasNotification(previousNotification);
+      setNotifLoading(false);
+      isRemovingRef.current = false;
+      return;
+    }
+
     try {
-      // First, get the notification preference ID
+      // Fetch all notifications to find the one for this restaurant
       const prefsRes = await fetch(`${API_CONFIG.BASE_URL}/api/notifications`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
       });
+
+      if (!prefsRes.ok) {
+        throw new Error(`Failed to fetch notifications: ${prefsRes.status}`);
+      }
+
       const prefsData = await prefsRes.json();
 
+      // Find the notification preference for this restaurant
       const pref = prefsData.notifications?.find(
         (n) => n.restaurant_id === currentRestaurant.id,
       );
 
       if (pref) {
+        // Delete the notification preference from server
         const deleteRes = await fetch(
           `${API_CONFIG.BASE_URL}/api/notifications/${pref.id}`,
           {
@@ -361,11 +355,13 @@ function RestaurantCard({
         );
 
         const deleteData = await deleteRes.json();
-        if (deleteData.success) {
-          setUserHasNotification(null);
-          setSelectedNotification(null);
 
-          // Refresh notification count if needed
+        if (!deleteData.success) {
+          // If server failed, revert UI back to previous state
+          setUserHasNotification(previousNotification);
+          alert(deleteData.message || "Failed to remove notification");
+        } else {
+          // Refresh notification count in parent component
           if (window.refreshNotificationCount) {
             window.refreshNotificationCount();
           }
@@ -373,15 +369,20 @@ function RestaurantCard({
       }
     } catch (error) {
       console.error("Remove notification error:", error);
+      // Revert UI on error
+      setUserHasNotification(previousNotification);
+      alert("Failed to remove notification. Please try again.");
     } finally {
       setNotifLoading(false);
+      // Clear removing flag after a short delay to allow parent to update
+      setTimeout(() => {
+        isRemovingRef.current = false;
+      }, 500);
     }
   };
 
-  // ========== HANDLE DISMISS SENT NOTIFICATION ==========
   const handleDismissNotification = async () => {
     if (!unreadNotificationData) return;
-
     const token = localStorage.getItem("auth_token");
 
     try {
@@ -413,8 +414,6 @@ function RestaurantCard({
         return "Moderate";
       case "orange":
         return "Busy";
-      case "red":
-        return "Full";
       default:
         return status;
     }
@@ -428,8 +427,6 @@ function RestaurantCard({
         return " Consider going soon";
       case "orange":
         return " Some wait time";
-      case "red":
-        return " Long wait expected";
       default:
         return "";
     }
@@ -443,7 +440,7 @@ function RestaurantCard({
   return (
     <>
       <div className="restaurant-card" onClick={handleClick}>
-        {/* Banner Container with Update Indicator */}
+        {/* Banner Container */}
         <div className="restaurant-banner-container">
           {bannerImageUrl ? (
             <img
@@ -511,14 +508,14 @@ function RestaurantCard({
             <button
               className={`notification-btn-icon ${
                 userHasNotification ? "active" : ""
-              } ${loading ? "loading" : ""}`}
+              } ${notifLoading ? "loading" : ""}`}
               onClick={handleNotificationClick}
-              disabled={loading}
+              disabled={notifLoading}
               aria-label={
                 userHasNotification ? "Change notification" : "Set notification"
               }
             >
-              {loading ? (
+              {notifLoading ? (
                 <div className="loading-spinner-small"></div>
               ) : userHasNotification ? (
                 <svg
@@ -574,7 +571,6 @@ function RestaurantCard({
             </div>
           </div>
 
-          {/* UPDATED STATUS BADGE WITH PULSE EFFECT */}
           <div
             className={`status-badge ${currentRestaurant.crowd_status} ${isUpdating ? "updating" : ""}`}
           >
@@ -637,7 +633,7 @@ function RestaurantCard({
           </div>
         )}
 
-        {/* Show PREFERENCE indicator (what they'll be notified about) */}
+        {/* Show PREFERENCE indicator */}
         {!hasUnreadNotification && userHasNotification && (
           <div className="current-notification preference">
             <small>
@@ -663,7 +659,7 @@ function RestaurantCard({
             <h4>Notify me when {currentRestaurant.name} is:</h4>
 
             <div className="notification-options">
-              {["green", "yellow", "orange", "red"].map((status) => (
+              {["green", "yellow", "orange"].map((status) => (
                 <button
                   key={status}
                   className={`notification-option ${status} ${
@@ -740,7 +736,6 @@ function RestaurantCard({
                 onClick={async () => {
                   await handleRemoveNotification();
                   setSelectedNotification(null);
-                  setShowNotificationModal(false);
                 }}
                 disabled={notifLoading}
               >

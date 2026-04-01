@@ -14,6 +14,8 @@
   align-items: center;
   margin-bottom: 30px;
   gap: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.342);
 }
 
 .reservations-back-button {
@@ -41,9 +43,8 @@
 .empty-state {
   text-align: center;
   padding: 60px 20px;
-  background: #f8f9fa;
+  background: inherit;
   border-radius: 12px;
-  border: 2px dashed #dee2e6;
 }
 
 .empty-icon {
@@ -164,26 +165,9 @@
   border-radius: 4px;
 }
 
-.empty-state {
-  text-align: center;
-  padding: 60px 20px;
-}
-
 .empty-icon {
   font-size: 64px;
   margin-bottom: 20px;
-}
-
-.browse-btn {
-  background-color: black;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 600;
-  margin-top: 20px;
-  transition: background-color 0.2s;
 }
 
 .back-button {
@@ -370,11 +354,6 @@
   background-color: #545b62;
 }
 
-.empty-state {
-  text-align: center;
-  padding: 60px 20px;
-}
-
 .empty-icon {
   font-size: 64px;
   margin-bottom: 20px;
@@ -410,13 +389,5 @@
 
   .detail-label {
     min-width: auto;
-  }
-}
-
-@media (min-width: 768px) {
-  .reservations-page {
-    padding: 1rem;
-    /* max-width: 800px;
-    margin: 0 auto; */
   }
 }

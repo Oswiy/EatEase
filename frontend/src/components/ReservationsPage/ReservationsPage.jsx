@@ -393,12 +393,6 @@ const ReservationsPage = ({ user, onBack }) => {
           </div>
           <h3>No Reservations Yet</h3>
           <p>Your upcoming reservations will appear here</p>
-          <button
-            className="browse-btn"
-            onClick={() => (window.location.href = "/")}
-          >
-            Browse Restaurants
-          </button>
         </div>
       ) : (
         <div className="reservations-list">

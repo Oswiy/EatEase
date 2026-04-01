@@ -4,14 +4,16 @@ import Signup from "./components/Signup/Signup";
 import RestaurantList from "./components/RestaurantList/RestaurantList";
 import BookmarksPage from "./components/BookmarksPage/BookmarksPage";
 import NotificationsPage from "./components/NotificationsPage/NotificationsPage";
-import "./globals.css";
 import ReservationsPage from "./components/ReservationsPage/ReservationsPage";
+import "./globals.css";
+import { useToast } from "./context/ToastContext"; // ✅ Add this import
 
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isLogin, setIsLogin] = useState(true);
   const [currentPage, setCurrentPage] = useState("restaurantList");
+  const { showToast } = useToast(); // ✅ Add this line
 
   // 🔴 CRITICAL: Redirect business users to Business App
   useEffect(() => {
@@ -22,8 +24,11 @@ function App() {
 
       // If user is NOT a diner, redirect to Business App
       if (parsedUser.user_type !== "diner") {
-        alert(
+        showToast(
+          // ✅ Replace alert with toast
           "This is the Diner App. Please use the Business App for restaurant management.",
+          "warning",
+          4000,
         );
 
         // Clear local storage
@@ -31,7 +36,9 @@ function App() {
         localStorage.removeItem("user");
 
         // Redirect to Business App
-        window.location.href = "https://eatease-restaurant.vercel.app";
+        setTimeout(() => {
+          window.location.href = "https://eatease-restaurant.vercel.app";
+        }, 1500);
         return;
       }
 
@@ -40,7 +47,7 @@ function App() {
     }
 
     setLoading(false);
-  }, []);
+  }, [showToast]);
 
   // Check if user is already logged in on app start
   useEffect(() => {
@@ -69,10 +76,15 @@ function App() {
   const handleLogin = (userData) => {
     // Verify this is a diner
     if (userData.user_type !== "diner") {
-      alert(
+      showToast(
+        // ✅ Replace alert with toast
         "This is the Diner App. Please use the Business App for restaurant management.",
+        "warning",
+        4000,
       );
-      window.location.href = "https://eatease-restaurant.vercel.app";
+      setTimeout(() => {
+        window.location.href = "https://eatease-restaurant.vercel.app";
+      }, 1500);
       return;
     }
 
@@ -82,13 +94,17 @@ function App() {
 
   // Handle successful signup
   const handleSignup = (userData) => {
-
     // Verify this is a diner (should be from signup)
     if (userData.user_type !== "diner") {
-      alert(
+      showToast(
+        // ✅ Replace alert with toast
         "Diner App only accepts diner signups. Please use the Business App for business accounts.",
+        "warning",
+        4000,
       );
-      window.location.href = "https://eatease-restaurant.vercel.app";
+      setTimeout(() => {
+        window.location.href = "https://eatease-restaurant.vercel.app";
+      }, 1500);
       return;
     }
 
@@ -102,6 +118,7 @@ function App() {
     localStorage.removeItem("user");
     setUser(null);
     setCurrentPage("restaurantList");
+    showToast("Logged out successfully", "info", 2000); // ✅ Add logout toast
   };
 
   // Navigation functions
@@ -125,7 +142,10 @@ function App() {
   if (loading) {
     return (
       <div className="app">
-        <p>Loading...</p>
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Loading...</p>
+        </div>
       </div>
     );
   }
@@ -148,7 +168,6 @@ function App() {
       </div>
     );
   }
-
 
   // DINER Navigation
   switch (currentPage) {
@@ -192,7 +211,7 @@ function App() {
             user={user}
             onNavigateToBookmarks={handleNavigateToBookmarks}
             onNavigateToNotifications={handleNavigateToNotifications}
-            onNavigateToReservations={handleNavigateToReservations} // ✅ ADD THIS LINE
+            onNavigateToReservations={handleNavigateToReservations}
             onLogout={handleLogout}
           />
         </div>

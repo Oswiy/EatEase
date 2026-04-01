@@ -1,10 +1,10 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&display=swap");
 
-/* Add this at the top of your RestaurantList.css */
+/* ===== DETAIL VIEW STYLES ===== */
 .restaurant-list.detail-view {
   padding: 0 !important;
   margin: 0 !important;
-  background: #efedde !important; /* Optional: Change background in detail view */
+  background: #efedde !important;
 }
 
 .restaurant-list.detail-view .restaurant-details-page {
@@ -12,8 +12,11 @@
   padding: 0;
   width: 100%;
   min-height: 100vh;
+  max-width: 100%;
+  padding-bottom: 15px;
 }
 
+/* ===== BASE STYLES ===== */
 .restaurant-list {
   padding: 0.8rem;
   min-height: 100vh;
@@ -21,48 +24,57 @@
   font-family: Inter;
 }
 
+/* ===== LOADING STATE ===== */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  padding: 2rem;
+}
+
+.loading-spinner-large {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e0e0e0;
+  border-top: 3px solid #ffd700;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+.loading-text {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.loading-state {
+  margin-top: 20px;
+}
+
+/* ===== ERROR STATE ===== */
 .error-state {
   margin: 20px 10px;
 }
-.error-state p{
+
+.error-state p {
   font-size: 13px;
 }
 
-.error-state button{
+.error-state button {
   font-size: 12px;
 }
 
-/* If you want to also remove the background color in detail view */
-
-/* Ensure the restaurant-details-page takes full width in detail view */
-.restaurant-list.detail-view .restaurant-details-page {
-  width: 100%;
-  max-width: 100%;
-  padding-bottom: 15px;
-}
-
-.refresh-button-detail-view {
-  margin-left: auto; /* Pushes to far right */
-  border: none;
-  background-color: inherit;
-}
-
-.back-button-detail-view {
-  position: absolute; /* Keep this */
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 1;
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
+/* ===== HEADER STYLES ===== */
+.restaurant-list-header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: inherit; /* Add background so it's visible */
+  gap: 5px;
+  flex-wrap: wrap;
+  position: relative;
+  border-radius: 8px;
+  min-height: 45px;
 }
 
 .menu-button {
@@ -74,28 +86,7 @@
   font-size: 0.9rem;
 }
 
-.restaurants-container h2 {
-  margin-bottom: 0.5rem;
-  color: #333;
-}
-
-.restaurants-container > p {
-  color: #666;
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 60px 20px;
-  margin: 20px 0;
-}
-
-.empty-state p {
-  font-size: 14px;
-}
-
-/* Hamburger Menu */
+/* ===== HAMBURGER MENU ===== */
 .menu-container {
   position: relative;
 }
@@ -115,9 +106,10 @@
 }
 
 .dropdown-menu button {
-  display: block;
+  display: flex;
+  align-items: center;
   width: 100%;
-  padding: 0.75rem 1rem;
+  padding: 12px 15px;
   background: none;
   border: none;
   text-align: left;
@@ -125,6 +117,8 @@
   font-size: 0.9rem;
   color: #333;
   border-bottom: 1px solid #f0f0f0;
+  gap: 7px;
+  position: relative;
 }
 
 .dropdown-menu button:hover {
@@ -135,23 +129,9 @@
   border-bottom: none;
 }
 
-.dropdown-menu button:has(.notification-badge) {
-  padding-right: 40px; /* Extra space for badge */
-}
-
 .logout-btn {
   color: #dc3545 !important;
   font-weight: 500;
-}
-
-/* Close menu when clicking outside */
-.menu-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 999;
 }
 
 /* Notification badge in hamburger menu */
@@ -176,75 +156,76 @@
   font-weight: bold;
 }
 
-/* Ensure dropdown menu items have relative positioning */
-.dropdown-menu button {
-  font-family: Inter;
-  position: relative;
+/* ===== AVAILABLE RESTAURANTS HEADER ===== */
+.available-restaurants-header {
   display: flex;
-  align-items: center;
-  width: 100%;
-  padding: 12px 15px;
-  text-align: left;
-  gap: 7px;
-}
-
-/* Premium Filter Styles */
-.premium-filter-container {
-  display: flex;
-  align-items: center;
-}
-
-.premium-filter-btn {
-  background: #f8f9fa;
-  border: 1px solid #dee2e6;
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  color: #6c757d;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  transition: all 0.3s ease;
-  white-space: nowrap;
-}
-
-.premium-filter-btn:hover {
-  background: #e9ecef;
-  border-color: #adb5bd;
-}
-
-.premium-filter-btn.active {
-  background: #fff3cd;
-  border-color: #ffd43b;
-  color: #856404;
-  font-weight: 600;
-  box-shadow: 0 0 0 2px rgba(255, 212, 59, 0.2);
-}
-
-.premium-filter-count {
-  background: #ffd43b;
-  color: #856404;
-  padding: 2px 6px;
-  border-radius: 10px;
-  font-size: 12px;
-  font-weight: 600;
-  margin-left: 5px;
-}
-
-/* Adjust header layout for the new filter */
-.restaurant-list-header {
-  display: flex;
-  align-items: center;
-  gap: 5px;
+  justify-content: space-between;
+  padding: 5px 0px 5px 0px;
   flex-wrap: wrap;
-  position: relative;
-  border-radius: 8px;
-  min-height: 45px;
+  align-items: center;
 }
 
-/* Empty state for premium filter */
+.available-restaurants-header .available-title {
+  font-size: 20px;
+  padding: 5px 0px 0px 5px;
+  font-family: Inter;
+  font-weight: 800;
+}
+
+/* ===== REFRESH BUTTON ===== */
+.available-restaurants-header .refresh-button {
+  display: flex;
+  border: none;
+  background-color: inherit;
+  gap: 3px;
+  align-items: center;
+  color: rgba(0, 0, 0, 0.664);
+  margin-right: 10px;
+  font-size: 12px;
+  align-self: flex-end;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.available-restaurants-header .refresh-button:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.05);
+  transform: rotate(15deg);
+}
+
+.available-restaurants-header .refresh-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.refresh-spinner.spinning {
+  animation: spin 0.6s linear infinite;
+}
+
+/* ===== RESTAURANTS CONTAINER ===== */
+.restaurants-container h2 {
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.restaurants-container > p {
+  color: #666;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+/* ===== EMPTY STATE ===== */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  margin: 20px 0;
+}
+
+.empty-state p {
+  font-size: 14px;
+}
+
 .empty-state .show-all-btn {
   background: #4dabf7;
   color: white;
@@ -260,58 +241,28 @@
   background: #339af0;
 }
 
-.available-restaurants-header {
-  display: flex;
-  justify-content: space-between;
-  padding: 5px 0px 5px 0px;
-  flex-wrap: wrap;
-  align-items: center; /* Changed from align-content to align-items */
+/* ===== ANIMATIONS ===== */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
-.available-restaurants-header .available-title {
-  font-size: 20px;
-  padding: 5px 0px 0px 5px;
-  font-family: Inter;
-  font-weight: 800;
-}
-
-.available-restaurants-header .refresh-button {
-  display: flex;
-  border: none;
-  background-color: inherit;
-  gap: 3px;
-  align-items: center; /* Added to center icon and text vertically */
-  color: rgba(0, 0, 0, 0.664);
-  margin-right: 3px;
-  font-size: 12px;
-  align-self: flex-end;
-  margin-right: 10px;
-}
-
-.loading-state {
-  margin-top: 20px;
-}
-
-/* Ensure the restaurant-list-header is hidden when in detail view on mobile */
+/* ===== MOBILE RESPONSIVE ===== */
 @media (max-width: 768px) {
   .restaurant-list:has(.restaurant-details-page) .restaurant-list-header {
     display: none !important;
   }
 }
 
-/* Hide any existing mobile back buttons in the header */
-.restaurant-list-header .mobile-back-btn,
-.restaurant-list-header .back-button-detail-view {
-  display: none !important;
-}
-
-/* Desktop grid layout */
-@media (min-width: 769px) {
+@media (min-width: 1200px) {
   .restaurants-container {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 2rem 2rem;
-    max-width: 1600px;
     margin: 0 auto;
     padding: 0 1rem;
     margin-top: 15px;
