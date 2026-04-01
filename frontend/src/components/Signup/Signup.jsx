@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import "./Signup.css";
+import { useToast } from "../../context/ToastContext";
 
 function Signup({ onSignup, onSwitchToLogin }) {
+  const { showToast } = useToast();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -165,7 +167,6 @@ function Signup({ onSignup, onSwitchToLogin }) {
         user_type: "diner",
       };
 
-      // FIXED URL: Use the correct WAMP URL
       const response = await fetch(
         "https://eatease-backend.vercel.app/api/auth/signup",
         {
@@ -191,8 +192,10 @@ function Signup({ onSignup, onSwitchToLogin }) {
       // Handle successful signup
       if (response.ok && data.user && data.token) {
         if (data.user.user_type !== "diner") {
-          alert(
+          showToast(
             "Error: Account was not created as diner. Please contact support.",
+            "error",
+            4000,
           );
           return;
         }
@@ -205,13 +208,19 @@ function Signup({ onSignup, onSwitchToLogin }) {
           localStorage.setItem("token_expires_at", data.token_expires_at);
         }
 
+        showToast(
+          `Welcome to EatEase, ${data.user.name}! Your account has been created successfully.`,
+          "success",
+          4000,
+        );
+
         onSignup(data.user);
       } else {
         setError(data.message || "Signup failed");
       }
     } catch (err) {
-      setError("Network error. Please try again.");
       console.error("Signup error:", err);
+      setError("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -402,11 +411,7 @@ function Signup({ onSignup, onSwitchToLogin }) {
               )}
           </div>
 
-          {error && (
-            <div className="error-message security-error">
-              {error}
-            </div>
-          )}
+          {error && <div className="error-message security-error">{error}</div>}
 
           <button
             type="submit"
