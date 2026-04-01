@@ -1,7 +1,7 @@
-// Add these imports if not already
 import React, { useState, useEffect } from "react";
 import "./ReservationModal.css";
 import API_CONFIG from "../../config";
+import { useToast } from "../../context/ToastContext";
 
 const ReservationModal = ({
   restaurant,
@@ -9,10 +9,10 @@ const ReservationModal = ({
   onSuccess,
   notificationData = null,
 }) => {
+  const { showToast } = useToast();
   const [formData, setFormData] = useState({
     party_size: 1,
     hold_type: "quick_10min",
-    special_requests: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -20,17 +20,15 @@ const ReservationModal = ({
   const [expiryTime, setExpiryTime] = useState("");
   const [confirmation, setConfirmation] = useState(null);
 
-  // ✅ ADD FEE STATE
+  // Fee state
   const [holdFee, setHoldFee] = useState(0);
   const [minPartyForFee, setMinPartyForFee] = useState(1);
-  const [feeDescription, setFeeDescription] = useState("");
 
-  // Calculate expiry times when hold_type changes
+  // Calculate expiry times for the form (shows when the hold would expire if created)
   useEffect(() => {
     const now = new Date();
     const expiryMinutes = formData.hold_type === "quick_10min" ? 10 : 20;
     const expiry = new Date(now.getTime() + expiryMinutes * 60000);
-
     setExpiryTime(
       expiry.toLocaleTimeString([], {
         hour: "2-digit",
@@ -40,7 +38,7 @@ const ReservationModal = ({
     );
   }, [formData.hold_type]);
 
-  // FETCH FEE SETTINGS WHEN COMPONENT MOUNTS
+  // Fetch fee settings
   useEffect(() => {
     const fetchFeeSettings = async () => {
       try {
@@ -49,38 +47,20 @@ const ReservationModal = ({
         );
         const data = await response.json();
         if (data.success) {
-          setHoldFee(Number(data.hold_fee) || 0); // Ensure it's a number
+          setHoldFee(Number(data.hold_fee) || 0);
           setMinPartyForFee(Number(data.min_party_for_fee) || 1);
-          setFeeDescription(data.fee_description || "");
         }
       } catch (error) {
         console.error("Error fetching fee settings:", error);
-        // Set defaults
-        setHoldFee(0);
-        setMinPartyForFee(1);
-        setFeeDescription("");
       }
     };
-
     fetchFeeSettings();
   }, [restaurant.id]);
 
-  // Pre-fill from notification if available
-  useEffect(() => {
-    if (notificationData) {
-      setFormData((prev) => ({
-        ...prev,
-        party_size: notificationData.preferred_party_size || 1,
-      }));
-    }
-  }, [notificationData]);
-
-  // ✅ CALCULATE FEE
   const calculateFee = () => {
     const holdFeeNum = Number(holdFee || 0);
     const partySizeNum = Number(formData.party_size || 1);
     const minPartyNum = Number(minPartyForFee || 1);
-
     if (holdFeeNum <= 0) return 0;
     return partySizeNum >= minPartyNum ? holdFeeNum : 0;
   };
@@ -99,12 +79,9 @@ const ReservationModal = ({
       return;
     }
 
-    // ✅ ADD FEE CONFIRMATION
     if (feeAmount > 0) {
       const confirmFee = window.confirm(
-        `A hold fee of ₱${Number(feeAmount || 0).toFixed(2)} will apply for your party of ${formData.party_size}.\n\n` +
-          "This fee guarantees your spot and will be charged when the hold is accepted.\n\n" +
-          "Continue with reservation?",
+        `A hold fee of ₱${Number(feeAmount || 0).toFixed(2)} will apply for your party of ${formData.party_size}.\n\nThis fee guarantees your spot and will be charged when the hold is accepted.\n\nContinue?`,
       );
       if (!confirmFee) return;
     }
@@ -114,12 +91,12 @@ const ReservationModal = ({
 
     try {
       const token = localStorage.getItem("auth_token");
-      // console.log("DEBUG: Making hold-spot request with:", {
-      //   restaurant_id: restaurant.id,
-      //   party_size: formData.party_size,
-      //   hold_type: formData.hold_type,
-      //   token_exists: !!token,
-      // });
+
+      console.log("Sending hold request with:", {
+        restaurant_id: restaurant.id,
+        party_size: formData.party_size,
+        hold_type: formData.hold_type,
+      });
 
       const response = await fetch(
         `${API_CONFIG.BASE_URL}/api/reservations/hold-spot`,
@@ -134,38 +111,38 @@ const ReservationModal = ({
             restaurant_id: restaurant.id,
             party_size: formData.party_size,
             hold_type: formData.hold_type,
-            special_requests: formData.special_requests,
             hold_fee: feeAmount,
           }),
         },
       );
 
-      // console.log("DEBUG: Response status:", response.status);
-
       const data = await response.json();
-      // console.log("DEBUG: Response data:", data);
 
-      if (data.success) {
+      console.log("Hold response:", { status: response.status, data });
+
+      if (response.ok && data.success) {
         setConfirmation(data);
         if (onSuccess) onSuccess(data.hold);
+        showToast("Spot hold created successfully!", "success", 3000);
       } else {
-        setError(data.message || data.error || "Failed to create spot hold");
+        // Handle the error message from backend
+        const errorMessage =
+          data.message || data.error || "Failed to create spot hold";
+        setError(errorMessage);
+
+        // Show toast for any error
+        showToast(errorMessage, "warning", 5000);
+
+        // Log the full response for debugging
+        console.error("Hold creation failed:", data);
       }
     } catch (error) {
       console.error("Error creating spot hold:", error);
       setError("Network error. Please try again.");
+      showToast("Network error. Please check your connection.", "error", 4000);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-    setError("");
   };
 
   const handlePartySizeChange = (change) => {
@@ -176,158 +153,156 @@ const ReservationModal = ({
     }
   };
 
-  // If we have confirmation, show confirmation screen
+  // Function to format time correctly
+  const formatTime = (dateString) => {
+    if (!dateString) return "Not set";
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return "Invalid date";
+      return date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
+    } catch (e) {
+      console.error("Error formatting time:", e);
+      return "Invalid time";
+    }
+  };
+
+  // Confirmation screen
   if (confirmation) {
+    const arrivalDeadline =
+      confirmation.hold?.expires_at ||
+      confirmation.hold?.original_expires_at ||
+      confirmation.restaurant_response_deadline;
+
+    const restaurantResponseDeadline =
+      confirmation.restaurant_response_deadline;
+    const holdDuration =
+      confirmation.hold_duration ||
+      (confirmation.hold?.hold_type === "quick_10min"
+        ? "10 minutes"
+        : "20 minutes");
+
     return (
       <div className="reservation-modal-overlay">
-        <div className="reservation-modal">
-          <div className="modal-header">
-            <h2>Spot Reserved!</h2>
+        <div className="reservation-modal confirmation-modal">
+          <div className="reservation-modal-header">
+            <h2>✓ Spot Reserved!</h2>
             <button className="close-btn" onClick={onClose}>
               ✕
             </button>
           </div>
 
           <div className="confirmation-content">
-            <div className="confirmation-details">
-              <h3>Your spot is on hold!</h3>
+            <h3>Your spot is on hold!</h3>
 
+            <div className="confirmation-details">
               <div className="detail-item">
-                <span className="label">Restaurant Response Deadline:</span>
+                <span className="label">Restaurant Response:</span>
                 <span className="value highlight">
-                  {new Date(
-                    confirmation.restaurant_response_deadline,
-                  ).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    hour12: true,
-                  })}
+                  {restaurantResponseDeadline
+                    ? formatTime(restaurantResponseDeadline)
+                    : "Waiting"}
                 </span>
               </div>
 
               <div className="detail-item">
-                <span className="label">Hold Duration (after acceptance):</span>
-                <span className="value">{confirmation.hold_duration}</span>
+                <span className="label">Hold Duration:</span>
+                <span className="value">{holdDuration}</span>
               </div>
 
-              {/* ✅ SHOW FEE IN CONFIRMATION */}
               {confirmation.hold_fee > 0 && (
                 <div className="detail-item fee-highlight">
                   <span className="label">Hold Fee:</span>
                   <span className="value fee-amount">
-                    ₱{Number(confirmation.hold_fee || 0).toFixed(2)}
+                    ₱{Number(confirmation.hold_fee).toFixed(2)}
                   </span>
                 </div>
               )}
 
               <div className="detail-item">
-                <span className="label">Expires at:</span>
+                <span className="label">Arrival Deadline:</span>
                 <span className="value highlight">
-                  {new Date(confirmation.hold.expires_at).toLocaleTimeString(
-                    [],
-                    {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      hour12: true,
-                    },
-                  )}
+                  {arrivalDeadline
+                    ? formatTime(arrivalDeadline)
+                    : "Calculating..."}
                 </span>
               </div>
 
               <div className="detail-item">
-                <span className="label">Confirmation:</span>
+                <span className="label">Confirmation Code:</span>
                 <span className="value code">
-                  {confirmation.confirmation_code}
+                  {confirmation.confirmation_code ||
+                    confirmation.hold?.confirmation_code}
                 </span>
               </div>
 
               <div className="detail-item">
                 <span className="label">Party Size:</span>
                 <span className="value">
-                  {confirmation.hold.party_size} people
+                  {confirmation.hold?.party_size || formData.party_size} people
                 </span>
               </div>
             </div>
 
             <div className="instructions">
-              <h4>What to do next:</h4>
+              <h4>Next steps:</h4>
               <ul>
                 <li>Go to the restaurant within the hold duration</li>
                 <li>Show your confirmation code at the entrance</li>
-                <li>The restaurant will confirm your hold</li>
+                <li>The restaurant staff will confirm your hold</li>
               </ul>
-
-              {/*ADD FEE NOTE */}
-              {confirmation.hold_fee > 0 && (
-                <div className="note important">
-                  <strong>Fee Information:</strong> hold fee of ₱
-                  {Number(confirmation.hold_fee || 0).toFixed(2)}
-                  will be charged when your hold is accepted by the restaurant.
-                </div>
-              )}
-
               <div className="note important">
-                <strong>Important:</strong> Your spot will be released
-                automatically after{" "}
-                {confirmation.hold.hold_type === "quick_10min" ? "10" : "20"}{" "}
-                minutes if you don't arrive.
+                ⏰ Your spot will be released if you don't arrive before the
+                arrival deadline.
               </div>
             </div>
 
-            <div className="confirmation-actions">
-              <button className="done-btn" onClick={onClose}>
-                Ok
-              </button>
-            </div>
+            <button className="done-btn" onClick={onClose}>
+              Done
+            </button>
           </div>
         </div>
       </div>
     );
   }
 
-  // Main booking form
+  // Main form
   return (
     <div className="reservation-modal-overlay">
       <div className="reservation-modal">
-        <div className="modal-header">
+        <div className="reservation-modal-header">
           <h2>Reserve at {restaurant?.name}</h2>
           <button className="close-btn" onClick={onClose}>
             ✕
           </button>
         </div>
 
-        {restaurant && (
-          <div className="restaurant-info">
-            <p className="restaurant-name"> {restaurant.name}</p>
-            <p className="restaurant-address">{restaurant.address}</p>
-            <div className="restaurant-status">
-              <span className="crowd-level">
-                Current crowd: {restaurant.crowd_level || "Moderate"}
+        {/* Restaurant Info - Show current occupancy warning if full */}
+        <div className="restaurant-info-minimal">
+          <div className="restaurant-address">{restaurant?.address}</div>
+          <div
+            className={`restaurant-capacity ${restaurant?.current_occupancy >= restaurant?.max_capacity ? "full" : ""}`}
+          >
+            {restaurant?.current_occupancy >= restaurant?.max_capacity ? (
+              <span className="full-warning">
+                Restaurant is currently FULL
               </span>
-              <span className="capacity">
-                Max: {restaurant.max_capacity} people
+            ) : (
+              <span>
+                Available:{" "}
+                {restaurant?.max_capacity - restaurant?.current_occupancy} seats
               </span>
-            </div>
+            )}
           </div>
-        )}
-
-        {notificationData && (
-          <div className="notification-context">
-            <div className="notification-badge">Responding to Alert</div>
-            <p>
-              {notificationData.preferred_crowd_level === "low"
-                ? "Low crowd"
-                : notificationData.preferred_crowd_level === "moderate"
-                  ? "Moderate crowd"
-                  : "Ideal crowd"}{" "}
-              detected!
-            </p>
-          </div>
-        )}
+        </div>
 
         <form onSubmit={handleSubmit} className="reservation-form">
+          {/* Party Size */}
           <div className="form-group">
-            <label>How many people?</label>
+            <label>Party Size</label>
             <div className="party-size-selector">
               <button
                 type="button"
@@ -337,10 +312,7 @@ const ReservationModal = ({
               >
                 −
               </button>
-              <span className="party-size-display">
-                {formData.party_size}{" "}
-                {formData.party_size === 1 ? "person" : "people"}
-              </span>
+              <span className="party-size-display">{formData.party_size}</span>
               <button
                 type="button"
                 className="size-btn"
@@ -350,95 +322,44 @@ const ReservationModal = ({
                 +
               </button>
             </div>
-
-            {/* ✅ SHOW FEE INFORMATION */}
             {feeAmount > 0 && (
-              <div className="fee-notice-small">
-                <span className="fee-label">Hold fee applies:</span>
-                <span className="fee-amount">
-                  ₱{Number(feeAmount || 0).toFixed(2)}
+              <div className="fee-badge">
+                <span>Hold Fee: ₱{feeAmount.toFixed(2)}</span>
+                <span className="fee-note">
+                  (for parties of {minPartyForFee}+)
                 </span>
-                {formData.party_size < minPartyForFee && (
-                  <span className="fee-note">
-                    (Free for parties under {minPartyForFee})
-                  </span>
-                )}
               </div>
             )}
           </div>
 
+          {/* Hold Options */}
           <div className="form-group">
-            <label>Choose hold duration:</label>
-            <div className="hold-options">
-              <label className="hold-option">
-                <input
-                  type="radio"
-                  name="hold_type"
-                  value="quick_10min"
-                  checked={formData.hold_type === "quick_10min"}
-                  onChange={handleChange}
-                />
-                <div className="option-content">
-                  <div className="option-header">
-                    <span className="option-title">Quick Hold (10 min)</span>
-                    <span className="option-badge">Recommended</span>
-                  </div>
-                  <div className="option-details">
-                    <span className="option-text">I'm ready to go now</span>
-                  </div>
-                  <div className="option-expiry">
-                    Expires at: {expiryTime} (10 min from now)
-                  </div>
-                </div>
-              </label>
-
-              <label className="hold-option">
-                <input
-                  type="radio"
-                  name="hold_type"
-                  value="extended_20min"
-                  checked={formData.hold_type === "extended_20min"}
-                  onChange={handleChange}
-                />
-                <div className="option-content">
-                  <div className="option-header">
-                    <span className="option-title">Extended Hold (20 min)</span>
-                  </div>
-                  <div className="option-details">
-                    <span className="option-text">Need a bit more time</span>
-                  </div>
-                  <div className="option-expiry">
-                    Expires at: {expiryTime} (20 min from now)
-                  </div>
-                </div>
-              </label>
+            <label>Hold Duration</label>
+            <div className="hold-options-simple">
+              <button
+                type="button"
+                className={`hold-option-btn ${formData.hold_type === "quick_10min" ? "active" : ""}`}
+                onClick={() =>
+                  setFormData({ ...formData, hold_type: "quick_10min" })
+                }
+              >
+                <span className="option-title">Quick Hold</span>
+                <span className="option-time">10 min</span>
+                <span className="option-expiry">Expires at {expiryTime}</span>
+              </button>
+              <button
+                type="button"
+                className={`hold-option-btn ${formData.hold_type === "extended_20min" ? "active" : ""}`}
+                onClick={() =>
+                  setFormData({ ...formData, hold_type: "extended_20min" })
+                }
+              >
+                <span className="option-title">Extended Hold</span>
+                <span className="option-time">20 min</span>
+                <span className="option-expiry">Expires at {expiryTime}</span>
+              </button>
             </div>
           </div>
-
-          {/* ✅ SHOW FEE SUMMARY */}
-          {feeAmount > 0 && (
-            <div className="fee-summary">
-              <div className="fee-summary-header">
-                <span>Hold Fee Summary</span>
-                <span className="fee-total">
-                  ₱{Number(feeAmount || 0).toFixed(2)}
-                </span>
-              </div>
-              <div className="fee-breakdown">
-                <div className="breakdown-item">
-                  <span>Party of {formData.party_size}</span>
-                  <span>₱{Number(holdFee || 0).toFixed(2)}</span>
-                </div>
-                {feeDescription && (
-                  <div className="fee-description">{feeDescription}</div>
-                )}
-                <div className="fee-disclaimer">
-                  This fee will be charged when your hold is accepted by the
-                  restaurant.
-                </div>
-              </div>
-            </div>
-          )}
 
           {error && <div className="error-message">{error}</div>}
 
@@ -451,16 +372,25 @@ const ReservationModal = ({
             >
               Cancel
             </button>
-            <button type="submit" className="modal-hold-btn" disabled={loading}>
+            <button
+              type="submit"
+              className="modal-hold-btn"
+              disabled={
+                loading ||
+                restaurant?.current_occupancy >= restaurant?.max_capacity
+              }
+            >
               {loading ? (
                 <>
                   <span className="spinner"></span>
-                  Loading...
+                  Holding...
                 </>
+              ) : restaurant?.current_occupancy >= restaurant?.max_capacity ? (
+                "Restaurant Full"
               ) : feeAmount > 0 ? (
-                `Confirm & Pay ₱${Number(feeAmount || 0).toFixed(2)}`
+                `Hold Spot • ₱${feeAmount.toFixed(2)}`
               ) : (
-                "Confirm Free Hold"
+                "Hold Spot"
               )}
             </button>
           </div>
