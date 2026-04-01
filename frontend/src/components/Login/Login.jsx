@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import "./Login.css";
 import { api } from "../../services/api";
+import { useToast } from "../../context/ToastContext";
 
 function Login({ onLogin, onSwitchToSignup }) {
+  const { showToast } = useToast();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -65,7 +67,6 @@ function Login({ onLogin, onSwitchToSignup }) {
         "X-Requested-App": "diner-app",
       });
 
-      // console.log("RESPONSE STATUS:", response.status);
       const data = await response.json();
 
       // Handle different error cases
@@ -83,15 +84,15 @@ function Login({ onLogin, onSwitchToSignup }) {
 
       // Check for wrong-app error
       if (data.error === "wrong_app") {
-        alert(data.message);
-        window.location.href = data.redirect_url;
+        showToast(data.message, "warning", 4000);
+        setTimeout(() => {
+          window.location.href = data.redirect_url;
+        }, 1500);
         return;
       }
 
       // Handle successful login
       if (response.ok && data.user && data.token) {
-        // console.log("SECURE LOGIN SUCCESS");
-
         localStorage.setItem("auth_token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
 
@@ -101,17 +102,24 @@ function Login({ onLogin, onSwitchToSignup }) {
 
         // Verify this is a diner account
         if (data.user.user_type !== "diner") {
-          alert("This is the Diner App. Please use the Business App.");
+          showToast(
+            "This is the Diner App. Please use the Business App.",
+            "warning",
+            4000,
+          );
           localStorage.removeItem("auth_token");
           localStorage.removeItem("user");
           localStorage.removeItem("token_expires_at");
-          window.location.href = "https://eatease-restaurant.vercel.app";
+          setTimeout(() => {
+            window.location.href = "https://eatease-restaurant.vercel.app";
+          }, 1500);
           return;
         }
 
         localStorage.removeItem("login_attempts");
         localStorage.removeItem("last_login_attempt");
 
+        showToast(`Welcome back, ${data.user.name}!`, "success", 3000);
         onLogin(data.user);
       } else {
         setError(data.message || "Invalid email or password");
