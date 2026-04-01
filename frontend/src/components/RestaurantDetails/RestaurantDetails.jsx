@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./RestaurantDetails.css";
 import pollingService from "../../services/pollingService";
+import { useToast } from "../../context/ToastContext";
 
 // Tab Components
 import OverviewTab from "../OverviewTab/OverviewTab";
@@ -11,28 +12,19 @@ import ReservationModal from "../ReservationModal/ReservationModal";
 import API_CONFIG from "../../config";
 
 function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
-  // ✅ Added onNotificationChange prop
+  const { showToast } = useToast();
+
   // ========== HELPER FUNCTION ==========
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
-
-    // If it's already a full URL (starts with http), use it directly
-    if (imagePath.startsWith("http")) {
-      return imagePath;
-    }
-
-    // If it's a Cloudinary URL without protocol? (unlikely but check)
-    if (imagePath.includes("cloudinary.com")) {
-      return imagePath;
-    }
-
-    // Otherwise, assume it's a local storage path
+    if (imagePath.startsWith("http")) return imagePath;
+    if (imagePath.includes("cloudinary.com")) return imagePath;
     const fullUrl = `${API_CONFIG.BASE_URL}${imagePath}`;
     return fullUrl;
   };
 
   const [selectedNotification, setSelectedNotification] = useState(null);
-  // ========== ADD THIS MISSING FUNCTION ==========
+
   const getStatusText = (status) => {
     switch (status) {
       case "green":
@@ -59,14 +51,12 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
     average_rating: 0,
     total_reviews: 0,
   });
-  // NEW: Track notification status for each crowd level
   const [notificationStatus, setNotificationStatus] = useState({
     green: false,
     yellow: false,
     orange: false,
   });
   const [isBookmarked, setIsBookmarked] = useState(false);
-  const [isNotifying, setIsNotifying] = useState(false);
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
   const [notificationLoading, setNotificationLoading] = useState(false);
   const [showNotificationModal, setShowNotificationModal] = useState(false);
@@ -78,18 +68,17 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
     }
   };
 
-  // ADD THESE FUNCTIONS
+  // ========== HANDLE BOOKMARK ==========
   const handleBookmark = async (e) => {
     e.stopPropagation();
 
-    // OPTIMISTIC UPDATE - change UI immediately
     const newBookmarkState = !isBookmarked;
     setIsBookmarked(newBookmarkState);
     setBookmarkLoading(true);
 
     const token = localStorage.getItem("auth_token");
     if (!token) {
-      alert("Please login to bookmark restaurants");
+      showToast("Please login to bookmark restaurants", "warning", 3000);
       setIsBookmarked(!newBookmarkState);
       setBookmarkLoading(false);
       return;
@@ -110,19 +99,25 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
 
       const data = await response.json();
       if (!data.success) {
-        // Revert if failed
         setIsBookmarked(!newBookmarkState);
-        alert("Failed to update bookmark. Please try again.");
+        showToast(data.message || "Failed to update bookmark", "error", 3000);
+      } else {
+        showToast(
+          newBookmarkState ? "Added to bookmarks!" : "Removed from bookmarks!",
+          "success",
+          2000,
+        );
       }
     } catch (error) {
       console.error("Bookmark error:", error);
       setIsBookmarked(!newBookmarkState);
-      alert("Failed to update bookmark. Please try again.");
+      showToast("Failed to update bookmark. Please try again.", "error", 3000);
     } finally {
       setBookmarkLoading(false);
     }
   };
 
+  // ========== HANDLE SET NOTIFICATION ==========
   const handleSetNotification = async (crowdLevel) => {
     setNotificationLoading((prev) => ({ ...prev, [crowdLevel]: true }));
 
@@ -144,7 +139,6 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
 
       const data = await response.json();
       if (data.success) {
-        // Update notification status
         setNotificationStatus((prev) => {
           const newStatus = { green: false, yellow: false, orange: false };
           newStatus[crowdLevel] = true;
@@ -153,33 +147,46 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
         setSelectedNotification(null);
         setShowNotificationModal(false);
 
-        // ✅ Notify parent to refresh notifications
+        // Notify parent to refresh notifications
         refreshParentNotifications();
 
-        alert(`You'll be notified when crowd is ${getStatusText(crowdLevel)}!`);
+        // Check if the set preference matches current crowd status
+        const currentStatus = restaurant.crowd_status;
+        const statusText = getStatusText(crowdLevel);
+
+        if (currentStatus === crowdLevel) {
+          showToast(
+            `This restaurant is already ${statusText} right now! You'll be notified when it changes.`,
+            "warning",
+            4000,
+          );
+        } else {
+          showToast(
+            `You'll be notified when ${restaurant.name} has ${statusText} crowd!`,
+            "success",
+            3000,
+          );
+        }
       } else {
-        alert(
-          "Failed to set notification: " + (data.message || "Unknown error"),
-        );
+        showToast(data.message || "Failed to set notification", "error", 3000);
       }
     } catch (error) {
       console.error("Notification error:", error);
-      alert("Failed to set notification. Please try again.");
+      showToast("Failed to set notification. Please try again.", "error", 3000);
     } finally {
       setNotificationLoading((prev) => ({ ...prev, [crowdLevel]: false }));
     }
   };
 
+  // ========== HANDLE NOTIFICATION TOGGLE (Add/Remove) ==========
   const handleNotificationToggle = async (status) => {
     if (!restaurant || notificationLoading[status]) return;
 
-    // Set loading for this specific status
     setNotificationLoading((prev) => ({ ...prev, [status]: true }));
 
     try {
       const token = localStorage.getItem("auth_token");
 
-      // Check if notification already exists for this status
       const checkResponse = await fetch(
         `${API_CONFIG.BASE_URL}/api/notifications`,
         {
@@ -193,7 +200,6 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
       if (checkResponse.ok) {
         const checkData = await checkResponse.json();
 
-        // Find existing notification for this restaurant and status
         const existingNotification = checkData.notifications?.find(
           (n) =>
             n.restaurant_id === parseInt(restaurantId) &&
@@ -215,11 +221,12 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
 
           if (deleteResponse.ok) {
             setNotificationStatus((prev) => ({ ...prev, [status]: false }));
-
-            // ✅ Notify parent to refresh notifications
             refreshParentNotifications();
-
-            alert(`Notification for ${getStatusText(status)} crowd removed!`);
+            showToast(
+              `Notification for ${getStatusText(status)} crowd removed!`,
+              "success",
+              2000,
+            );
           }
         } else {
           // Add new notification
@@ -239,24 +246,37 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
           const data = await response.json();
           if (data.success) {
             setNotificationStatus((prev) => ({ ...prev, [status]: true }));
-
-            // ✅ Notify parent to refresh notifications
             refreshParentNotifications();
 
-            alert(`You'll be notified when crowd is ${getStatusText(status)}!`);
+            // Check if the set preference matches current crowd status
+            const currentStatus = restaurant.crowd_status;
+            const statusText = getStatusText(status);
+
+            if (currentStatus === status) {
+              showToast(
+                `This restaurant is already ${statusText} right now! You'll be notified when it changes.`,
+                "warning",
+                4000,
+              );
+            } else {
+              showToast(
+                `You'll be notified when ${restaurant.name} has ${statusText} crowd!`,
+                "success",
+                3000,
+              );
+            }
           }
         }
       }
     } catch (error) {
       console.error("Notification error:", error);
-      alert("Error setting notification");
+      showToast("Error setting notification", "error", 3000);
     } finally {
-      // Clear loading for this status
       setNotificationLoading((prev) => ({ ...prev, [status]: false }));
     }
   };
 
-  // ADD THIS EFFECT TO CHECK INITIAL BOOKMARK/NOTIFICATION STATUS
+  // ========== CHECK INITIAL STATUS ==========
   useEffect(() => {
     if (!restaurantId) return;
 
@@ -285,7 +305,7 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
           }
         }
 
-        // Check notification status for ALL statuses
+        // Check notification status
         const notificationResponse = await fetch(
           `${API_CONFIG.BASE_URL}/api/notifications`,
           {
@@ -299,14 +319,12 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
         if (notificationResponse.ok) {
           const data = await notificationResponse.json();
           if (data.success && data.notifications) {
-            // Reset all notification statuses
             const newStatus = {
               green: false,
               yellow: false,
               orange: false,
             };
 
-            // Set true for each status the user has notifications for
             data.notifications.forEach((notification) => {
               if (notification.restaurant_id === parseInt(restaurantId)) {
                 newStatus[notification.notify_when_status] = true;
@@ -333,7 +351,6 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
       (updatedData) => {
         setIsUpdating(true);
 
-        // Update restaurant data
         setRestaurant((prev) => {
           if (!prev) return null;
           return {
@@ -352,14 +369,11 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
           };
         });
 
-        // Hide indicator after 1 second
         setTimeout(() => setIsUpdating(false), 1000);
       },
     );
 
-    return () => {
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, [restaurantId]);
 
   useEffect(() => {
@@ -372,8 +386,7 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
     }
   }, [restaurantId]);
 
-  // ========== IMAGE URLS (CALCULATED FROM RESTAURANT) ==========
-  // Calculate these AFTER restaurant is loaded
+  // ========== IMAGE URLS ==========
   const bannerImageUrl = restaurant?.banner_image
     ? getImageUrl(restaurant.banner_image)
     : null;
@@ -423,11 +436,8 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
       }
 
       const result = await response.json();
-
-      // EXTRACT THE RESTAURANT OBJECT FROM THE RESPONSE
       const data = result.restaurant || result;
 
-      // Transform data to match expected field names
       const transformedData = {
         id: data.id || restaurantId,
         name: data.name || "Unknown Restaurant",
@@ -456,7 +466,6 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
 
       setRestaurant(transformedData);
 
-      // Fetch stats
       try {
         const statsResponse = await fetch(
           `${API_CONFIG.BASE_URL}/api/restaurants/${restaurantId}/stats`,
@@ -488,13 +497,11 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
     switch (activeTab) {
       case "overview":
         return (
-          <>
-            <OverviewTab
-              restaurant={restaurant}
-              stats={stats}
-              reviewsData={reviewsData}
-            />
-          </>
+          <OverviewTab
+            restaurant={restaurant}
+            stats={stats}
+            reviewsData={reviewsData}
+          />
         );
       case "menu":
         return <MenuTab restaurantId={restaurantId} />;
@@ -511,13 +518,11 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
         return <PhotosTab restaurantId={restaurantId} />;
       default:
         return (
-          <>
-            <OverviewTab
-              restaurant={restaurant}
-              stats={stats}
-              reviewsData={reviewsData}
-            />
-          </>
+          <OverviewTab
+            restaurant={restaurant}
+            stats={stats}
+            reviewsData={reviewsData}
+          />
         );
     }
   };
@@ -548,7 +553,6 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
 
   return (
     <div className="restaurant-details-page">
-      {/* ADD FLOATING BACK BUTTON FOR MOBILE */}
       <button className="mobile-back-btn" onClick={onBack} aria-label="Go back">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
           <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
@@ -569,7 +573,6 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
             }}
           />
 
-          {/* ADD BANNER ACTION BUTTONS */}
           <div className="banner-action-buttons">
             {/* Bookmark Button */}
             <button
@@ -589,7 +592,7 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
               )}
             </button>
 
-            {/* Notification Button - Opens Modal */}
+            {/* Notification Button */}
             <button
               className={`action-btn notification-btn ${
                 Object.values(notificationStatus).some((status) => status)
@@ -615,7 +618,6 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
       <div className="restaurant-header">
         <div className="restaurant-basic-info">
           <div className="restaurant-header-profile">
-            {/* Profile Image */}
             <div className="restaurant-profile-image-container">
               {profileImageUrl ? (
                 <img
@@ -637,7 +639,6 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
               )}
             </div>
 
-            {/* Restaurant Name and Meta */}
             <div className="restaurant-header-info">
               <h1 className="details-restaurant-name">{restaurant.name}</h1>
             </div>
@@ -745,8 +746,10 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
           restaurant={restaurant}
           onClose={() => setShowReservationModal(false)}
           onSuccess={(reservation) => {
-            alert(
+            showToast(
               `Reservation confirmed! Your code: ${reservation.confirmation_code}`,
+              "success",
+              4000,
             );
           }}
         />
