@@ -256,7 +256,7 @@ const OwnerReviewsTab = ({ restaurantId, restaurantName }) => {
                   height="24px"
                   viewBox="0 -960 960 960"
                   width="24px"
-                  fill="black "
+                  fill="white "
                 >
                   <path d="M480-360 280-560h400L480-360Z" />
                 </svg>

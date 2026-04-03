@@ -1,140 +1,158 @@
+/* ===== SPOT HOLD MANAGEMENT - DARK THEME ===== */
 .spot-hold-management {
   padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
 }
 
+/* ===== HEADER ===== */
 .management-header {
   display: flex;
   flex-direction: column;
   align-items: center;
   padding-bottom: 20px;
-  border-bottom: 2px solid #040404;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 16px;
 }
 
 .management-header h3 {
   margin: 0;
-  color: #000000;
-  font-size: 24px;
-  text-align: start;
-  font-weight: bold;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 600;
 }
 
-.restaurant-name {
-  margin: 5px 0 0 0;
-  color: var(--text-secondary);
-  font-size: 16px;
-}
-
+/* ===== CAPACITY STATUS ===== */
 .capacity-status {
-  background: white;
-  padding: 10px;
-  border-radius: 12px;
-  box-shadow: var(--card-shadow);
-  min-width: 250px;
-}
-
-.capacity-label {
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.capacity-progress {
-  height: 8px;
-  background: #e9ecef;
-  border-radius: 4px;
-  overflow: hidden;
+  background: #1e2a3a;
+  padding: 16px 20px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 100%;
+  max-width: 300px;
 }
 
 .spot-hold-capacity-bar {
   display: flex;
-  align-content: center;
-  justify-content: center;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.capacity-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+}
+
+.capacity-progress {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
 }
 
 .hold-capacity-fill {
   height: 100%;
   transition: width 0.3s ease;
+  border-radius: 4px;
 }
 
 .available-capacity {
   font-size: 12px;
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.5);
   text-align: center;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.fee-badge {
-  padding: 4px 8px;
-}
-
+/* ===== FEE SETTINGS BUTTON ===== */
 .fee-settings-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  justify-self: center;
-  border-radius: 8px;
-  width: fit-content;
+  gap: 6px;
+  border-radius: 10px;
+  width: 100%;
   font-size: 12px;
-  padding: 5px;
-  margin-top: 10px;
-  background: black;
-  color: white;
-  border: none;
+  font-weight: 500;
+  padding: 8px 12px;
+  margin-top: 12px;
+  background: #0f3460;
+  color: #ffd700;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
+.fee-settings-btn:hover {
+  background: #1a4a7a;
+  transform: translateY(-1px);
+}
+
+.fee-settings-btn svg {
+  fill: #ffd700;
+}
+
+/* ===== TABS ===== */
 .management-tabs {
   display: flex;
-  gap: 10px;
-  margin: 10px 0px;
-  padding-bottom: 10px;
+  gap: 12px;
+  margin: 20px 0;
+  padding-bottom: 0;
   justify-content: center;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .tab {
-  padding: 10px 10px;
-  background: black;
-  border: none;
-  border-radius: 6px;
+  padding: 10px 20px;
+  background: #2a3a4a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
   cursor: pointer;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 500;
-  color: white;
+  color: rgba(255, 255, 255, 0.7);
   position: relative;
   transition: all 0.2s ease;
 }
 
-.currency-input {
-  margin-top: 20px;
-}
 .tab:hover {
-  background: #f8f9fa;
+  background: #0f3460;
+  color: #fff;
+  border-color: rgba(255, 215, 0, 0.3);
 }
 
 .tab.active {
-  color: black;
-  background: #ffffff;
-  border: 1px solid black;
+  background: #ffd700;
+  color: #1a1a2e;
+  border-color: #ffd700;
+  font-weight: 600;
 }
 
 .tab-badge {
   position: absolute;
-  top: -5px;
-  right: -5px;
-  background: var(--red-status);
+  top: -6px;
+  right: -6px;
+  background: #ff6b6b;
   color: white;
-  font-size: 11px;
+  font-size: 10px;
+  font-weight: 600;
   padding: 2px 6px;
   border-radius: 10px;
   min-width: 18px;
   text-align: center;
 }
 
+/* ===== CONTENT AREA ===== */
 .management-content {
-  min-height: 200px;
+  min-height: 300px;
+  margin-top: 20px;
 }
 
+/* ===== LOADING STATE ===== */
 .loading-state {
   display: flex;
   flex-direction: column;
@@ -146,8 +164,8 @@
 .spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid var(--accent-blue);
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-top: 3px solid #ffd700;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 15px;
@@ -162,178 +180,198 @@
   }
 }
 
+/* ===== EMPTY STATE ===== */
 .hold-empty-state {
   text-align: center;
-  padding: 60px;
-  color: var(--text-secondary);
+  padding: 60px 20px;
+  background: #1e2a3a;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
+
 .hold-empty-state p {
-  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+  margin: 0;
 }
 
 .empty-subtitle {
-  font-size: 11px;
-  margin-top: 5px;
+  font-size: 12px;
+  margin-top: 8px;
+  color: rgba(255, 255, 255, 0.4);
 }
 
-/* Active Holds Styles */
+/* ===== ACTIVE HOLDS LIST ===== */
 .holds-list {
-  display: grid;
-  gap: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .hold-card {
-  background: #efedde;
-  border-radius: 12px;
-  box-shadow: var(--card-shadow);
+  background: #1e2a3a;
+  border-radius: 16px;
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0.1, 0.1, 0.1, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s;
 }
 
 .hold-card:hover {
   transform: translateY(-2px);
-  box-shadow: var(--hover-shadow);
+  border-color: rgba(255, 215, 0, 0.3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
 
 .hold-card.expired {
-  opacity: 0.7;
-  background: #f8f9fa;
+  opacity: 0.6;
+  background: #1e2a3a;
 }
 
+/* Hold Header */
 .hold-header {
   display: flex;
-  justify-content: flex-start;
+  justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 15px;
+  margin-bottom: 16px;
   flex-wrap: wrap;
-  gap: 15px;
+  gap: 16px;
 }
 
 .hold-user {
   display: flex;
   flex-direction: column;
-  text-align: start;
+  gap: 4px;
 }
 
 .user-name {
   font-weight: 600;
-  color: var(--text-primary);
-  font-size: 13.3px;
+  color: #fff;
+  font-size: 15px;
 }
 
 .user-email {
   font-size: 12px;
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .hold-meta {
   display: flex;
-  gap: 15px;
-  justify-content: center;
-  font-size: 11px;
-  align-self: center;
-  text-align: start;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
 }
 
 .party-size {
-  background: #e7f5ff;
-  color: var(--accent-blue);
-  padding: 4px 8px;
-  border-radius: 4px;
+  background: rgba(81, 207, 102, 0.15);
+  color: #51cf66;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
   font-weight: 500;
 }
 
 .hold-type {
-  color: var(--orange-status);
+  background: rgba(255, 146, 43, 0.15);
+  color: #ff922b;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
   font-weight: 500;
-  padding: 4px 8px;
 }
 
 .confirmation-code {
   font-family: monospace;
-  background: #f8f9fa;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 13px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
 }
 
+.fee-badge {
+  background: rgba(255, 215, 0, 0.15);
+  color: #ffd700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Hold Details */
 .hold-details {
-  margin-bottom: 15px;
-  padding: 15px;
-  background: #f8f9fa;
-  border-radius: 8px;
+  margin-bottom: 16px;
+  padding: 16px;
+  background: #2a3a4a;
+  border-radius: 12px;
 }
 
 .time-info {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
   flex-wrap: wrap;
-  gap: 10px;
-  text-align: start;
-}
-
-.time-text {
-  font-size: 12px;
+  gap: 12px;
 }
 
 .time-remaining {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
 }
 
 .time-label {
-  font-size: 11px;
-  color: var(--text-secondary);
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .time-value {
   font-weight: 600;
-  font-size: 11px;
+  font-size: 13px;
+  color: #51cf66;
 }
 
 .time-value.expired {
-  color: var(--red-status);
+  color: #ff6b6b;
 }
 
-.expires-at {
-  padding-top: 5px;
+.time-text {
   font-size: 12px;
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.7);
 }
 
-.special-requests {
-  font-size: 14px;
-  color: var(--text-secondary);
-  padding-top: 10px;
-  border-top: 1px solid #dee2e6;
-  margin-top: 10px;
+.expires-at,
+.accepted-at {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 8px;
 }
 
+/* Hold Actions */
 .hold-actions {
   display: flex;
-  gap: 10px;
+  gap: 12px;
 }
 
 .btn-accept,
 .btn-reject {
-  padding: 8px 14px;
+  padding: 10px 20px;
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
   cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
   transition: all 0.2s ease;
   flex: 1;
 }
 
 .btn-accept {
-  color: rgb(3, 2, 2);
-  background-color: rgb(255, 255, 255);
-  border: 1px solid black;
+  background: #51cf66;
+  color: #1a1a2e;
+}
+
+.btn-accept:hover:not(:disabled) {
+  background: #37b24d;
+  transform: translateY(-1px);
 }
 
 .btn-accept:disabled {
@@ -342,52 +380,65 @@
 }
 
 .btn-reject {
-  background: black;
-  color: white;
+  background: rgba(255, 107, 107, 0.15);
+  color: #ff6b6b;
+  border: 1px solid rgba(255, 107, 107, 0.3);
+}
+
+.btn-reject:hover {
+  background: rgba(255, 107, 107, 0.25);
+  transform: translateY(-1px);
 }
 
 .expired-label {
-  color: var(--red-status);
-  font-weight: 500;
+  color: #ff6b6b;
+  font-weight: 600;
   font-size: 14px;
   text-align: center;
   width: 100%;
-  display: block;
   padding: 10px;
+  background: rgba(255, 107, 107, 0.1);
+  border-radius: 10px;
 }
 
-/* Table Styles */
+.accepted-label {
+  color: #51cf66;
+  font-weight: 600;
+  font-size: 14px;
+  text-align: center;
+  width: 100%;
+  padding: 10px;
+  background: rgba(81, 207, 102, 0.1);
+  border-radius: 10px;
+}
+
+/* ===== TODAY'S RESERVATIONS TABLE ===== */
+.reservations-list {
+  overflow-x: auto;
+}
+
 .reservations-table {
   width: 100%;
-  background: white;
-  border-radius: 12px;
+  background: #1e2a3a;
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: var(--card-shadow);
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
+  border-collapse: collapse;
 }
 
 .reservations-table th {
-  background: #f8f9fa;
-  padding: 15px;
+  background: #0f3460;
+  padding: 14px 16px;
   text-align: left;
   font-weight: 600;
-  color: var(--text-primary);
-  border-bottom: 2px solid #e9ecef;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  color: #fff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .reservations-table td {
-  padding: 15px;
-  border-bottom: 1px solid #e9ecef;
-  color: var(--text-secondary);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 13px;
 }
 
 .reservations-table tr:last-child td {
@@ -395,75 +446,268 @@
 }
 
 .reservations-table tr:hover td {
-  background: #f8f9fa;
+  background: rgba(255, 255, 255, 0.05);
 }
 
-/* Expired Holds Styles */
+.reservations-table code {
+  background: rgba(255, 215, 0, 0.15);
+  color: #ffd700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+/* ===== EXPIRED HOLDS ===== */
 .expired-holds {
-  display: grid;
-  gap: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .expired-hold-card {
-  background: rgba(145, 144, 144, 0.13);
-  padding: 40px 15px 15px 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  border-left: 4px solid #dee2e6;
+  background: #1e2a3a;
+  padding: 20px 20px 20px 60px;
+  border-radius: 12px;
+  border-left: 4px solid #ff6b6b;
   position: relative;
+  transition: all 0.2s;
+}
+
+.expired-hold-card:hover {
+  background: #2a3a4a;
 }
 
 .remove-expired-btn {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  display: flex;
-  align-self: flex-end;
-  width: 20px;
-  height: 20px;
+  top: 12px;
+  right: 12px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: #ff4444;
-  color: white;
-  border: none;
-  font-size: 15px;
+  background: rgba(255, 107, 107, 0.2);
+  color: #ff6b6b;
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  font-size: 16px;
   font-weight: bold;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0.7;
   transition: all 0.2s;
-  z-index: 2;
 }
+
+.remove-expired-btn:hover {
+  background: rgba(255, 107, 107, 0.4);
+  transform: scale(1.1);
+}
+
 .expired-hold-header {
   display: flex;
-  gap: 15px;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  font-size: 13px;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
   align-items: center;
 }
 
 .customer-name {
-  font-weight: 500;
-  color: var(--text-primary);
+  font-weight: 600;
+  color: #fff;
+  font-size: 14px;
 }
 
 .expired-hold-details {
   font-size: 12px;
-  color: var(--text-secondary);
-  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.6;
 }
 
 .expired-hold-details div {
-  margin-bottom: 3px;
+  margin-bottom: 4px;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
+/* ===== FEE MODAL ===== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
 
-  .capacity-status {
-    width: 100%;
+.modal-content {
+  background: #1e2a3a;
+  border-radius: 24px;
+  width: 100%;
+  max-width: 500px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.close-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 20px;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.fee-current {
+  background: #2a3a4a;
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.fee-current h4 {
+  margin: 0 0 8px;
+  color: #ffd700;
+  font-size: 16px;
+}
+
+.fee-desc {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 8px;
+}
+
+.currency-input {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.currency-symbol {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffd700;
+}
+
+.form-group input {
+  flex: 1;
+  padding: 10px 14px;
+  background: #2a3a4a;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  font-size: 14px;
+  color: #fff;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #ffd700;
+}
+
+.form-group small {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  padding: 20px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cancel-btn,
+.save-btn {
+  flex: 1;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancel-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.save-btn {
+  background: #ffd700;
+  color: #1a1a2e;
+}
+
+.save-btn:hover {
+  background: #ffed4e;
+  transform: translateY(-1px);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .spot-hold-management {
+    padding: 16px;
+  }
+
+  .management-tabs {
+    gap: 8px;
+  }
+
+  .tab {
+    padding: 8px 16px;
+    font-size: 12px;
   }
 
   .hold-header {
@@ -471,24 +715,58 @@
   }
 
   .hold-meta {
-    flex-direction: column;
-    gap: 5px;
+    flex-wrap: wrap;
   }
 
   .time-info {
     flex-direction: column;
+    align-items: flex-start;
   }
 
   .hold-actions {
     flex-direction: column;
   }
 
-  .reservations-table {
+  .reservations-table th,
+  .reservations-table td {
+    padding: 10px 12px;
     font-size: 12px;
+  }
+
+  .expired-hold-card {
+    padding: 16px 16px 16px 50px;
+  }
+}
+
+@media (max-width: 480px) {
+  .management-tabs {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .tab {
+    width: 100%;
+    text-align: center;
+  }
+
+  .capacity-status {
+    max-width: 100%;
+  }
+
+  .reservations-table {
+    font-size: 11px;
   }
 
   .reservations-table th,
   .reservations-table td {
-    padding: 5px;
+    padding: 8px;
+  }
+
+  .modal-content {
+    margin: 16px;
+  }
+
+  .modal-actions {
+    flex-direction: column;
   }
 }

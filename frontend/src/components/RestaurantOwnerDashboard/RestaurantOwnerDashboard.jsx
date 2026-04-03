@@ -13,6 +13,7 @@ import ImageUpload from "../ImageUpload/ImageUpload";
 import SpotHoldManagement from "../SpotHoldManagement/SpotHoldManagement"; // Or the correct path
 import pollingService from "../../services/pollingService"; // Adjust path
 import { BASE_URL } from "../../config";
+import { useToast } from "../../context/ToastContext";
 
 function RestaurantOwnerDashboard({ user }) {
   const [showVerificationForm, setShowVerificationForm] = useState(false);
@@ -44,6 +45,7 @@ function RestaurantOwnerDashboard({ user }) {
   const [showPromo, setShowPromo] = useState(false);
   const [showPromoModal, setShowPromoModal] = useState(false);
 
+  const { showToast } = useToast();
   // ===== HELPER FUNCTION TO GET CORRECT IMAGE URL =====
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
@@ -982,10 +984,7 @@ function RestaurantOwnerDashboard({ user }) {
                           ? "Busy"
                           : "Very High"}
                   </span>
-                  <span className="owner-stat-label">
-                    Crowd <br />
-                    Status
-                  </span>
+                  <span className="owner-stat-label">Crowd Status</span>
                 </div>
               </div>
             </div>
@@ -1511,21 +1510,23 @@ function RestaurantOwnerDashboard({ user }) {
                   : restaurant.banner_image || null //   Pass raw URL, don't use getImageUrl
               }
               onUploadSuccess={(url, path) => {
-                //   IMPORTANT: Use 'url' from the response, not 'path'
                 if (editingImageType === "profile") {
                   setRestaurant((prev) => ({
                     ...prev,
-                    profile_image: url, //   Save the Cloudinary URL
+                    profile_image: url,
                   }));
                 } else {
                   setRestaurant((prev) => ({
                     ...prev,
-                    banner_image: url, //   Save the Cloudinary URL
+                    banner_image: url,
                   }));
                 }
                 setEditingImageType(null);
-                alert(
-                  `${editingImageType === "profile" ? "Profile" : "Banner"} image updated!`,
+                // Show success toast
+                showToast(
+                  `${editingImageType === "profile" ? "Profile" : "Banner"} image updated successfully!`,
+                  "success",
+                  3000,
                 );
               }}
               restaurantId={restaurant.id}
