@@ -90,6 +90,29 @@ Route::post('/iot/log', function (Request $request) {
 Route::post('/iot/update-occupancy', [IoTController::class, 'updateOccupancy']);
 Route::post('/iot/sync-counts', [IoTController::class, 'updateOccupancy']); // Reuse same logic
 
+// ========== FAST IOT ROUTES FOR ESP32 ==========
+Route::get('/iot/quick-update', function (Request $request) {
+    $secret = $request->query('secret');
+    $expectedSecret = env('IOT_SECRET_KEY');
+    
+    if ($secret !== $expectedSecret) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+    
+    $restaurantId = $request->query('restaurant_id');
+    $count = $request->query('count');
+    
+    DB::table('restaurants')
+      ->where('id', $restaurantId)
+      ->update(['current_occupancy' => $count, 'updated_at' => now()]);
+    
+    return response()->json(['success' => true]);
+});
+
+Route::get('/iot/ping', function (Request $request) {
+    return response()->json(['success' => true, 'time' => now()]);
+});
+
 // Protected IoT endpoints (restaurant owner only)
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/iot/register-device', [IoTController::class, 'registerDevice']);
