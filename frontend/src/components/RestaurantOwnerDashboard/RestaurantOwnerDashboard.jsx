@@ -70,34 +70,18 @@ function RestaurantOwnerDashboard({ user }) {
   useEffect(() => {
     if (!restaurant || !restaurant.id) return;
 
-    // console.log(
-    //   `[Owner Dashboard] Setting up polling for restaurant ${restaurant.id}`,
-    // );
-
-    // Subscribe to restaurant updates
     const unsubscribe = pollingService.subscribe(
       restaurant.id,
       (updatedData) => {
-        // console.log(`[Owner Dashboard] Received update:`, updatedData);
-
-        // Update restaurant state with new data
+        // Only update current_occupancy – let child components recalc crowd status and percentage
         setRestaurant((prev) => ({
           ...prev,
           current_occupancy: updatedData.current_occupancy,
-          crowd_status: updatedData.crowd_status,
-          occupancy_percentage: updatedData.occupancy_percentage,
-          updated_at: updatedData.updated_at,
         }));
       },
     );
 
-    // Cleanup on unmount
-    return () => {
-      // console.log(
-      //   `🏪 [Owner Dashboard] Cleaning up polling for restaurant ${restaurant.id}`,
-      // );
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, [restaurant?.id]); // Only re-run if restaurant ID changes
 
   // Effect for closing hamburger menu when clicking outside
