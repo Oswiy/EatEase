@@ -350,31 +350,55 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
       restaurantId,
       (updatedData) => {
         setIsUpdating(true);
-
+        // ✅ Only update current_occupancy – let recalculation handle the rest
         setRestaurant((prev) => {
           if (!prev) return null;
           return {
             ...prev,
-            crowd_status: updatedData.crowd_status,
             current_occupancy: updatedData.current_occupancy,
-            occupancy_percentage: updatedData.occupancy_percentage,
-            crowd_level:
-              updatedData.crowd_status === "green"
-                ? "Low"
-                : updatedData.crowd_status === "yellow"
-                  ? "Moderate"
-                  : updatedData.crowd_status === "orange"
-                    ? "Busy"
-                    : "Full",
           };
         });
-
         setTimeout(() => setIsUpdating(false), 1000);
       },
     );
 
     return () => unsubscribe();
   }, [restaurantId]);
+
+  // ========== RECALCULATE CROWD STATUS & PERCENTAGE ==========
+  useEffect(() => {
+    if (!restaurant) return;
+
+    const max = restaurant.max_capacity || 1;
+    const occupancy = restaurant.current_occupancy || 0;
+    const percentage = Math.round((occupancy / max) * 100);
+
+    let crowdStatus = "green";
+    if (percentage >= 90) crowdStatus = "red";
+    else if (percentage >= 70) crowdStatus = "orange";
+    else if (percentage >= 40) crowdStatus = "yellow";
+    else crowdStatus = "green";
+
+    // Only update if changed
+    if (
+      percentage !== restaurant.occupancy_percentage ||
+      crowdStatus !== restaurant.crowd_status
+    ) {
+      setRestaurant((prev) => ({
+        ...prev,
+        occupancy_percentage: percentage,
+        crowd_status: crowdStatus,
+        crowd_level:
+          crowdStatus === "green"
+            ? "Low"
+            : crowdStatus === "yellow"
+              ? "Moderate"
+              : crowdStatus === "orange"
+                ? "Busy"
+                : "Full",
+      }));
+    }
+  }, [restaurant?.current_occupancy, restaurant?.max_capacity]);
 
   // ========== FETCH RESTAURANT DETAILS ==========
   const fetchRestaurantDetails = async () => {
