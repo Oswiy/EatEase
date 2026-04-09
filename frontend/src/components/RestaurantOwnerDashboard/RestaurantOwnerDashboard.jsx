@@ -952,21 +952,37 @@ function RestaurantOwnerDashboard({ user }) {
                 </div>
                 <div className="owner-stat-card">
                   <span className="owner-stat-value">
-                    {restaurant.occupancy_percentage}%
+                    {Math.round(
+                      (restaurant.current_occupancy / restaurant.max_capacity) *
+                        100,
+                    )}
+                    %
                   </span>
                   <span className="owner-stat-label">Occupancy</span>
                 </div>
                 <div className="owner-stat-card">
                   <span
-                    className={`owner-stat-value status-${restaurant.crowd_status}`}
+                    className={`owner-stat-value status-${(() => {
+                      const percent =
+                        (restaurant.current_occupancy /
+                          restaurant.max_capacity) *
+                        100;
+                      if (percent >= 90) return "red";
+                      if (percent >= 70) return "orange";
+                      if (percent >= 40) return "yellow";
+                      return "green";
+                    })()}`}
                   >
-                    {restaurant.crowd_status === "green"
-                      ? "Low"
-                      : restaurant.crowd_status === "yellow"
-                        ? "Moderate"
-                        : restaurant.crowd_status === "orange"
-                          ? "Busy"
-                          : "Very High"}
+                    {(() => {
+                      const percent =
+                        (restaurant.current_occupancy /
+                          restaurant.max_capacity) *
+                        100;
+                      if (percent >= 90) return "Very High";
+                      if (percent >= 70) return "Busy";
+                      if (percent >= 40) return "Moderate";
+                      return "Low";
+                    })()}
                   </span>
                   <span className="owner-stat-label">Crowd Status</span>
                 </div>
