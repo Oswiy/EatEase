@@ -5,7 +5,7 @@ class RestaurantPollingService {
   constructor() {
     this.intervals = new Map();
     this.subscribers = new Map();
-    this.pollingInterval = 15000; // 15 seconds (faster for owners)
+    this.pollingInterval = 5000; // 5 seconds (faster for owners)
     this.isTabActive = true;
   }
 
