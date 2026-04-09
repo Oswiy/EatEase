@@ -67,6 +67,72 @@ function RestaurantCard({
     return () => unsubscribe();
   }, [restaurant.id, restaurant.name]);
 
+  // Recalculate crowd status and percentage when occupancy or max capacity changes
+  useEffect(() => {
+    const max = currentRestaurant.max_capacity || 1;
+    const occupancy = currentRestaurant.current_occupancy || 0;
+    const percentage = Math.round((occupancy / max) * 100);
+
+    let crowdStatus = "green";
+    if (percentage >= 90) crowdStatus = "red";
+    else if (percentage >= 70) crowdStatus = "orange";
+    else if (percentage >= 40) crowdStatus = "yellow";
+    else crowdStatus = "green";
+
+    // Only update if values changed to avoid infinite loop
+    if (
+      percentage !== currentRestaurant.occupancy_percentage ||
+      crowdStatus !== currentRestaurant.crowd_status
+    ) {
+      setCurrentRestaurant((prev) => ({
+        ...prev,
+        occupancy_percentage: percentage,
+        crowd_status: crowdStatus,
+        crowdLevel:
+          crowdStatus === "green"
+            ? "Low"
+            : crowdStatus === "yellow"
+              ? "Moderate"
+              : crowdStatus === "orange"
+                ? "Busy"
+                : "Full",
+      }));
+    }
+  }, [currentRestaurant.current_occupancy, currentRestaurant.max_capacity]);
+
+  // Recalculate crowd status and percentage when occupancy or max capacity changes
+  useEffect(() => {
+    const max = currentRestaurant.max_capacity || 1;
+    const occupancy = currentRestaurant.current_occupancy || 0;
+    const percentage = Math.round((occupancy / max) * 100);
+
+    let crowdStatus = "green";
+    if (percentage >= 90) crowdStatus = "red";
+    else if (percentage >= 70) crowdStatus = "orange";
+    else if (percentage >= 40) crowdStatus = "yellow";
+    else crowdStatus = "green";
+
+    // Only update if values changed to avoid infinite loop
+    if (
+      percentage !== currentRestaurant.occupancy_percentage ||
+      crowdStatus !== currentRestaurant.crowd_status
+    ) {
+      setCurrentRestaurant((prev) => ({
+        ...prev,
+        occupancy_percentage: percentage,
+        crowd_status: crowdStatus,
+        crowdLevel:
+          crowdStatus === "green"
+            ? "Low"
+            : crowdStatus === "yellow"
+              ? "Moderate"
+              : crowdStatus === "orange"
+                ? "Busy"
+                : "Full",
+      }));
+    }
+  }, [currentRestaurant.current_occupancy, currentRestaurant.max_capacity]);
+
   // ========== UPDATE FROM allNotifications - SKIP DURING REMOVAL ==========
   useEffect(() => {
     // Skip if we're in the middle of removing
