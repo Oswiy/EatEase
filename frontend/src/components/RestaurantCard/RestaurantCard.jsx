@@ -47,7 +47,6 @@ function RestaurantCard({
       restaurant.id,
       (updatedData) => {
         setIsUpdating(true);
-        // ✅ Only update current_occupancy – let the recalculation useEffect handle the rest
         setCurrentRestaurant((prev) => ({
           ...prev,
           current_occupancy: updatedData.current_occupancy,

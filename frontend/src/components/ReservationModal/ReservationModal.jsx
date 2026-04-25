@@ -79,6 +79,18 @@ const ReservationModal = ({
       return;
     }
 
+    const availableSeats =
+      (restaurant?.max_capacity ?? 0) - (restaurant?.current_occupancy ?? 0);
+
+    if (formData.party_size > availableSeats) {
+      const msg =
+        `Sorry, this restaurant cannot accommodate your party of ${formData.party_size}. ` +
+        `Only ${availableSeats} seat${availableSeats === 1 ? "" : "s"} available right now.`;
+      setError(msg);
+      showToast(msg, "warning", 5000);
+      return;
+    }
+
     if (feeAmount > 0) {
       const confirmFee = window.confirm(
         `A hold fee of ₱${Number(feeAmount || 0).toFixed(2)} will apply for your party of ${formData.party_size}.\n\nThis fee guarantees your spot and will be charged when the hold is accepted.\n\nContinue?`,
@@ -287,8 +299,16 @@ const ReservationModal = ({
             className={`restaurant-capacity ${restaurant?.current_occupancy >= restaurant?.max_capacity ? "full" : ""}`}
           >
             {restaurant?.current_occupancy >= restaurant?.max_capacity ? (
-              <span className="full-warning">
-                Restaurant is currently FULL
+              <span className="full-warning">Restaurant is currently FULL</span>
+            ) : formData.party_size >
+              restaurant?.max_capacity - restaurant?.current_occupancy ? (
+              <span className="capacity-warning">
+                Only {restaurant?.max_capacity - restaurant?.current_occupancy}{" "}
+                seat
+                {restaurant?.max_capacity - restaurant?.current_occupancy === 1
+                  ? ""
+                  : "s"}{" "}
+                available — your party of {formData.party_size} won't fit
               </span>
             ) : (
               <span>
@@ -322,6 +342,7 @@ const ReservationModal = ({
                 +
               </button>
             </div>
+
             {feeAmount > 0 && (
               <div className="fee-badge">
                 <span>Hold Fee: ₱{feeAmount.toFixed(2)}</span>

@@ -486,3 +486,12 @@
     min-width: 50px;
   }
 }
+
+.capacity-warning {
+  color: #f39c12;
+  font-weight: bold;
+}
+
+.restaurant-info-minimal .restaurant-address {
+  text-align: start;
+}
