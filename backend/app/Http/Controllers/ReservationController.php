@@ -203,6 +203,19 @@ class ReservationController extends Controller
 
             $data = $validator->validated();
 
+            $restaurant = Restaurant::findOrFail($data['restaurant_id']);
+            $availableSeats = $restaurant->max_capacity - $restaurant->current_occupancy;
+
+            if ($data['party_size'] > $availableSeats) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Sorry, this restaurant cannot accommodate your party of {$data['party_size']}. Only {$availableSeats} seat" . ($availableSeats === 1 ? '' : 's') . " available right now.",
+                    'available_seats' => $availableSeats,
+                    'requested_party_size' => $data['party_size']
+                ], 422);
+            }
+
+
             // ✅ CRITICAL FIX: Auto-update ALL expired holds for this user FIRST
             $expiredHoldsToUpdate = Reservation::where('user_id', $user->id)
                 ->where('restaurant_id', $data['restaurant_id'])
