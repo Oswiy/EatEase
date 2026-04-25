@@ -205,13 +205,24 @@ class IoTController extends Controller
         Log::info('✅ Updated restaurant ' . $restaurant->id . ' to ' . $restaurant->current_occupancy);
 
         // Also create an occupancy log
+ // Also create an occupancy log with all analytics‑required fields
+        $oldOccupancy = $restaurant->getOriginal('current_occupancy');
+        $newOccupancy = $restaurant->current_occupancy;
+        $maxCap = $restaurant->max_capacity;
+        $percentage = $maxCap > 0 ? round(($newOccupancy / $maxCap) * 100, 1) : 0;
+        $crowdStatus = $newOccupancy >= $maxCap * 0.9 ? 'red'
+                     : ($newOccupancy >= $maxCap * 0.7 ? 'orange'
+                     : ($newOccupancy >= $maxCap * 0.4 ? 'yellow' : 'green'));
+
         OccupancyLog::create([
-            'device_id' => $data['device_id'] ?? 'unknown',
-            'restaurant_id' => $restaurant->id,
-            'action' => $data['action'] ?? 'unknown',
-            'capacity_before' => $restaurant->getOriginal('current_occupancy'),
-            'capacity_after' => $restaurant->current_occupancy,
-            'ip_address' => $request->ip(),
+            'restaurant_id'        => $restaurant->id,
+            'occupancy_count'      => $newOccupancy,
+            'occupancy_percentage' => $percentage,
+            'crowd_status'         => $crowdStatus,
+            'source_type'          => 'sensor',
+            'sensor_id'            => $data['device_id'] ?? 'unknown',
+            'is_estimated'         => false,
+            'notes'                => ($data['action'] ?? 'update') . " – {$oldOccupancy} → {$newOccupancy}",
         ]);
 
         return response()->json([

@@ -91,22 +91,52 @@ Route::post('/iot/update-occupancy', [IoTController::class, 'updateOccupancy']);
 Route::post('/iot/sync-counts', [IoTController::class, 'updateOccupancy']); // Reuse same logic
 
 // ========== FAST IOT ROUTES FOR ESP32 ==========
-Route::get('/iot/quick-update', function (Request $request) {
-    $secret = $request->query('secret');
-    $expectedSecret = env('IOT_SECRET_KEY');
-    
-    if ($secret !== $expectedSecret) {
+Route::match(['get', 'post'], '/iot/quick-update', function (Request $request) {
+    $secret = $request->input('secret') ?? $request->query('secret');
+    if ($secret !== env('IOT_SECRET_KEY')) {
         return response()->json(['error' => 'Unauthorized'], 401);
     }
-    
-    $restaurantId = $request->query('restaurant_id');
-    $count = $request->query('count');
-    
+
+    $restaurantId = $request->input('restaurant_id') ?? $request->query('restaurant_id');
+    $count        = $request->input('count') ?? $request->query('count');
+    $action       = $request->input('action') ?? $request->query('action') ?? 'unknown';
+    $deviceId     = $request->input('device_id') ?? $request->query('device_id') ?? 'esp32_unknown';
+
+    $restaurant = \App\Models\Restaurant::find($restaurantId);
+    if (!$restaurant) {
+        return response()->json(['error' => 'Restaurant not found'], 404);
+    }
+
+    $oldOccupancy = $restaurant->current_occupancy;
+    $newCount = max(0, min((int)$count, $restaurant->max_capacity));
+
     DB::table('restaurants')
-      ->where('id', $restaurantId)
-      ->update(['current_occupancy' => $count, 'updated_at' => now()]);
-    
-    return response()->json(['success' => true]);
+        ->where('id', $restaurantId)
+        ->update(['current_occupancy' => $newCount, 'updated_at' => now()]);
+
+    // Compute analytics fields
+    $maxCap    = $restaurant->max_capacity;
+    $percentage = $maxCap > 0 ? round(($newCount / $maxCap) * 100, 1) : 0;
+    $crowdStatus = $newCount >= $maxCap * 0.9 ? 'red'
+                 : ($newCount >= $maxCap * 0.7 ? 'orange'
+                 : ($newCount >= $maxCap * 0.4 ? 'yellow' : 'green'));
+
+    // Write log with all fields required by AnalyticsController
+    \App\Models\OccupancyLog::create([
+        'restaurant_id'        => $restaurantId,
+        'occupancy_count'      => $newCount,
+        'occupancy_percentage' => $percentage,
+        'crowd_status'         => $crowdStatus,
+        'source_type'          => 'sensor',
+        'sensor_id'            => $deviceId,       // identifies entry/exit button
+        'is_estimated'         => false,
+        'notes'                => "{$action} – from {$oldOccupancy} to {$newCount}",
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'new_occupancy' => $newCount
+    ]);
 });
 
 Route::get('/iot/ping', function (Request $request) {
