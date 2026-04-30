@@ -108,7 +108,13 @@ Route::match(['get', 'post'], '/iot/quick-update', function (Request $request) {
     }
 
     $oldOccupancy = $restaurant->current_occupancy;
-    $newCount = max(0, min((int)$count, $restaurant->max_capacity));
+    $mode = $request->input('mode') ?? $request->query('mode') ?? 'set';
+
+    if ($mode === 'decrement') {
+        $newCount = max(0, $restaurant->current_occupancy - 1);
+    } else {
+        $newCount = max(0, min((int)$count, $restaurant->max_capacity));
+    }
 
     DB::table('restaurants')
         ->where('id', $restaurantId)
