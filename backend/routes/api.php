@@ -108,11 +108,15 @@ Route::match(['get', 'post'], '/iot/quick-update', function (Request $request) {
     }
 
     $oldOccupancy = $restaurant->current_occupancy;
-    $mode = $request->input('mode') ?? $request->query('mode') ?? 'set';
+    $mode  = $request->input('mode')  ?? $request->query('mode')  ?? 'set';
+    $count = $request->input('count') ?? $request->query('count') ?? 0;
 
-    if ($mode === 'decrement') {
-        $newCount = max(0, $restaurant->current_occupancy - 1);
+    if ($mode === 'increment') {
+        $newCount = min($restaurant->current_occupancy + 1, $restaurant->max_capacity);
+    } elseif ($mode === 'decrement') {
+        $newCount = max($restaurant->current_occupancy - 1, 0);
     } else {
+        // legacy 'set' mode — absolute value sent by old firmware
         $newCount = max(0, min((int)$count, $restaurant->max_capacity));
     }
 
