@@ -34,6 +34,13 @@ function KpiGrid({ occ, reviews, sensorCount }) {
           <p>{reviews.total || 0} reviews</p>
         </div>
       </div>
+      <div className="kpi-card kpi-card--orange">
+        <div className="kpi-content">
+          <div className="kpi-label">ESP32 Reads</div>
+          <h3>{sensorCount}</h3>
+          <p>button presses this period</p>
+        </div>
+      </div>
     </div>
   );
 }
@@ -104,7 +111,7 @@ function CrowdBreakdown({ breakdown }) {
     <div className="chart-card">
       <div className="chart-card-header">
         <h3>Crowd Distribution</h3>
-        <span className="chart-tag">ALL TIME</span>
+        <span className="chart-tag">THIS PERIOD</span>
       </div>
       <div className="crowd-pills">
         {items.map(it => (
@@ -125,7 +132,7 @@ function CrowdBreakdown({ breakdown }) {
         ))}
       </div>
       <div className="crowd-total">
-        Based on {Object.values(breakdown).reduce((a, b) => a + b, 0)} sensor readings
+        Based on {Object.values(breakdown).reduce((a, b) => a + b, 0)} readings
       </div>
     </div>
   );
@@ -162,22 +169,6 @@ function RecentActivity({ logs }) {
       )}
     </div>
   );
-}
-
-function InsightsCard({ summary, avgOccupancy, sensorCount }) {
-  const items = [];
-  if (summary?.best_day && summary.best_day !== "No data yet")
-    items.push({text: `Busiest day: ${summary.best_day}` });
-  if (sensorCount > 0)
-    items.push({text: `${sensorCount} ESP32 sensor readings logged this period` });
-  if (avgOccupancy > 75)
-    items.push({text: "High demand — consider marketing off-peak slots" });
-  else if (avgOccupancy > 0 && avgOccupancy < 40)
-    items.push({text: "Low traffic — a promotional campaign could help" });
-  if (summary?.recommendations)
-    summary.recommendations.forEach(r => items.push({text: r }));
-  if (items.length === 0)
-    items.push({text: "Keep logging occupancy to generate insights" });
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
@@ -217,11 +208,11 @@ const AnalyticsTab = ({ restaurantId, isPremium }) => {
           <p>Upgrade to Premium to unlock your full dashboard — powered by real-time ESP32 sensor data.</p>
           <div className="features-list">
             <ul>
-              <li className="feature-text">Live ESP32 occupancy tracking</li>
-              <li className="feature-text">Peak hours &amp; crowd distribution</li>
-              <li className="feature-text">Sensor vs manual breakdown</li>
+              <li className="feature-text">Occupancy trend charts</li>
+              <li className="feature-text">Peak hours analysis</li>
+              <li className="feature-text">Crowd distribution breakdown</li>
               <li className="feature-text">Recent IoT activity log</li>
-              <li className="feature-text">Personalised recommendations</li>
+              <li className="feature-text">ESP32 sensor read counter</li>
             </ul>
           </div>
         </div>
@@ -257,9 +248,6 @@ const AnalyticsTab = ({ restaurantId, isPremium }) => {
             <li><strong>Or:</strong> update occupancy manually from the Overview tab</li>
           </ol>
         </div>
-        <p className="empty-note">
-          Analytics data is collected automatically via IoT sensors or manual updates.
-        </p>
       </div>
     );
   }
@@ -268,11 +256,9 @@ const AnalyticsTab = ({ restaurantId, isPremium }) => {
   const occ         = data.occupancy      || {};
   const peaks       = data.peakHours      || [];
   const reviews     = data.reviews        || {};
-  const summary     = data.summary        || {};
   const breakdown   = data.crowdBreakdown || {};
   const recentLogs  = data.recentLogs     || [];
   const sensorCount = data.sensorCount    || 0;
-  const manualCount = data.manualCount    || 0;
 
   const chartData =
     range === "week"  ? (occ.daily   || []) :
@@ -286,11 +272,9 @@ const AnalyticsTab = ({ restaurantId, isPremium }) => {
   return (
     <div className="analytics-tab">
 
+      {/* Header */}
       <div className="analytics-header">
-        <div>
-          <h2>Restaurant Analytics</h2>
-          <p className="analytics-subtitle">{occ.total_logs || 0} total logs · IoT + manual</p>
-        </div>
+        <h2>Restaurant Analytics</h2>
         <div className="time-range-selector">
           {["week", "month", "year"].map(r => (
             <button
@@ -304,8 +288,10 @@ const AnalyticsTab = ({ restaurantId, isPremium }) => {
         </div>
       </div>
 
+      {/* KPIs */}
       <KpiGrid occ={occ} reviews={reviews} sensorCount={sensorCount} />
 
+      {/* Occupancy trend + Peak hours */}
       <div className="charts-section">
         <OccupancyChart
           data={chartData.slice(0, chartLabels.length)}
@@ -315,24 +301,14 @@ const AnalyticsTab = ({ restaurantId, isPremium }) => {
         <PeakHours peaks={peaks} />
       </div>
 
+      {/* Crowd breakdown + Recent activity */}
       <div className="charts-section charts-section--equal">
         <CrowdBreakdown breakdown={breakdown} />
         <RecentActivity logs={recentLogs} />
       </div>
 
-      <InsightsCard
-        summary={summary}
-        avgOccupancy={occ.average || 0}
-        sensorCount={sensorCount}
-      />
-
       <div className="data-info">
-        <p>
-          <small>
-            Analytics based on {occ.total_logs || 0} occupancy logs.
-            ESP32 sensor data is logged in real time.
-          </small>
-        </p>
+        <p><small>Data updates automatically when ESP32 sensors register entries or exits.</small></p>
       </div>
     </div>
   );
