@@ -14,21 +14,6 @@ function formatTime(ts) {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function SourceBadges({ sensorCount, manualCount }) {
-  return (
-    <div className="source-badges">
-      <div className="source-badge source-badge--sensor">
-        <span className="source-badge__dot" />
-        ESP32 Sensor · {sensorCount} readings
-      </div>
-      <div className="source-badge source-badge--manual">
-        <span className="source-badge__dot" />
-        Manual · {manualCount} updates
-      </div>
-    </div>
-  );
-}
-
 function KpiGrid({ occ, reviews, sensorCount }) {
   return (
     <div className="kpi-cards">
@@ -42,25 +27,11 @@ function KpiGrid({ occ, reviews, sensorCount }) {
           </div>
         </div>
       </div>
-      <div className="kpi-card kpi-card--green">
-        <div className="kpi-content">
-          <div className="kpi-label">Current</div>
-          <h3>{occ.current || 0}%</h3>
-          <p>live reading</p>
-        </div>
-      </div>
       <div className="kpi-card kpi-card--blue">
         <div className="kpi-content">
           <div className="kpi-label">Avg Rating</div>
           <h3>{reviews.average || "–"}</h3>
           <p>{reviews.total || 0} reviews</p>
-        </div>
-      </div>
-      <div className="kpi-card kpi-card--orange">
-        <div className="kpi-content">
-          <div className="kpi-label">Sensor Reads</div>
-          <h3>{sensorCount}</h3>
-          <p>ESP32 button presses</p>
         </div>
       </div>
     </div>
@@ -196,33 +167,17 @@ function RecentActivity({ logs }) {
 function InsightsCard({ summary, avgOccupancy, sensorCount }) {
   const items = [];
   if (summary?.best_day && summary.best_day !== "No data yet")
-    items.push({ icon: "📅", text: `Busiest day: ${summary.best_day}` });
+    items.push({text: `Busiest day: ${summary.best_day}` });
   if (sensorCount > 0)
-    items.push({ icon: "🔌", text: `${sensorCount} ESP32 sensor readings logged this period` });
+    items.push({text: `${sensorCount} ESP32 sensor readings logged this period` });
   if (avgOccupancy > 75)
-    items.push({ icon: "🔥", text: "High demand — consider marketing off-peak slots" });
+    items.push({text: "High demand — consider marketing off-peak slots" });
   else if (avgOccupancy > 0 && avgOccupancy < 40)
-    items.push({ icon: "📣", text: "Low traffic — a promotional campaign could help" });
+    items.push({text: "Low traffic — a promotional campaign could help" });
   if (summary?.recommendations)
-    summary.recommendations.forEach(r => items.push({ icon: "💡", text: r }));
+    summary.recommendations.forEach(r => items.push({text: r }));
   if (items.length === 0)
-    items.push({ icon: "📊", text: "Keep logging occupancy to generate insights" });
-
-  return (
-    <div className="insights-section">
-      <div className="insights-card">
-        <h3>Insights &amp; Recommendations</h3>
-        <div className="insights-list">
-          {items.map((it, i) => (
-            <div className="insight-item" key={i}>
-              <span className="insight-item__icon">{it.icon}</span>
-              <span className="insight-item__text">{it.text}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+    items.push({text: "Keep logging occupancy to generate insights" });
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
@@ -349,7 +304,6 @@ const AnalyticsTab = ({ restaurantId, isPremium }) => {
         </div>
       </div>
 
-      <SourceBadges sensorCount={sensorCount} manualCount={manualCount} />
       <KpiGrid occ={occ} reviews={reviews} sensorCount={sensorCount} />
 
       <div className="charts-section">
