@@ -6,92 +6,73 @@ use App\Http\Controllers\Controller;
 use App\Models\Restaurant;
 use App\Models\Review;
 use App\Models\Reservation;
-use App\Models\OccupancyLog; // ADD THIS IMPORT
+use App\Models\OccupancyLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class AnalyticsController extends Controller
 {
-    /**
-     * Get restaurant analytics (Premium only)
-     */
     public function getRestaurantAnalytics($restaurantId, Request $request)
     {
         $user = Auth::user();
 
         if (!$user || $user->user_type !== 'restaurant_owner') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Not authorized'
-            ], 403);
+            return response()->json(['success' => false, 'message' => 'Not authorized'], 403);
         }
 
-        // Get the restaurant
         $restaurant = Restaurant::find($restaurantId);
-
         if (!$restaurant) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Restaurant not found'
-            ], 404);
+            return response()->json(['success' => false, 'message' => 'Restaurant not found'], 404);
         }
 
-        // Check if user owns this restaurant
         if ($restaurant->owner_id !== $user->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Not authorized to view analytics for this restaurant'
-            ], 403);
+            return response()->json(['success' => false, 'message' => 'Not authorized'], 403);
         }
 
-        // Check if restaurant is premium
         if ($restaurant->subscription_tier !== 'premium') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Analytics available for Premium tier only'
-            ], 403);
+            return response()->json(['success' => false, 'message' => 'Analytics available for Premium tier only'], 403);
         }
 
-        $range = $request->get('range', 'week');
-
-        // Calculate real analytics data
+        $range     = $request->get('range', 'week');
         $analytics = $this->calculateAnalytics($restaurant, $range);
 
         return response()->json([
-            'success' => true,
-            'analytics' => $analytics,
-            'time_range' => $range,
-            'restaurant_name' => $restaurant->name
+            'success'         => true,
+            'analytics'       => $analytics,
+            'time_range'      => $range,
+            'restaurant_name' => $restaurant->name,
         ]);
     }
 
-    /**
-     * Calculate analytics data
-     */
+    // ─────────────────────────────────────────────────────────────────────────
     private function calculateAnalytics($restaurant, $range)
     {
-        $startDate = $this->getStartDateFromRange($range);
+        $startDate = $this->getStartDate($range);
 
         return [
-            'occupancy' => $this->getOccupancyData($restaurant, $startDate),
-            'peakHours' => $this->getPeakHours($restaurant, $startDate),
-            'revenue' => $this->getRevenueData($restaurant, $range),
-            'reviews' => $this->getReviewData($restaurant, $range),
-            'customers' => $this->getCustomerData($restaurant, $range),
-            'summary' => $this->getAnalyticsSummary($restaurant, $range),
+            'occupancy'       => $this->getOccupancyData($restaurant, $startDate),
+            'peakHours'       => $this->getPeakHours($restaurant, $startDate),
+            'reviews'         => $this->getReviewData($restaurant, $range),
+            'customers'       => $this->getCustomerData($restaurant, $range),
+            'summary'         => $this->getAnalyticsSummary($restaurant, $range),
+            'crowdBreakdown'  => $this->getCrowdBreakdown($restaurant, $startDate),
+            'recentLogs'      => $this->getRecentLogs($restaurant),
+            'sensorCount'     => $this->countBySource($restaurant, $startDate, 'sensor'),
+            'manualCount'     => $this->countBySource($restaurant, $startDate, 'manual'),
         ];
     }
 
-    private function getStartDateFromRange($range)
+    private function getStartDate($range)
     {
         return match ($range) {
-            'week' => now()->subDays(7),
+            'week'  => now()->subDays(7),
             'month' => now()->subDays(30),
-            'year' => now()->subDays(365),
+            'year'  => now()->subDays(365),
             default => now()->subDays(7),
         };
     }
 
+    // ── Occupancy ─────────────────────────────────────────────────────────────
     private function getOccupancyData($restaurant, $startDate)
     {
         $logs = OccupancyLog::where('restaurant_id', $restaurant->id)
@@ -99,67 +80,50 @@ class AnalyticsController extends Controller
             ->orderBy('created_at')
             ->get();
 
-        // Check if we have any data
         if ($logs->isEmpty()) {
             return [
-                'daily' => [],
-                'weekly' => [],
+                'daily'   => [],
+                'weekly'  => [],
                 'monthly' => [],
-                'current' => $restaurant->occupancy_percentage,
+                'current' => $restaurant->occupancy_percentage ?? 0,
                 'average' => 0,
-                'peak' => 0,
-                'low' => 0,
-                'has_data' => false,
+                'peak'    => 0,
+                'low'     => 0,
+                'has_data'   => false,
                 'total_logs' => 0,
             ];
         }
 
-        // Group by day for daily data
-        $dailyData = [];
-        $weeklyData = [];
-        $monthlyData = [];
+        $daily   = [];
+        $weekly  = [];
+        $monthly = [];
 
         foreach ($logs as $log) {
-            $day = $log->created_at->format('Y-m-d');
-            $week = $log->created_at->format('Y-W');
-            $month = $log->created_at->format('Y-m');
+            $d = $log->created_at->format('Y-m-d');
+            $w = $log->created_at->format('Y-W');
+            $m = $log->created_at->format('Y-m');
 
-            if (!isset($dailyData[$day])) $dailyData[$day] = [];
-            $dailyData[$day][] = $log->occupancy_percentage;
-
-            if (!isset($weeklyData[$week])) $weeklyData[$week] = [];
-            $weeklyData[$week][] = $log->occupancy_percentage;
-
-            if (!isset($monthlyData[$month])) $monthlyData[$month] = [];
-            $monthlyData[$month][] = $log->occupancy_percentage;
+            $daily[$d][]   = $log->occupancy_percentage;
+            $weekly[$w][]  = $log->occupancy_percentage;
+            $monthly[$m][] = $log->occupancy_percentage;
         }
 
-        // Calculate averages
-        $dailyAvg = array_map(function ($day) {
-            return count($day) > 0 ? round(array_sum($day) / count($day), 1) : 0;
-        }, array_values($dailyData));
-
-        $weeklyAvg = array_map(function ($week) {
-            return count($week) > 0 ? round(array_sum($week) / count($week), 1) : 0;
-        }, array_values($weeklyData));
-
-        $monthlyAvg = array_map(function ($month) {
-            return count($month) > 0 ? round(array_sum($month) / count($month), 1) : 0;
-        }, array_values($monthlyData));
+        $avg = fn($arr) => count($arr) ? round(array_sum($arr) / count($arr), 1) : 0;
 
         return [
-            'daily' => array_slice($dailyAvg, -7), // Last 7 days
-            'weekly' => array_slice($weeklyAvg, -4), // Last 4 weeks
-            'monthly' => array_slice($monthlyAvg, -12), // Last 12 months
-            'current' => $restaurant->occupancy_percentage,
-            'average' => round($logs->avg('occupancy_percentage'), 1),
-            'peak' => round($logs->max('occupancy_percentage'), 1),
-            'low' => round($logs->min('occupancy_percentage'), 1),
-            'has_data' => true,
+            'daily'      => array_slice(array_map($avg, array_values($daily)),   -7),
+            'weekly'     => array_slice(array_map($avg, array_values($weekly)),  -4),
+            'monthly'    => array_slice(array_map($avg, array_values($monthly)), -12),
+            'current'    => $restaurant->occupancy_percentage ?? 0,
+            'average'    => round($logs->avg('occupancy_percentage'), 1),
+            'peak'       => round($logs->max('occupancy_percentage'), 1),
+            'low'        => round($logs->min('occupancy_percentage'), 1),
+            'has_data'   => true,
             'total_logs' => $logs->count(),
         ];
     }
 
+    // ── Peak Hours ────────────────────────────────────────────────────────────
     private function getPeakHours($restaurant, $startDate)
     {
         $logs = OccupancyLog::where('restaurant_id', $restaurant->id)
@@ -170,167 +134,141 @@ class AnalyticsController extends Controller
             ->limit(6)
             ->get();
 
-        $peakHours = [];
-        foreach ($logs as $log) {
-            $hour = $log->hour < 12 ? $log->hour . ' AM' : ($log->hour == 12 ? '12 PM' : ($log->hour - 12) . ' PM');
-
-            $peakHours[] = [
-                'hour' => $hour,
-                'occupancy' => round($log->avg_occupancy, 1)
-            ];
+        if ($logs->isEmpty()) {
+            return [];
         }
 
-        // If no logs, return mock data
-        if (empty($peakHours)) {
-            return [
-                ['hour' => '12 PM', 'occupancy' => 70],
-                ['hour' => '7 PM', 'occupancy' => 85],
-                ['hour' => '8 PM', 'occupancy' => 80],
-                ['hour' => '6 PM', 'occupancy' => 75],
-            ];
-        }
-
-        return $peakHours;
+        return $logs->map(function ($log) {
+            $h    = (int) $log->hour;
+            $label = $h === 0 ? '12 AM'
+                   : ($h < 12 ? "{$h} AM"
+                   : ($h === 12 ? '12 PM'
+                   : (($h - 12) . ' PM')));
+            return ['hour' => $label, 'occupancy' => round($log->avg_occupancy, 1)];
+        })->values()->toArray();
     }
 
-    private function getRevenueData($restaurant, $range)
+    // ── Crowd Status Breakdown ────────────────────────────────────────────────
+    private function getCrowdBreakdown($restaurant, $startDate)
     {
-        // For now, we'll calculate based on occupancy (can be enhanced later)
-        $averageSpend = 500; // Assume average spend per customer
-        $avgOccupancy = $this->getAverageOccupancy($restaurant, $range);
-
-        // Estimate revenue: average occupancy * max capacity * average spend
-        $current = ($avgOccupancy / 100) * $restaurant->max_capacity * $averageSpend;
-        $previous = ($avgOccupancy * 0.9 / 100) * $restaurant->max_capacity * $averageSpend;
-
-        $growth = $previous > 0 ? round((($current - $previous) / $previous) * 100, 1) : 0;
+        $rows = OccupancyLog::where('restaurant_id', $restaurant->id)
+            ->where('created_at', '>=', $startDate)
+            ->selectRaw('crowd_status, COUNT(*) as cnt')
+            ->groupBy('crowd_status')
+            ->pluck('cnt', 'crowd_status')
+            ->toArray();
 
         return [
-            'current' => round($current),
-            'previous' => round($previous),
-            'growth' => ($growth > 0 ? '+' : '') . $growth . '%',
+            'green'  => (int) ($rows['green']  ?? 0),
+            'yellow' => (int) ($rows['yellow'] ?? 0),
+            'orange' => (int) ($rows['orange'] ?? 0),
+            'red'    => (int) ($rows['red']    ?? 0),
         ];
     }
 
-    private function getAverageOccupancy($restaurant, $range)
+    // ── Recent Logs (last 10 events, any source) ──────────────────────────────
+    private function getRecentLogs($restaurant)
     {
-        $logs = OccupancyLog::where('restaurant_id', $restaurant->id)
-            ->where('created_at', '>=', $this->getStartDateFromRange($range))
-            ->avg('occupancy_percentage');
-
-        return $logs ?? 0;
+        return OccupancyLog::where('restaurant_id', $restaurant->id)
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->get(['occupancy_count', 'source_type', 'sensor_id', 'notes', 'created_at'])
+            ->toArray();
     }
 
+    // ── Source counts (sensor vs manual) ─────────────────────────────────────
+    private function countBySource($restaurant, $startDate, string $source)
+    {
+        $query = OccupancyLog::where('restaurant_id', $restaurant->id)
+            ->where('created_at', '>=', $startDate);
+
+        if ($source === 'sensor') {
+            $query->where('source_type', 'sensor');
+        } else {
+            $query->where('source_type', '!=', 'sensor');
+        }
+
+        return $query->count();
+    }
+
+    // ── Reviews ───────────────────────────────────────────────────────────────
     private function getReviewData($restaurant, $range)
     {
+        $start   = $this->getStartDate($range);
         $reviews = Review::where('restaurant_id', $restaurant->id)
-            ->where('created_at', '>=', $this->getStartDateFromRange($range))
-            ->get();
+            ->where('created_at', '>=', $start)->get();
 
-        $previousReviews = Review::where('restaurant_id', $restaurant->id)
-            ->where('created_at', '<', $this->getStartDateFromRange($range))
-            ->where('created_at', '>=', $this->getStartDateFromRange($range)->subDays(7))
-            ->get();
+        $prevStart = $this->getStartDate($range)->subDays(
+            match($range) { 'week'=>7, 'month'=>30, 'year'=>365, default=>7 }
+        );
+        $prevReviews = Review::where('restaurant_id', $restaurant->id)
+            ->where('created_at', '>=', $prevStart)
+            ->where('created_at', '<', $start)->get();
 
         return [
-            'average' => $reviews->avg('rating') ? round($reviews->avg('rating'), 1) : 0,
-            'total' => $reviews->count(),
-            'trend' => $reviews->count() - $previousReviews->count(),
+            'average'      => $reviews->avg('rating') ? round($reviews->avg('rating'), 1) : 0,
+            'total'        => $reviews->count(),
+            'trend'        => $reviews->count() - $prevReviews->count(),
             'distribution' => $this->getRatingDistribution($reviews),
         ];
     }
 
     private function getRatingDistribution($reviews)
     {
-        $distribution = [0, 0, 0, 0, 0];
-        foreach ($reviews as $review) {
-            if ($review->rating >= 1 && $review->rating <= 5) {
-                $distribution[$review->rating - 1]++;
-            }
+        $dist = [0, 0, 0, 0, 0];
+        foreach ($reviews as $r) {
+            if ($r->rating >= 1 && $r->rating <= 5) $dist[$r->rating - 1]++;
         }
-        return $distribution;
+        return $dist;
     }
 
+    // ── Customers ─────────────────────────────────────────────────────────────
     private function getCustomerData($restaurant, $range)
     {
-        // For MVP, we'll estimate based on reservations
         $reservations = Reservation::where('restaurant_id', $restaurant->id)
-            ->where('created_at', '>=', $this->getStartDateFromRange($range))
-            ->get();
+            ->where('created_at', '>=', $this->getStartDate($range))->get();
 
-        $totalCustomers = $reservations->sum('party_size');
-        $uniqueCustomers = $reservations->groupBy('user_id')->count();
+        $total  = $reservations->sum('party_size');
+        $unique = $reservations->groupBy('user_id')->count();
 
         return [
-            'repeat' => $uniqueCustomers > 0 ? round(($uniqueCustomers / $totalCustomers) * 100) : 0,
-            'new' => $uniqueCustomers > 0 ? round(((count($reservations) - $uniqueCustomers) / $totalCustomers) * 100) : 100,
-            'total' => $totalCustomers,
+            'repeat' => $total > 0 ? round(($unique / $total) * 100) : 0,
+            'new'    => $total > 0 ? round((($reservations->count() - $unique) / $total) * 100) : 100,
+            'total'  => $total,
         ];
     }
 
+    // ── Summary ───────────────────────────────────────────────────────────────
     private function getAnalyticsSummary($restaurant, $range)
     {
         return [
-            'best_day' => $this->getBestDay($restaurant, $range),
+            'best_day'        => $this->getBestDay($restaurant, $range),
             'recommendations' => $this->getRecommendations($restaurant, $range),
-            'insights' => $this->getInsights($restaurant, $range),
         ];
     }
 
     private function getBestDay($restaurant, $range)
     {
-        $logs = OccupancyLog::where('restaurant_id', $restaurant->id)
-            ->where('created_at', '>=', $this->getStartDateFromRange($range))
+        $log = OccupancyLog::where('restaurant_id', $restaurant->id)
+            ->where('created_at', '>=', $this->getStartDate($range))
             ->selectRaw("TO_CHAR(created_at, 'Day') as day, AVG(occupancy_percentage) as avg_occupancy")
             ->groupByRaw("TO_CHAR(created_at, 'Day')")
             ->orderBy('avg_occupancy', 'DESC')
             ->first();
 
-        return $logs ? $logs->day . ' (' . round($logs->avg_occupancy) . '% avg)' : 'No data yet';
+        return $log ? trim($log->day) . ' (' . round($log->avg_occupancy) . '% avg)' : 'No data yet';
     }
 
     private function getRecommendations($restaurant, $range)
     {
-        $avgOccupancy = $this->getAverageOccupancy($restaurant, $range);
-        $recommendations = [];
+        $avg = OccupancyLog::where('restaurant_id', $restaurant->id)
+            ->where('created_at', '>=', $this->getStartDate($range))
+            ->avg('occupancy_percentage') ?? 0;
 
-        if ($avgOccupancy < 50) {
-            $recommendations[] = "Consider running promotions during off-peak hours";
-        }
-
-        if ($avgOccupancy > 80) {
-            $recommendations[] = "You're consistently busy! Consider expanding capacity";
-        }
-
-        // If no data yet
-        if ($avgOccupancy === 0) {
-            $recommendations[] = "Start logging occupancy data to get personalized recommendations";
-        }
-
-        return $recommendations;
-    }
-
-    private function getInsights($restaurant, $range)
-    {
-        $logs = OccupancyLog::where('restaurant_id', $restaurant->id)
-            ->where('created_at', '>=', $this->getStartDateFromRange($range))
-            ->get();
-
-        if ($logs->isEmpty()) {
-            return ["Start logging occupancy data to get insights"];
-        }
-
-        $avgOccupancy = $logs->avg('occupancy_percentage');
-
-        $insights = [];
-        $insights[] = "Average occupancy: " . round($avgOccupancy) . "%";
-
-        if ($avgOccupancy > 75) {
-            $insights[] = "High demand - maximize seating efficiency";
-        } elseif ($avgOccupancy < 40) {
-            $insights[] = "Consider marketing campaigns to boost traffic";
-        }
-
-        return $insights;
+        $recs = [];
+        if ($avg === 0)   $recs[] = 'Start logging occupancy data to get personalised recommendations';
+        if ($avg < 50)    $recs[] = 'Consider running promotions during off-peak hours';
+        if ($avg > 80)    $recs[] = "You're consistently busy! Consider expanding capacity";
+        return $recs;
     }
 }
