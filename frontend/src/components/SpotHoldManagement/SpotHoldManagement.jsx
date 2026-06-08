@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./SpotHoldManagement.css";
 import { BASE_URL } from "../../config";
-
+ 
 const SpotHoldManagement = ({ restaurant }) => {
   const [activeHolds, setActiveHolds] = useState([]);
   const [todaysReservations, setTodaysReservations] = useState([]);
@@ -12,7 +12,11 @@ const SpotHoldManagement = ({ restaurant }) => {
     current: restaurant?.current_occupancy || 0,
     max: restaurant?.max_capacity || 100,
   });
-
+ 
+  // Track whether this is the first load for the current tab
+  // so background polls never trigger the loading spinner
+  const isInitialLoad = useRef(true);
+ 
   //   ADD FEE STATE
   const [showFeeModal, setShowFeeModal] = useState(false);
   const [feeSettings, setFeeSettings] = useState({
@@ -20,28 +24,34 @@ const SpotHoldManagement = ({ restaurant }) => {
     min_party_for_fee: 1,
     fee_description: "",
   });
-
+ 
   const handleRemoveExpired = () => {
-    // Refresh the expired holds list
     if (activeTab === "expired") {
-      fetchExpiredHolds();
+      fetchExpiredHolds(false); // silent refresh
     }
   };
-
+ 
+  // Reset initialLoad flag whenever the tab changes so
+  // switching tabs shows the spinner once, then goes silent.
+  useEffect(() => {
+    isInitialLoad.current = true;
+  }, [activeTab]);
+ 
   useEffect(() => {
     if (restaurant) {
       setCapacityInfo({
         current: restaurant.current_occupancy || 0,
         max: restaurant.max_capacity || 100,
       });
-      fetchData();
-      fetchFeeSettings(); //   ADD THIS
-
-      const interval = setInterval(fetchData, 30000);
+ 
+      fetchData(true); // first fetch: show spinner
+      fetchFeeSettings();
+ 
+      const interval = setInterval(() => fetchData(false), 30000); // polls: silent
       return () => clearInterval(interval);
     }
   }, [activeTab, restaurant]);
-
+ 
   //   ADD FETCH FEE SETTINGS
   const fetchFeeSettings = async () => {
     try {
@@ -52,11 +62,10 @@ const SpotHoldManagement = ({ restaurant }) => {
           Accept: "application/json",
         },
       });
-
+ 
       const data = await response.json();
-
+ 
       if (data.success) {
-        // Ensure all values are properly converted to numbers
         setFeeSettings({
           hold_fee: Number(data.hold_fee) || 0,
           min_party_for_fee: Number(data.min_party_for_fee) || 1,
@@ -67,6 +76,7 @@ const SpotHoldManagement = ({ restaurant }) => {
       console.error("Error fetching fee settings:", error);
     }
   };
+ 
   //   ADD SAVE FEE SETTINGS
   const saveFeeSettings = async () => {
     try {
@@ -80,7 +90,7 @@ const SpotHoldManagement = ({ restaurant }) => {
         },
         body: JSON.stringify(feeSettings),
       });
-
+ 
       const data = await response.json();
       if (data.success) {
         alert("  Fee settings saved!");
@@ -93,11 +103,14 @@ const SpotHoldManagement = ({ restaurant }) => {
       alert("Error saving fee settings");
     }
   };
-
-  const fetchData = async () => {
+ 
+  // showSpinner: true only on the very first fetch per tab
+  const fetchData = async (showSpinner = false) => {
     try {
-      setLoading(true);
-
+      if (showSpinner) {
+        setLoading(true);
+      }
+ 
       if (activeTab === "active") {
         await fetchActiveHolds();
       } else if (activeTab === "today") {
@@ -108,22 +121,22 @@ const SpotHoldManagement = ({ restaurant }) => {
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
-      setLoading(false);
+      if (showSpinner) {
+        setLoading(false);
+      }
     }
   };
-
+ 
   const fetchWithAuth = async (endpoint, options = {}) => {
     const token = localStorage.getItem("auth_token");
     const url = `${BASE_URL}/api${endpoint}`;
-
-    // console.log("API Call:", url, endpoint);
-
+ 
     const defaultHeaders = {
       Authorization: `Bearer ${token}`,
       Accept: "application/json",
       "Content-Type": "application/json",
     };
-
+ 
     try {
       const response = await fetch(url, {
         ...options,
@@ -132,27 +145,22 @@ const SpotHoldManagement = ({ restaurant }) => {
           ...options.headers,
         },
       });
-
-      // console.log("Response Status:", response.status);
-
+ 
       if (!response.ok) {
         console.error("API Error:", response.status, response.statusText);
         throw new Error(`API Error: ${response.status}`);
       }
-
+ 
       return await response.json();
     } catch (error) {
       console.error("Fetch error:", error);
       throw error;
     }
   };
-
+ 
   const fetchActiveHolds = async () => {
     try {
-      // console.log("Fetching active holds...");
       const data = await fetchWithAuth("/my-restaurant/spot-holds");
-      // console.log("Active holds response:", data);
-
       if (data.success) {
         setActiveHolds(data.spot_holds || []);
       } else {
@@ -162,7 +170,7 @@ const SpotHoldManagement = ({ restaurant }) => {
       console.error("Error fetching active holds:", error);
     }
   };
-
+ 
   const fetchTodaysReservations = async () => {
     try {
       const data = await fetchWithAuth("/my-restaurant/todays-reservations");
@@ -173,7 +181,7 @@ const SpotHoldManagement = ({ restaurant }) => {
       console.error("Error fetching today's reservations:", error);
     }
   };
-
+ 
   const fetchExpiredHolds = async () => {
     try {
       const data = await fetchWithAuth("/my-restaurant/spot-holds/expired");
@@ -184,10 +192,8 @@ const SpotHoldManagement = ({ restaurant }) => {
       console.error("Error fetching expired holds:", error);
     }
   };
-
+ 
   const handleAcceptHold = async (holdId) => {
-    // console.log("Accepting hold ID:", holdId);
-
     if (
       !window.confirm(
         "Accept this spot hold? This will confirm the reservation.",
@@ -195,21 +201,17 @@ const SpotHoldManagement = ({ restaurant }) => {
     ) {
       return;
     }
-
+ 
     try {
       const data = await fetchWithAuth(
         `/my-restaurant/spot-holds/${holdId}/accept`,
-        {
-          method: "PUT",
-        },
+        { method: "PUT" },
       );
-
-      // console.log("Accept hold response:", data);
-
+ 
       if (data.success) {
         alert("Spot hold accepted! Reservation confirmed.");
-        fetchData();
-
+        fetchData(false); // silent refresh after action
+ 
         if (data.restaurant_occupancy) {
           setCapacityInfo({
             current: data.restaurant_occupancy.current,
@@ -225,21 +227,19 @@ const SpotHoldManagement = ({ restaurant }) => {
       alert("Error accepting spot hold. Check console for details.");
     }
   };
-
+ 
   const handleRejectHold = async (holdId) => {
     if (!window.confirm("Reject this spot hold?")) return;
-
+ 
     try {
       const data = await fetchWithAuth(
         `/my-restaurant/spot-holds/${holdId}/reject`,
-        {
-          method: "PUT",
-        },
+        { method: "PUT" },
       );
-
+ 
       if (data.success) {
         alert("Spot hold rejected.");
-        fetchData();
+        fetchData(false); // silent refresh after action
       } else {
         alert(data.message || "Failed to reject hold");
       }
@@ -248,7 +248,7 @@ const SpotHoldManagement = ({ restaurant }) => {
       alert("Error rejecting spot hold");
     }
   };
-
+ 
   const formatTimeRemaining = (minutes, hold) => {
     if (minutes <= 0) return "Expired";
     if (minutes < 60) return `${minutes}m remaining`;
@@ -256,7 +256,7 @@ const SpotHoldManagement = ({ restaurant }) => {
     const mins = minutes % 60;
     return `${hours}h ${mins}m remaining`;
   };
-
+ 
   const getHoldTypeLabel = (type) => {
     switch (type) {
       case "quick_10min":
@@ -267,11 +267,11 @@ const SpotHoldManagement = ({ restaurant }) => {
         return type;
     }
   };
-
+ 
   const calculateAvailableCapacity = () => {
     return capacityInfo.max - capacityInfo.current;
   };
-
+ 
   return (
     <div className="spot-hold-management">
       {/* Header with Restaurant Info */}
@@ -279,7 +279,7 @@ const SpotHoldManagement = ({ restaurant }) => {
         <div>
           <h3>Spot Hold Management</h3>
         </div>
-
+ 
         {/* Capacity Status */}
         <div className="capacity-status">
           <div className="spot-hold-capacity-bar">
@@ -304,7 +304,7 @@ const SpotHoldManagement = ({ restaurant }) => {
           <div className="available-capacity">
             Available: {calculateAvailableCapacity()} seats
           </div>
-
+ 
           {/*   ADD FEE SETTINGS BUTTON */}
           <button
             className="fee-settings-btn"
@@ -318,7 +318,7 @@ const SpotHoldManagement = ({ restaurant }) => {
           </button>
         </div>
       </div>
-
+ 
       {/* Tabs */}
       <div className="management-tabs">
         <button
@@ -343,7 +343,7 @@ const SpotHoldManagement = ({ restaurant }) => {
           Expired Holds
         </button>
       </div>
-
+ 
       {/* Content Area */}
       <div className="management-content">
         {loading ? (
@@ -362,23 +362,23 @@ const SpotHoldManagement = ({ restaurant }) => {
                 availableCapacity={calculateAvailableCapacity()}
               />
             )}
-
+ 
             {activeTab === "today" && (
               <TodaysReservationsView reservations={todaysReservations} />
             )}
-
+ 
             {activeTab === "expired" && (
               <ExpiredHoldsView
                 holds={activeHolds}
                 getHoldTypeLabel={getHoldTypeLabel}
                 onRemoveExpired={handleRemoveExpired}
-                setActiveHolds={setActiveHolds} //   Pass this down
+                setActiveHolds={setActiveHolds}
               />
             )}
           </>
         )}
       </div>
-
+ 
       {/*ADD FEE MODAL */}
       {showFeeModal && (
         <div className="modal-overlay" onClick={() => setShowFeeModal(false)}>
@@ -404,7 +404,7 @@ const SpotHoldManagement = ({ restaurant }) => {
                   <p className="fee-desc">{feeSettings.fee_description}</p>
                 )}
               </div>
-
+ 
               <div className="form-group">
                 <div className="currency-input">
                   <label className="currency-symbol">Php Amount:</label>
@@ -418,7 +418,6 @@ const SpotHoldManagement = ({ restaurant }) => {
                     }
                     onChange={(e) => {
                       const value = e.target.value;
-                      // Convert to number or 0 if empty
                       setFeeSettings({
                         ...feeSettings,
                         hold_fee: value === "" ? 0 : parseFloat(value),
@@ -431,7 +430,7 @@ const SpotHoldManagement = ({ restaurant }) => {
                 </div>
                 <small>Set to 0 for free holds</small>
               </div>
-
+ 
               <div className="form-group">
                 <label>Minimum Party Size for Fee</label>
                 <input
@@ -468,8 +467,8 @@ const SpotHoldManagement = ({ restaurant }) => {
     </div>
   );
 };
-
-// Sub-component: Active Holds (FIXED - remove duplicate functions)
+ 
+// Sub-component: Active Holds
 const ActiveHoldsView = ({
   holds,
   onAccept,
@@ -488,30 +487,27 @@ const ActiveHoldsView = ({
       </div>
     );
   }
-
+ 
   return (
     <div className="holds-list">
       {holds.map((hold) => {
-        //   FIXED: Calculate isExpired based on hold_status
         let isExpired = false;
         let timeRemainingText = "";
-
+ 
         if (hold.hold_status === "pending") {
-          // Pending holds: Restaurant has 10 minutes to respond
           isExpired = hold.time_remaining <= 0;
           timeRemainingText = isExpired
             ? "Response deadline passed"
             : `Restaurant response in: ${formatTimeRemaining(hold.time_remaining)}`;
         } else if (hold.hold_status === "accepted") {
-          // Accepted holds: Timer from acceptance
           isExpired = hold.time_remaining <= 0;
           timeRemainingText = isExpired
             ? "Hold expired"
             : `Diner arrival time: ${formatTimeRemaining(hold.time_remaining)}`;
         }
-
+ 
         const canAccept = !isExpired && hold.party_size <= availableCapacity;
-
+ 
         return (
           <div
             key={hold.id}
@@ -541,7 +537,7 @@ const ActiveHoldsView = ({
                 )}
               </div>
             </div>
-
+ 
             <div className="hold-details">
               <div className="time-info">
                 <div className="time-remaining">
@@ -552,21 +548,18 @@ const ActiveHoldsView = ({
                       : "Accepted - Timer running"}
                   </span>
                 </div>
-
+ 
                 <div className="time-details">
                   {timeRemainingText && (
                     <div className="time-text">{timeRemainingText}</div>
                   )}
-
+ 
                   {hold.hold_status === "pending" ? (
                     <div className="expires-at">
                       Auto-cancels if not accepted by:{" "}
                       {new Date(hold.original_expires_at).toLocaleTimeString(
                         [],
-                        {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        },
+                        { hour: "2-digit", minute: "2-digit" },
                       )}
                     </div>
                   ) : hold.accepted_at ? (
@@ -581,7 +574,7 @@ const ActiveHoldsView = ({
                 </div>
               </div>
             </div>
-
+ 
             <div className="hold-actions">
               {hold.hold_status === "pending" ? (
                 !isExpired ? (
@@ -620,8 +613,8 @@ const ActiveHoldsView = ({
     </div>
   );
 };
-
-// Sub-component: Today's Reservations (keep same)
+ 
+// Sub-component: Today's Reservations
 const TodaysReservationsView = ({ reservations }) => {
   if (reservations.length === 0) {
     return (
@@ -630,7 +623,7 @@ const TodaysReservationsView = ({ reservations }) => {
       </div>
     );
   }
-
+ 
   return (
     <div className="reservations-list">
       <table className="reservations-table">
@@ -663,8 +656,8 @@ const TodaysReservationsView = ({ reservations }) => {
     </div>
   );
 };
-
-// Sub-component: Expired Holds (with remove button)
+ 
+// Sub-component: Expired Holds
 const ExpiredHoldsView = ({
   holds,
   getHoldTypeLabel,
@@ -678,13 +671,13 @@ const ExpiredHoldsView = ({
       </div>
     );
   }
-
+ 
   const handleRemove = async (holdId) => {
     if (!window.confirm("Remove this expired hold from view?")) return;
-
+ 
     try {
       const token = localStorage.getItem("auth_token");
-
+ 
       const response = await fetch(
         `${BASE_URL}/api/my-restaurant/expired-holds/${holdId}/hide`,
         {
@@ -695,11 +688,10 @@ const ExpiredHoldsView = ({
           },
         },
       );
-
+ 
       const data = await response.json();
-
+ 
       if (data.success) {
-        // Remove from UI
         setActiveHolds((prev) => prev.filter((h) => h.id !== holdId));
         if (onRemoveExpired) onRemoveExpired();
         alert("Hold hidden successfully");
@@ -711,19 +703,18 @@ const ExpiredHoldsView = ({
       alert("Error hiding hold");
     }
   };
-
+ 
   const formatExpiryDate = (hold) => {
-    // Try multiple date fields
     let dateString =
       hold.expires_at || hold.original_expires_at || hold.created_at;
-
+ 
     if (!dateString) return "Date not available";
-
+ 
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return "Date not available";
       if (date.getTime() === 0) return "Date not available";
-
+ 
       return date.toLocaleString(undefined, {
         year: "numeric",
         month: "numeric",
@@ -736,7 +727,7 @@ const ExpiredHoldsView = ({
       return "Date not available";
     }
   };
-
+ 
   return (
     <div className="expired-holds">
       {holds.map((hold) => (
@@ -766,5 +757,5 @@ const ExpiredHoldsView = ({
     </div>
   );
 };
-
+ 
 export default SpotHoldManagement;
