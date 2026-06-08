@@ -1068,11 +1068,6 @@
 }
 
 @media (max-width: 480px) {
-  .restaurant-header-profile {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
   .owner-quick-stats {
     grid-template-columns: 1fr;
   }
