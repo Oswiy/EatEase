@@ -400,92 +400,14 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
     }
   }, [restaurant?.current_occupancy, restaurant?.max_capacity]);
 
-  // ========== FETCH RESTAURANT DETAILS ==========
-  const fetchRestaurantDetails = async () => {
-    try {
-      setError(null);
-      setLoading(true);
-
-      const response = await fetch(
-        `${API_CONFIG.BASE_URL}/api/restaurants/${restaurantId}`,
-        {
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      const data = result.restaurant || result;
-
-      const transformedData = {
-        id: data.id || restaurantId,
-        name: data.name || "Unknown Restaurant",
-        cuisine_type: data.cuisine || data.cuisine_type || "Not specified",
-        address: data.address || "Address not available",
-        phone: data.phone || "No phone number",
-        hours: data.hours || "Hours not specified",
-        max_capacity: data.max_capacity || data.capacity || 50,
-        current_occupancy: data.current_occupancy || data.occupancy || 0,
-        occupancy_percentage:
-          data.occupancy ||
-          data.occupancy_percentage ||
-          Math.round(
-            ((data.current_occupancy || 0) / (data.max_capacity || 50)) * 100,
-          ),
-        crowd_status: data.status || data.crowd_status || "green",
-        crowd_level: data.crowdLevel || "Low",
-        is_verified: data.is_verified || false,
-        is_featured: data.isFeatured || data.is_featured || false,
-        features: data.features || [],
-        average_rating: data.average_rating || reviewsData.average_rating || 0,
-        total_reviews: data.total_reviews || reviewsData.total_reviews || 0,
-        banner_image: data.banner_image || null,
-        profile_image: data.profile_image || null,
-      };
-
-      setRestaurant(transformedData);
-
-      // Fetch stats after restaurant is loaded
-      try {
-        const statsResponse = await fetch(
-          `${API_CONFIG.BASE_URL}/api/restaurants/${restaurantId}/stats`,
-        );
-        if (statsResponse.ok) {
-          const statsData = await statsResponse.json();
-          setStats(statsData);
-        }
-      } catch (statsError) {
-        setStats({
-          average_rating: 0,
-          total_reviews: 0,
-          menu_items_count: 0,
-          photos_count: 0,
-        });
-      }
-
-      setLoading(false);
-    } catch (error) {
-      console.error("Error fetching restaurant details:", error);
-      setError("Failed to load restaurant details");
-      setLoading(false);
-    }
-  };
-
+  // ========== FETCH ALL DATA IN PARALLEL ==========
   const fetchReviewsData = async () => {
     try {
       const response = await fetch(
         `${API_CONFIG.BASE_URL}/api/restaurants/${restaurantId}/reviews`,
       );
-
       if (response.ok) {
         const data = await response.json();
-
         if (data.success) {
           setReviewsData({
             reviews: data.reviews || [],
@@ -495,19 +417,98 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
         }
       }
     } catch (error) {
-      console.error("Error fetching reviews for header:", error);
+      console.error("Error fetching reviews:", error);
     }
   };
 
-  // ========== FETCH DATA ON MOUNT ==========
   useEffect(() => {
-    if (restaurantId) {
-      fetchRestaurantDetails();
-      fetchReviewsData();
-    } else {
+    if (!restaurantId) {
       setError("No restaurant ID provided");
       setLoading(false);
+      return;
     }
+
+    const fetchAllData = async () => {
+      try {
+        setError(null);
+        setLoading(true);
+
+        // All three requests fire simultaneously
+        const [detailsRes, statsRes, reviewsRes] = await Promise.all([
+          fetch(`${API_CONFIG.BASE_URL}/api/restaurants/${restaurantId}`, {
+            headers: { Accept: "application/json" },
+          }),
+          fetch(`${API_CONFIG.BASE_URL}/api/restaurants/${restaurantId}/stats`),
+          fetch(
+            `${API_CONFIG.BASE_URL}/api/restaurants/${restaurantId}/reviews`,
+          ),
+        ]);
+
+        // Process restaurant details
+        if (!detailsRes.ok)
+          throw new Error(`HTTP error! status: ${detailsRes.status}`);
+        const result = await detailsRes.json();
+        const data = result.restaurant || result;
+
+        setRestaurant({
+          id: data.id || restaurantId,
+          name: data.name || "Unknown Restaurant",
+          cuisine_type: data.cuisine || data.cuisine_type || "Not specified",
+          address: data.address || "Address not available",
+          phone: data.phone || "No phone number",
+          hours: data.hours || "Hours not specified",
+          max_capacity: data.max_capacity || data.capacity || 50,
+          current_occupancy: data.current_occupancy || data.occupancy || 0,
+          occupancy_percentage:
+            data.occupancy ||
+            data.occupancy_percentage ||
+            Math.round(
+              ((data.current_occupancy || 0) / (data.max_capacity || 50)) * 100,
+            ),
+          crowd_status: data.status || data.crowd_status || "green",
+          crowd_level: data.crowdLevel || "Low",
+          is_verified: data.is_verified || false,
+          is_featured: data.isFeatured || data.is_featured || false,
+          features: data.features || [],
+          average_rating: data.average_rating || 0,
+          total_reviews: data.total_reviews || 0,
+          banner_image: data.banner_image || null,
+          profile_image: data.profile_image || null,
+        });
+
+        // Process stats (non-blocking — fallback to defaults if it fails)
+        if (statsRes.ok) {
+          const statsData = await statsRes.json();
+          setStats(statsData);
+        } else {
+          setStats({
+            average_rating: 0,
+            total_reviews: 0,
+            menu_items_count: 0,
+            photos_count: 0,
+          });
+        }
+
+        // Process reviews (non-blocking)
+        if (reviewsRes.ok) {
+          const reviewsData = await reviewsRes.json();
+          if (reviewsData.success) {
+            setReviewsData({
+              reviews: reviewsData.reviews || [],
+              average_rating: reviewsData.average_rating || 0,
+              total_reviews: reviewsData.total_reviews || 0,
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching restaurant details:", error);
+        setError("Failed to load restaurant details");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllData();
   }, [restaurantId]);
 
   // ========== IMAGE URLS ==========
