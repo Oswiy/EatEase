@@ -50,33 +50,6 @@ function RestaurantList({
   const [allBookmarks, setAllBookmarks] = useState([]);
   const [allSentNotifications, setAllSentNotifications] = useState([]);
 
-  // ========== USE EFFECTS ==========
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setShowMenu(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  useEffect(() => {
-    fetchRestaurants();
-    fetchSharedData();
-
-    const interval = setInterval(fetchSharedData, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    window.refreshNotificationCount = fetchSharedData;
-    return () => {
-      window.refreshNotificationCount = null;
-    };
-  }, [fetchSharedData]);
-
   // ========== API FUNCTIONS ==========
   const fetchSharedData = useCallback(async () => {
     const token = localStorage.getItem("auth_token");
@@ -126,9 +99,35 @@ function RestaurantList({
     }
   }, []);
 
-  // Function to refresh notifications (to be passed to RestaurantDetails)
   const refreshNotifications = useCallback(() => {
     fetchSharedData();
+  }, [fetchSharedData]);
+
+  // ========== USE EFFECTS ==========
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    fetchRestaurants();
+    fetchSharedData();
+
+    const interval = setInterval(fetchSharedData, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    window.refreshNotificationCount = fetchSharedData;
+    return () => {
+      window.refreshNotificationCount = null;
+    };
   }, [fetchSharedData]);
 
   const randomizeRestaurants = (restaurantsList) => {
