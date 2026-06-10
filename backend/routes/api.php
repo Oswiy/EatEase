@@ -309,11 +309,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('reservations')->group(function () {
         Route::get('/', [ReservationController::class, 'index']);
         Route::post('/', [ReservationController::class, 'store']);
-        Route::get('/{id}', [ReservationController::class, 'show']);
-        Route::delete('/{id}', [ReservationController::class, 'destroy']);
         Route::post('/hold-spot', [ReservationController::class, 'holdSpot']);
-        Route::delete('/{id}/remove', [ReservationController::class, 'removeFromView']);
         Route::delete('/my-restaurant/expired-holds/{id}/hide', [ReservationController::class, 'hideExpiredHold']);
+        Route::delete('/{id}/remove', [ReservationController::class, 'removeFromView']); // ← specific first
+        Route::get('/{id}', [ReservationController::class, 'show']);
+        Route::delete('/{id}', [ReservationController::class, 'destroy']);         // ← wildcard last
     });
 
     // ========== RESTAURANT OWNER RESERVATION MANAGEMENT ==========
