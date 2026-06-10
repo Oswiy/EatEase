@@ -1,5 +1,3 @@
-/* ===== NOTIFICATIONS PAGE - DARK THEME ===== */
-
 .notifications-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
@@ -7,7 +5,7 @@
   font-family: "Inter", sans-serif;
 }
 
-/* ===== HEADER ===== */
+/* ─── Header ──────────────────────────────────────────────────────────────── */
 .notifications-page__header {
   display: flex;
   align-items: center;
@@ -29,17 +27,13 @@
   cursor: pointer;
   transition: all 0.2s ease;
   color: #fff;
+  flex-shrink: 0;
 }
-
 .notifications-page__back-btn:hover {
   background: rgba(255, 255, 255, 0.2);
   transform: translateX(-2px);
 }
-
-.notifications-page__back-btn svg {
-  width: 24px;
-  height: 24px;
-}
+.notifications-page__back-btn svg { width: 24px; height: 24px; }
 
 .notifications-page__title {
   display: flex;
@@ -51,75 +45,63 @@
   margin: 0;
   flex: 1;
 }
-
-.notifications-page__title svg {
-  width: 28px;
-  height: 28px;
-  fill: #ffd700;
-}
+.notifications-page__title svg { width: 28px; height: 28px; fill: #ffd700; }
 
 .notifications-page__unread-counter {
-  background: rgba(255, 215, 0, 0.2);
+  background: rgba(255, 215, 0, 0.15);
   color: #ffd700;
-  padding: 4px 12px;
+  padding: 3px 10px;
   border-radius: 20px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  margin-left: 12px;
+  margin-left: 8px;
+}
+
+/* ─── Toolbar (delete-all + confirm banner) ───────────────────────────────── */
+.notifications-page__toolbar {
+  margin-bottom: 16px;
 }
 
 .notifications-page__delete-all-btn {
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
   border-radius: 10px;
   padding: 8px 16px;
   color: #ef4444;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.2s, border-color 0.2s;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
 }
-
-.notifications-page__delete-all-btn svg {
-  width: 16px;
-  height: 16px;
-  fill: currentColor;
-}
-
+.notifications-page__delete-all-btn svg { width: 15px; height: 15px; fill: currentColor; }
 .notifications-page__delete-all-btn:hover {
-  background: rgba(239, 68, 68, 0.25);
-  border-color: rgba(239, 68, 68, 0.5);
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.45);
 }
 
-/* ===== LOADING STATE ===== */
+/* ─── Loading ─────────────────────────────────────────────────────────────── */
 .notifications-page__loading-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: 400px;
-  text-align: center;
 }
-
 .notifications-page__loading-spinner {
   width: 48px;
   height: 48px;
-  border: 3px solid rgba(255, 255, 255, 0.2);
-  border-top-color: #ffffff;
+  border: 3px solid rgba(255, 255, 255, 0.15);
+  border-top-color: #ffd700;
   border-radius: 50%;
-  animation: notifications-spin 0.8s linear infinite;
+  animation: np-spin 0.8s linear infinite;
   margin-bottom: 16px;
 }
+.notifications-page__loading-state p { color: rgba(255, 255, 255, 0.6); font-size: 14px; }
 
-.notifications-page__loading-state p {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 14px;
-}
-
-/* ===== ERROR STATE ===== */
+/* ─── Error ───────────────────────────────────────────────────────────────── */
 .notifications-page__error-state {
   text-align: center;
   padding: 60px 20px;
@@ -127,17 +109,12 @@
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
-
-.notifications-page__error-state p {
-  color: #ff6b6b;
-  font-size: 14px;
-  margin-bottom: 16px;
-}
+.notifications-page__error-state p { color: #ff6b6b; font-size: 14px; margin-bottom: 16px; }
 
 .notifications-page__retry-btn {
   padding: 10px 24px;
   background: #0f3460;
-  color: white;
+  color: #fff;
   border: none;
   border-radius: 10px;
   font-size: 14px;
@@ -145,13 +122,9 @@
   cursor: pointer;
   transition: all 0.2s ease;
 }
+.notifications-page__retry-btn:hover { background: #1a4a7a; transform: translateY(-1px); }
 
-.notifications-page__retry-btn:hover {
-  background: #1a4a7a;
-  transform: translateY(-1px);
-}
-
-/* ===== EMPTY STATE ===== */
+/* ─── Empty ───────────────────────────────────────────────────────────────── */
 .notifications-page__empty {
   text-align: center;
   padding: 60px 20px;
@@ -159,66 +132,52 @@
   border-radius: 24px;
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
-
 .notifications-page__empty-icon {
   width: 80px;
   height: 80px;
   margin: 0 auto 20px;
   color: rgba(255, 255, 255, 0.3);
 }
+.notifications-page__empty-icon svg { width: 100%; height: 100%; }
+.notifications-page__empty h3 { font-size: 20px; font-weight: 600; color: #fff; margin-bottom: 8px; }
+.notifications-page__empty p  { font-size: 14px; color: rgba(255, 255, 255, 0.6); margin: 0; }
 
-.notifications-page__empty-icon svg {
-  width: 100%;
-  height: 100%;
-}
+/* ─── List ────────────────────────────────────────────────────────────────── */
+.notifications-page__list { display: flex; flex-direction: column; gap: 14px; }
 
-.notifications-page__empty h3 {
-  font-size: 20px;
-  font-weight: 600;
-  color: #fff;
-  margin-bottom: 8px;
-}
-
-.notifications-page__empty p {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.6);
-  margin: 0;
-}
-
-/* ===== NOTIFICATIONS LIST ===== */
-.notifications-page__list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-/* ===== NOTIFICATION CARD ===== */
+/* ─── Card ────────────────────────────────────────────────────────────────── */
 .notifications-page__card {
   background: #1e2a3a;
   border-radius: 20px;
-  padding: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.2s ease;
+  padding: 18px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
   display: flex;
   gap: 16px;
   cursor: pointer;
+  animation: np-fadein 0.22s ease both;
 }
-
-.notifications-page__card--unread {
-  border-left: 3px solid #ffd700;
-  background: rgba(30, 42, 58, 0.9);
-}
-
 .notifications-page__card:hover {
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.18);
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
 
-/* Card Icon */
+/* Unread: gold left accent */
+.notifications-page__card--unread {
+  border-left: 3px solid #ffd700;
+}
+
+/* Confirming: red ring */
+.notifications-page__card--confirming {
+  border-color: rgba(255, 107, 107, 0.4);
+  box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.08);
+}
+
+/* Card icon column */
 .notifications-page__card-icon {
-  width: 48px;
-  height: 48px;
+  width: 46px;
+  height: 46px;
   background: rgba(255, 215, 0, 0.1);
   border-radius: 12px;
   display: flex;
@@ -226,236 +185,213 @@
   justify-content: center;
   flex-shrink: 0;
 }
+.notifications-page__card-icon svg { width: 22px; height: 22px; fill: #ffd700; }
 
-.notifications-page__card-icon svg {
-  width: 24px;
-  height: 24px;
-  fill: #ffd700;
-}
-
-/* Card Content */
-.notifications-page__card-content {
-  flex: 1;
-}
+/* Card content column */
+.notifications-page__card-content { flex: 1; min-width: 0; }
 
 .notifications-page__card-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
+  gap: 10px;
 }
 
 .notifications-page__card-title {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   color: #fff;
   margin: 0;
   display: flex;
   align-items: center;
-  gap: 10px;
   flex-wrap: wrap;
+  gap: 8px;
 }
 
 .notifications-page__unread-badge {
-  background: rgba(255, 215, 0, 0.2);
+  background: rgba(255, 215, 0, 0.15);
   color: #ffd700;
   padding: 2px 8px;
-  border-radius: 12px;
+  border-radius: 10px;
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
+  letter-spacing: 0.4px;
 }
 
-/* Delete Button */
+/* Delete (×) button */
 .notifications-page__delete-btn {
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.2);
   border-radius: 8px;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.2s, transform 0.15s;
   color: #ef4444;
+  flex-shrink: 0;
 }
-
+.notifications-page__delete-btn svg { width: 15px; height: 15px; fill: currentColor; }
 .notifications-page__delete-btn:hover {
-  background: rgba(239, 68, 68, 0.2);
-  transform: scale(1.05);
+  background: rgba(239, 68, 68, 0.22);
+  transform: scale(1.08);
 }
+.notifications-page__delete-btn--loading { opacity: 0.55; cursor: default; pointer-events: none; }
 
-.notifications-page__delete-btn svg {
-  width: 16px;
-  height: 16px;
-}
-
-/* Card Meta */
+/* Meta row */
 .notifications-page__card-meta {
   display: flex;
-  gap: 12px;
-  margin-bottom: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
 .notifications-page__status-badge {
-  padding: 4px 10px;
+  padding: 3px 10px;
   border-radius: 20px;
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
-
-.notifications-page__status-badge.status-green {
-  background: rgba(81, 207, 102, 0.2);
-  color: #51cf66;
-}
-
-.notifications-page__status-badge.status-yellow {
-  background: rgba(252, 196, 25, 0.2);
-  color: #fcc419;
-}
-
-.notifications-page__status-badge.status-orange {
-  background: rgba(255, 146, 43, 0.2);
-  color: #ff922b;
-}
-
-.notifications-page__status-badge.status-red {
-  background: rgba(255, 107, 107, 0.2);
-  color: #ff6b6b;
-}
+.notifications-page__status-badge.status-green  { background: rgba(81, 207, 102, 0.15); color: #51cf66; }
+.notifications-page__status-badge.status-yellow { background: rgba(252, 196, 25, 0.15);  color: #fcc419; }
+.notifications-page__status-badge.status-orange { background: rgba(255, 146, 43, 0.15);  color: #ff922b; }
+.notifications-page__status-badge.status-red    { background: rgba(255, 107, 107, 0.15); color: #ff6b6b; }
 
 .notifications-page__notification-type {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.45);
 }
 
-/* Card Message */
+/* Message bubble */
 .notifications-page__card-message {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.8);
-  line-height: 1.5;
-  margin: 0 0 12px 0;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  border-left: 2px solid #ffd700;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.55;
+  margin: 0 0 10px;
+  padding: 11px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  border-left: 2px solid rgba(255, 215, 0, 0.5);
 }
 
-/* Card Footer */
-.notifications-page__card-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 8px;
-}
+/* Footer timestamp */
+.notifications-page__card-footer { margin-top: 6px; }
 
 .notifications-page__timestamp {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.4);
 }
+.notifications-page__timestamp svg { width: 11px; height: 11px; fill: currentColor; }
 
-.notifications-page__timestamp svg {
-  width: 12px;
-  height: 12px;
-  fill: currentColor;
-}
-
-/* Book Now Button */
+/* Reserve Now button */
 .notifications-page__book-btn {
-  margin-top: 16px;
+  margin-top: 14px;
   width: 100%;
   padding: 10px;
   background: #0f3460;
   border: none;
   border-radius: 10px;
-  color: white;
+  color: #fff;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.2s, transform 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 7px;
+}
+.notifications-page__book-btn svg { width: 15px; height: 15px; fill: currentColor; }
+.notifications-page__book-btn:hover { background: #1a4a7a; transform: translateY(-1px); }
+
+/* ─── Inline confirm row ──────────────────────────────────────────────────── */
+.np-confirm-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 11px 14px;
+  margin-top: 12px;
+  background: rgba(255, 107, 107, 0.07);
+  border: 1px solid rgba(255, 107, 107, 0.2);
+  border-radius: 12px;
+  animation: np-fadein 0.15s ease;
 }
 
-.notifications-page__book-btn svg {
-  width: 16px;
-  height: 16px;
-  fill: currentColor;
+/* Banner variant (delete-all toolbar) */
+.np-confirm-row--banner { margin-top: 0; }
+
+.np-confirm-msg { font-size: 13px; color: rgba(255, 255, 255, 0.82); }
+.np-confirm-actions { display: flex; gap: 8px; }
+
+.np-confirm-cancel {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.np-confirm-cancel:hover { background: rgba(255, 255, 255, 0.1); }
+
+.np-confirm-ok {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: none;
+  background: #ef4444;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.np-confirm-ok:hover { background: #dc2626; }
+
+/* Inline button spinner */
+.np-btn-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(239, 68, 68, 0.25);
+  border-top-color: #ef4444;
+  border-radius: 50%;
+  animation: np-spin 0.65s linear infinite;
 }
 
-.notifications-page__book-btn:hover {
-  background: #1a4a7a;
-  transform: translateY(-1px);
+/* ─── Animations ──────────────────────────────────────────────────────────── */
+@keyframes np-spin   { to { transform: rotate(360deg); } }
+@keyframes np-fadein {
+  from { opacity: 0; transform: translateY(7px); }
+  to   { opacity: 1; transform: translateY(0);   }
 }
 
-/* ===== ANIMATIONS ===== */
-@keyframes notifications-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* ===== RESPONSIVE DESIGN ===== */
+/* ─── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .notifications-page {
-    padding: 16px;
-  }
-
-  .notifications-page__title {
-    font-size: 20px;
-  }
-
-  .notifications-page__title svg {
-    width: 24px;
-    height: 24px;
-  }
-
-  .notifications-page__card {
-    padding: 16px;
-    flex-direction: column;
-  }
-
-  .notifications-page__card-icon {
-    width: 40px;
-    height: 40px;
-  }
-
-  .notifications-page__card-icon svg {
-    width: 20px;
-    height: 20px;
-  }
-
-  .notifications-page__card-title {
-    font-size: 15px;
-  }
-
-  .notifications-page__delete-all-btn {
-    padding: 6px 12px;
-    font-size: 12px;
-  }
+  .notifications-page { padding: 16px; }
+  .notifications-page__title { font-size: 20px; }
+  .notifications-page__title svg { width: 24px; height: 24px; }
+  .notifications-page__card { padding: 14px 16px; flex-direction: column; gap: 12px; }
+  .notifications-page__card-icon { width: 40px; height: 40px; }
+  .notifications-page__card-icon svg { width: 20px; height: 20px; }
 }
 
 @media (max-width: 480px) {
-  .notifications-page {
-    padding: 12px;
-  }
-
-  .notifications-page__card {
-    padding: 14px;
-  }
-
-  .notifications-page__card-message {
-    font-size: 13px;
-  }
-
-  .notifications-page__card-meta {
-    flex-wrap: wrap;
-  }
+  .notifications-page { padding: 12px; }
+  .notifications-page__card { padding: 12px 14px; }
+  .notifications-page__card-message { font-size: 12px; }
+  .notifications-page__card-meta { flex-wrap: wrap; }
 }
