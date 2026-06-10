@@ -46,6 +46,10 @@ function RestaurantList({
   const [lastFetchTime, setLastFetchTime] = useState(null);
   const CACHE_DURATION = 60000; // 1 minute cache
 
+  // New
+  const [allBookmarks, setAllBookmarks] = useState([]);
+  const [allSentNotifications, setAllSentNotifications] = useState([]);
+
   // ========== USE EFFECTS ==========
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -59,70 +63,73 @@ function RestaurantList({
   }, []);
 
   useEffect(() => {
-    window.refreshNotificationCount = fetchNotificationCount;
+    fetchRestaurants();
+    fetchSharedData();
+
+    const interval = setInterval(fetchSharedData, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    window.refreshNotificationCount = fetchSharedData;
     return () => {
       window.refreshNotificationCount = null;
     };
-  }, []);
-
-  useEffect(() => {
-    fetchRestaurants();
-    fetchNotificationCount();
-  }, []);
-
-  useEffect(() => {
-    fetchAllNotifications();
-  }, []);
+  }, [fetchSharedData]);
 
   // ========== API FUNCTIONS ==========
-  const fetchAllNotifications = async () => {
+  const fetchSharedData = useCallback(async () => {
     const token = localStorage.getItem("auth_token");
     if (!token) return;
 
     try {
-      const response = await fetch(`${API_CONFIG.BASE_URL}/api/notifications`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
-      });
+      const [notifRes, bookmarksRes, sentRes] = await Promise.all([
+        fetch(`${API_CONFIG.BASE_URL}/api/notifications`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        }),
+        fetch(`${API_CONFIG.BASE_URL}/api/bookmarks`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        }),
+        fetch(`${API_CONFIG.BASE_URL}/api/user-notifications`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        }),
+      ]);
 
-      if (response.ok) {
-        const data = await response.json();
+      if (notifRes.ok) {
+        const data = await notifRes.json();
         if (data.success) {
           setAllNotifications(data.notifications || []);
           setNotificationCount(data.count || data.notifications?.length || 0);
         }
       }
-    } catch (error) {
-      console.error("Error fetching notifications:", error);
-    }
-  };
 
-  // Function to refresh notifications (to be passed to RestaurantDetails)
-  const refreshNotifications = useCallback(async () => {
-    const token = localStorage.getItem("auth_token");
-    if (!token) return;
+      if (bookmarksRes.ok) {
+        const data = await bookmarksRes.json();
+        if (data.success) setAllBookmarks(data.bookmarks || []);
+      }
 
-    try {
-      const response = await fetch(`${API_CONFIG.BASE_URL}/api/notifications`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setAllNotifications(data.notifications || []);
-          setNotificationCount(data.count || data.notifications?.length || 0);
-        }
+      if (sentRes.ok) {
+        const data = await sentRes.json();
+        setAllSentNotifications(data.notifications || []);
       }
     } catch (error) {
-      console.error("Error refreshing notifications:", error);
+      console.error("Error fetching shared data:", error);
     }
   }, []);
+
+  // Function to refresh notifications (to be passed to RestaurantDetails)
+  const refreshNotifications = useCallback(() => {
+    fetchSharedData();
+  }, [fetchSharedData]);
 
   const randomizeRestaurants = (restaurantsList) => {
     if (!restaurantsList || restaurantsList.length === 0) return [];
@@ -272,36 +279,6 @@ function RestaurantList({
     }
   };
 
-  const fetchNotificationCount = async () => {
-    try {
-      const token = localStorage.getItem("auth_token");
-      if (!token) return;
-
-      const response = await fetch(`${API_CONFIG.BASE_URL}/api/notifications`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setAllNotifications(data.notifications || []);
-          setNotificationCount(data.count || data.notifications?.length || 0);
-        } else {
-          setNotificationCount(0);
-        }
-      } else {
-        setNotificationCount(0);
-      }
-    } catch (error) {
-      console.error("Error fetching notification count:", error);
-      setNotificationCount(0);
-    }
-  };
-
   // ========== HANDLER FUNCTIONS ==========
   const handleRestaurantClick = (restaurant) => {
     setSelectedRestaurant(restaurant);
@@ -333,7 +310,7 @@ function RestaurantList({
 
   const handleNotifications = () => {
     setShowMenu(false);
-    fetchNotificationCount();
+    fetchSharedData();
     setShowNotifications(true);
     setShowBookmarks(false);
     setShowReservations(false);
@@ -594,6 +571,9 @@ function RestaurantList({
                     restaurant={restaurant}
                     onRestaurantClick={handleRestaurantClick}
                     allNotifications={allNotifications}
+                    allBookmarks={allBookmarks}
+                    allSentNotifications={allSentNotifications}
+                    onSharedDataRefresh={fetchSharedData}
                   />
                 ))
               )}

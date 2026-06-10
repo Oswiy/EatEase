@@ -9,6 +9,9 @@ function RestaurantCard({
   restaurant,
   onRestaurantClick,
   allNotifications = [],
+  allBookmarks = [],
+  allSentNotifications = [],
+  onSharedDataRefresh,
 }) {
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
@@ -90,131 +93,31 @@ function RestaurantCard({
     }
   }, [currentRestaurant.current_occupancy, currentRestaurant.max_capacity]);
 
-  // ========== UPDATE FROM allNotifications - SKIP DURING REMOVAL ==========
+  // Sync bookmark state from parent data
   useEffect(() => {
-    // Skip if we're in the middle of removing
     if (isRemovingRef.current) return;
+    setIsBookmarked(
+      allBookmarks.some((b) => b.restaurant_id === currentRestaurant.id),
+    );
+  }, [allBookmarks, currentRestaurant.id]);
 
-    if (!userHasNotification) {
-      const notification = allNotifications.find(
-        (n) => n.restaurant_id === currentRestaurant.id,
-      );
-      if (notification) {
-        setUserHasNotification(notification.notify_when_status);
-      }
-    }
-  }, [allNotifications, currentRestaurant.id, userHasNotification]);
-
+  // Sync notification preference from parent data
   useEffect(() => {
-    checkBookmarks();
-  }, [currentRestaurant.id]);
+    if (isRemovingRef.current) return;
+    const notif = allNotifications.find(
+      (n) => n.restaurant_id === currentRestaurant.id,
+    );
+    setUserHasNotification(notif?.notify_when_status || null);
+  }, [allNotifications, currentRestaurant.id]);
 
-  // ========== FETCH NOTIFICATION PREFERENCES ==========
+  // Sync sent/unread notifications from parent data
   useEffect(() => {
-    const fetchNotificationPreference = async () => {
-      // Skip if we're removing
-      if (isRemovingRef.current) return;
-
-      const token = localStorage.getItem("auth_token");
-      if (!token) return;
-
-      try {
-        const response = await fetch(
-          `${API_CONFIG.BASE_URL}/api/notifications`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              Accept: "application/json",
-            },
-          },
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.notifications) {
-            const pref = data.notifications.find(
-              (n) => n.restaurant_id === currentRestaurant.id,
-            );
-            // Only update if not removing
-            if (!isRemovingRef.current) {
-              setUserHasNotification(pref?.notify_when_status || null);
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching preferences:", error);
-      }
-    };
-
-    fetchNotificationPreference();
-  }, [currentRestaurant.id]);
-
-  // ========== FETCH SENT NOTIFICATIONS ==========
-  const fetchSentNotifications = async () => {
-    const token = localStorage.getItem("auth_token");
-    if (!token) return;
-
-    try {
-      const response = await fetch(
-        `${API_CONFIG.BASE_URL}/api/user-notifications`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: "application/json",
-          },
-        },
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        const unread = data.notifications?.find(
-          (n) => n.restaurant_id === currentRestaurant.id && !n.is_read,
-        );
-
-        if (unread) {
-          setHasUnreadNotification(true);
-          setUnreadNotificationData(unread);
-        } else {
-          setHasUnreadNotification(false);
-          setUnreadNotificationData(null);
-        }
-      }
-    } catch (error) {
-      console.error("Error checking notifications:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchSentNotifications();
-    const interval = setInterval(fetchSentNotifications, 30000);
-    return () => clearInterval(interval);
-  }, [currentRestaurant.id]);
-
-  const checkBookmarks = async () => {
-    const token = localStorage.getItem("auth_token");
-    if (!token) return;
-
-    try {
-      const bookmarksRes = await fetch(`${API_CONFIG.BASE_URL}/api/bookmarks`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
-      });
-
-      if (bookmarksRes.ok) {
-        const bookmarksData = await bookmarksRes.json();
-        if (bookmarksData.success && bookmarksData.bookmarks) {
-          const bookmarked = bookmarksData.bookmarks.some(
-            (b) => b.restaurant_id === currentRestaurant.id,
-          );
-          setIsBookmarked(bookmarked);
-        }
-      }
-    } catch (error) {
-      console.error("Error checking bookmarks:", error);
-    }
-  };
+    const unread = allSentNotifications.find(
+      (n) => n.restaurant_id === currentRestaurant.id && !n.is_read,
+    );
+    setHasUnreadNotification(!!unread);
+    setUnreadNotificationData(unread || null);
+  }, [allSentNotifications, currentRestaurant.id]);
 
   const handleClick = () => {
     onRestaurantClick(currentRestaurant);
@@ -252,6 +155,7 @@ function RestaurantCard({
           "success",
           2000,
         );
+        onSharedDataRefresh();
       } else {
         console.error("Bookmark failed:", data.message);
         showToast(data.message || "Failed to update bookmark", "error", 3000);
@@ -316,22 +220,7 @@ function RestaurantCard({
           );
         }
 
-        setTimeout(() => {
-          const fetchPrefs = async () => {
-            const res = await fetch(
-              `${API_CONFIG.BASE_URL}/api/notifications`,
-              { headers: { Authorization: `Bearer ${token}` } },
-            );
-            const prefData = await res.json();
-            if (prefData.success && !isRemovingRef.current) {
-              const pref = prefData.notifications.find(
-                (n) => n.restaurant_id === currentRestaurant.id,
-              );
-              setUserHasNotification(pref?.notify_when_status || null);
-            }
-          };
-          fetchPrefs();
-        }, 500);
+        onSharedDataRefresh();
       } else {
         showToast(data.message || "Failed to set notification", "error", 3000);
       }
@@ -413,10 +302,8 @@ function RestaurantCard({
           );
         } else {
           // Refresh notification count in parent component
-          if (window.refreshNotificationCount) {
-            window.refreshNotificationCount();
-          }
           showToast("Notification removed successfully!", "success", 2000);
+          onSharedDataRefresh();
         }
       } else {
         // No notification found, UI is already cleared
@@ -460,6 +347,7 @@ function RestaurantCard({
         setHasUnreadNotification(false);
         setUnreadNotificationData(null);
         showToast("Notification dismissed", "info", 2000);
+        onSharedDataRefresh();
       }
     } catch (error) {
       console.error("Error dismissing notification:", error);

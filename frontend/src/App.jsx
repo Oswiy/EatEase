@@ -17,60 +17,32 @@ function App() {
 
   // 🔴 CRITICAL: Redirect business users to Business App
   useEffect(() => {
+    const token = localStorage.getItem("auth_token");
     const storedUser = localStorage.getItem("user");
 
-    if (storedUser) {
+    if (token && storedUser) {
       const parsedUser = JSON.parse(storedUser);
 
-      // If user is NOT a diner, redirect to Business App
       if (parsedUser.user_type !== "diner") {
+        localStorage.removeItem("auth_token");
+        localStorage.removeItem("user");
         showToast(
-          // ✅ Replace alert with toast
           "This is the Diner App. Please use the Business App for restaurant management.",
           "warning",
           4000,
         );
-
-        // Clear local storage
-        localStorage.removeItem("auth_token");
-        localStorage.removeItem("user");
-
-        // Redirect to Business App
         setTimeout(() => {
           window.location.href = "https://eatease-restaurant.vercel.app";
         }, 1500);
+        setLoading(false);
         return;
       }
 
-      // If user IS a diner, set the user state
       setUser(parsedUser);
     }
 
     setLoading(false);
-  }, [showToast]);
-
-  // Check if user is already logged in on app start
-  useEffect(() => {
-    const checkAuthStatus = () => {
-      const token = localStorage.getItem("auth_token");
-      const storedUser = localStorage.getItem("user");
-
-      if (token && storedUser) {
-        const parsedUser = JSON.parse(storedUser);
-
-        // Double-check: If somehow a business user got here, redirect
-        if (parsedUser.user_type !== "diner") {
-          handleLogout();
-          return;
-        }
-
-        setUser(parsedUser);
-      }
-      setLoading(false);
-    };
-
-    checkAuthStatus();
-  }, []);
+  }, []); // ← empty deps, runs once only
 
   // Handle successful login
   const handleLogin = (userData) => {
