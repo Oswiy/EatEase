@@ -3,7 +3,12 @@ import "./ReviewsTab.css";
 import API_CONFIG from "../../config";
 import { useToast } from "../../context/ToastContext";
 
-const ReviewsTab = ({ restaurantId, restaurantName }) => {
+const ReviewsTab = ({
+  restaurantId,
+  restaurantName,
+  reviewsData,
+  onReviewsUpdate,
+}) => {
   const { showToast } = useToast();
   const [reviews, setReviews] = useState([]);
   const [averageRating, setAverageRating] = useState(0);
@@ -50,7 +55,7 @@ const ReviewsTab = ({ restaurantId, restaurantName }) => {
       }
       setLoading(false);
     }
-  }, [restaurantId]);
+  }, [restaurantId, reviewsData]);
 
   const fetchReviews = async () => {
     setLoading(true);
