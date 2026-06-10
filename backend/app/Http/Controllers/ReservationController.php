@@ -27,7 +27,7 @@ class ReservationController extends Controller
             foreach ($expiredHolds as $hold) {
                 $hold->status = 'cancelled';
                 $hold->hold_status = 'rejected';
-                $hold->save();
+                $hold->saveQuietly();
             }
 
             // Now get non-hidden reservations
@@ -236,7 +236,7 @@ class ReservationController extends Controller
             foreach ($expiredHoldsToUpdate as $hold) {
                 $hold->status = 'cancelled';
                 $hold->hold_status = 'expired';
-                $hold->save();
+                $hold->saveQuietly();
                 Log::info('Updated expired hold', [
                     'hold_id' => $hold->id,
                     'original_expires_at' => $hold->original_expires_at
@@ -286,7 +286,7 @@ class ReservationController extends Controller
                 ]);
                 $hold->status = 'cancelled';
                 $hold->hold_status = 'expired';
-                $hold->save();
+                $hold->saveQuietly();
             }
 
             // ✅ FIXED: Set original_expires_at (10 minutes for restaurant to respond)
@@ -393,7 +393,7 @@ class ReservationController extends Controller
             // Cancel the hold
             $reservation->status = 'cancelled';
             $reservation->hold_status = 'cancelled_by_user';
-            $reservation->save();
+            $reservation->saveQuietly();
 
             return response()->json([
                 'success' => true,
@@ -411,83 +411,35 @@ class ReservationController extends Controller
      * Remove/hide a reservation from user's view
      */
     public function removeFromView($id)
-{
-    try {
-        $user = Auth::user();
-        $reservation = Reservation::where('user_id', $user->id)->find($id);
+    {
+        try {
+            $user = Auth::user();
+            $reservation = Reservation::where('user_id', $user->id)->find($id);
 
-        if (!$reservation) {
+            if (!$reservation) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Reservation not found'
+                ], 404);
+            }
+
+            // Only touch is_hidden — don't modify status/hold_status
+            // which would trigger the boot() saving event and cascade
+            $reservation->is_hidden = true;
+            $reservation->saveQuietly(); // ← bypasses boot() observers entirely
+
             return response()->json([
-                'success' => false,
-                'message' => 'Reservation not found'
-            ], 404);
-        }
-
-        // MORE PERMISSIVE CONDITIONS FOR EXPIRED HOLDS:
-        $canRemove = false;
-
-        // 1. Always allow if it's already expired by any definition
-        if ($reservation->status === 'expired' || 
-            $reservation->hold_status === 'expired' ||
-            $reservation->status === 'cancelled' ||
-            $reservation->status === 'rejected') {
-            $canRemove = true;
-        }
-
-        // 2. Check if it's a pending hold that's actually expired
-        if ($reservation->status === 'pending_hold') {
-            // Check original_expires_at
-            if ($reservation->original_expires_at && $reservation->original_expires_at < now()) {
-                $canRemove = true;
-            }
-            // Check expires_at
-            elseif ($reservation->expires_at && $reservation->expires_at < now()) {
-                $canRemove = true;
-            }
-            // If older than 30 minutes, consider it expired
-            elseif ($reservation->created_at && $reservation->created_at < now()->subMinutes(30)) {
-                $canRemove = true;
-            }
-        }
-
-        // 3. TEMPORARY DEBUG: Allow removal of ANY hold for testing
-        // Comment this out after testing
-        if (!$canRemove) {
-            // For now, let's allow removal anyway with a warning
-            Log::warning('Force-removing hold that may not be expired', [
-                'id' => $reservation->id,
-                'status' => $reservation->status,
-                'hold_status' => $reservation->hold_status,
-                'created_at' => $reservation->created_at
+                'success' => true,
+                'message' => 'Reservation removed from view'
             ]);
-            $canRemove = true;
-        }
-
-        if (!$canRemove) {
+        } catch (\Exception $e) {
+            Log::error('Remove reservation error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'This reservation cannot be removed yet. ' .
-                    'Status: ' . $reservation->status . ', ' .
-                    'Hold Status: ' . $reservation->hold_status
-            ], 422);
+                'message' => 'Failed to remove reservation: ' . $e->getMessage()
+            ], 500);
         }
-
-        // Mark as hidden (soft delete from user's view)
-        $reservation->is_hidden = true;
-        $reservation->save();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Reservation removed from view'
-        ]);
-    } catch (\Exception $e) {
-        Log::error('Remove reservation error: ' . $e->getMessage());
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to remove reservation: ' . $e->getMessage()
-        ], 500);
     }
-}
 
     /**
      * Check availability for a restaurant.
@@ -858,7 +810,7 @@ class ReservationController extends Controller
             // Reject the hold
             $hold->status = 'cancelled';
             $hold->hold_status = 'rejected';
-            $hold->save();
+            $hold->saveQuietly();
 
             // Create notification for diner
             $this->createHoldNotification($hold, 'rejected');
@@ -987,7 +939,7 @@ class ReservationController extends Controller
             // ✅ ONLY update is_hidden - leave status alone!
             $hold->hold_status = 'expired'; // This might be allowed
             $hold->is_hidden = true;
-            $hold->save();
+            $hold->saveQuietly();
 
             return response()->json([
                 'success' => true,
