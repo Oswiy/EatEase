@@ -520,42 +520,6 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
     ? getImageUrl(restaurant.profile_image)
     : null;
 
-  const renderTabContent = () => {
-    if (!restaurant) return null;
-
-    switch (activeTab) {
-      case "overview":
-        return (
-          <OverviewTab
-            restaurant={restaurant}
-            stats={stats}
-            reviewsData={reviewsData}
-          />
-        );
-      case "menu":
-        return <MenuTab restaurantId={restaurantId} />;
-      case "reviews":
-        return (
-          <ReviewsTab
-            restaurantId={restaurantId}
-            restaurantName={restaurant.name}
-            reviewsData={reviewsData}
-            onReviewsUpdate={fetchReviewsData}
-          />
-        );
-      case "photos":
-        return <PhotosTab restaurantId={restaurantId} />;
-      default:
-        return (
-          <OverviewTab
-            restaurant={restaurant}
-            stats={stats}
-            reviewsData={reviewsData}
-          />
-        );
-    }
-  };
-
   if (loading) {
     return (
       <div className="restaurant-details-page">
@@ -767,7 +731,33 @@ function RestaurantDetails({ restaurantId, onBack, onNotificationChange }) {
       </div>
 
       {/* Tab Content */}
-      <div className="tab-content">{renderTabContent()}</div>
+      {/* Tab Content — all tabs stay mounted, hidden when inactive */}
+      <div className="tab-content">
+        <div style={{ display: activeTab === "overview" ? "block" : "none" }}>
+          <OverviewTab
+            restaurant={restaurant}
+            stats={stats}
+            reviewsData={reviewsData}
+          />
+        </div>
+        <div style={{ display: activeTab === "menu" ? "block" : "none" }}>
+          <MenuTab
+            restaurantId={restaurantId}
+            restaurantName={restaurant.name}
+          />
+        </div>
+        <div style={{ display: activeTab === "reviews" ? "block" : "none" }}>
+          <ReviewsTab
+            restaurantId={restaurantId}
+            restaurantName={restaurant.name}
+            reviewsData={reviewsData}
+            onReviewsUpdate={fetchReviewsData}
+          />
+        </div>
+        <div style={{ display: activeTab === "photos" ? "block" : "none" }}>
+          <PhotosTab restaurantId={restaurantId} />
+        </div>
+      </div>
 
       {/* Reservation Modal */}
       {showReservationModal && restaurant && (

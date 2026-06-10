@@ -18,16 +18,38 @@ const ReviewsTab = ({ restaurantId, restaurantName }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    // Load user from localStorage once
     const userData = localStorage.getItem("user");
     if (userData) {
       try {
-        const parsedUser = JSON.parse(userData);
-        setUser(parsedUser);
+        setUser(JSON.parse(userData));
       } catch (e) {
         console.error("Error parsing user data:", e);
       }
     }
-    fetchReviews();
+
+    // Only fetch if parent didn't already provide reviews
+    if (!reviewsData?.reviews?.length) {
+      fetchReviews();
+    } else {
+      // Use data already fetched by parent
+      setReviews(reviewsData.reviews || []);
+      setAverageRating(reviewsData.average_rating || 0);
+      setTotalReviews(reviewsData.total_reviews || 0);
+
+      // Check if the user already has a review in the provided data
+      const stored = localStorage.getItem("user");
+      if (stored) {
+        const u = JSON.parse(stored);
+        const existing = reviewsData.reviews.find((r) => r.user_id === u.id);
+        if (existing) {
+          setUserReview(existing);
+          setEditRating(existing.rating);
+          setEditComment(existing.comment || "");
+        }
+      }
+      setLoading(false);
+    }
   }, [restaurantId]);
 
   const fetchReviews = async () => {

@@ -2,10 +2,9 @@ import React, { useState, useEffect } from "react";
 import "./MenuTab.css";
 import API_CONFIG from "../../config";
 
-const MenuTab = ({ restaurantId }) => {
+const MenuTab = ({ restaurantId, restaurantName = "" }) => {
   const [menuItems, setMenuItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [restaurantName, setRestaurantName] = useState("");
 
   useEffect(() => {
     fetchMenu();
@@ -49,7 +48,6 @@ const MenuTab = ({ restaurantId }) => {
         } else {
           setMenuItems([]);
         }
-        setRestaurantName(data.restaurant_name || "");
       } else {
         setMenuItems([]);
       }
