@@ -19,72 +19,39 @@ use App\Http\Controllers\IoTController;
 use Illuminate\Support\Facades\Log;
 
 // ==================== PUBLIC ROUTES (No Auth) ====================
-Route::get('/test', function() {
-    echo '{"message":"Laravel is working!"}';
-    exit;
-});
+// ── Development-only routes (never exposed in production) ──
+if (app()->environment('local')) {
+    Route::get('/test', function () {
+        return response()->json(['message' => 'Laravel is working!']);
+    });
 
-// ==================== IOT ROUTES ====================
-Route::get('/list-routes', function() {
-    $routes = [];
-    foreach (Route::getRoutes() as $route) {
-        if (str_contains($route->uri(), 'reservation')) {
-            $routes[] = [
-                'uri' => $route->uri(),
-                'methods' => $route->methods(),
-                'name' => $route->getName(),
-            ];
+    Route::get('/list-routes', function () {
+        $routes = [];
+        foreach (Route::getRoutes() as $route) {
+            if (str_contains($route->uri(), 'reservation')) {
+                $routes[] = [
+                    'uri'     => $route->uri(),
+                    'methods' => $route->methods(),
+                    'name'    => $route->getName(),
+                ];
+            }
         }
-    }
-    return response()->json([
-        'reservation_routes' => $routes,
-        'count' => count($routes)
-    ]);
-});
-// Super fast response endpoint
-Route::post('/iot/quick', function (Request $request) {
-    // Immediate response with minimal processing
-    return response()->json([
-        'status' => 'success',
-        'message' => 'Quick response from Laravel',
-        'received' => $request->all(),
-        'timestamp' => now()->format('H:i:s.u'),
-        'response_time_ms' => 0
-    ]);
-});
+        return response()->json(['reservation_routes' => $routes, 'count' => count($routes)]);
+    });
 
-// ULTRA-SIMPLE IoT TEST (no dependencies)
-Route::post('/iot/test-ultra-simple', function (Request $request) {
-    Log::info('🎯 ULTRA SIMPLE TEST RECEIVED:', [
-        'raw' => $request->getContent(),
-        'json' => $request->all(),
-        'headers' => $request->headers->all()
-    ]);
+    Route::post('/iot/quick', function (Request $request) {
+        return response()->json(['status' => 'success', 'received' => $request->all()]);
+    });
 
-    // Just echo back what we received
-    return response()->json([
-        'status' => 'success',
-        'message' => 'IoT Test Working!',
-        'received' => $request->all(),
-        'timestamp' => now()->toDateTimeString(),
-        'server' => 'Laravel',
-        'note' => 'This proves ESP32 can talk to Laravel'
-    ], 200, [], JSON_UNESCAPED_SLASHES);
-});
+    Route::post('/iot/test-ultra-simple', function (Request $request) {
+        return response()->json(['status' => 'success', 'received' => $request->all()]);
+    });
 
-Route::post('/iot/log', function (Request $request) {
-    Log::info('ESP32 DEBUG LOG:', [
-        'data' => $request->all(),
-        'ip' => $request->ip(),
-        'time' => now()->format('H:i:s.u')
-    ]);
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Log received',
-        'timestamp' => now()->format('H:i:s.u')
-    ]);
-});
+    Route::post('/iot/log', function (Request $request) {
+        Log::info('ESP32 DEBUG LOG:', ['data' => $request->all()]);
+        return response()->json(['success' => true]);
+    });
+}
 
 // Public IoT endpoints (device authentication via device_id + api_key)
 Route::post('/iot/update-occupancy', [IoTController::class, 'updateOccupancy']);
@@ -161,31 +128,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/iot/devices/{deviceId}', [IoTController::class, 'deleteDevice']);
 });
 
-// Test routes
-Route::get('/test-db', function () {
-    try {
-        $databaseName = DB::connection()->getDatabaseName();
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Database connected successfully!',
-            'database' => $databaseName
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Database connection failed',
-            'error' => $e->getMessage()
-        ]);
-    }
-});
-
-Route::get('/test-api', function () {
-    return response()->json([
-        'message' => '///API is working!',
-        'timestamp' => now()
-    ]);
-});
-
 // Authentication routes
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/signup', [AuthController::class, 'signup']);
@@ -217,14 +159,6 @@ Route::get('/restaurants/{restaurant}/availability', [ReservationController::cla
 // ==================== PROTECTED ROUTES ====================
 Route::middleware('auth:sanctum')->group(function () {
     // Debug routes
-    Route::get('/debug-protected', function () {
-        $user = auth()->user();
-        return response()->json([
-            'message' => 'Protected route works',
-            'user' => $user ? ['id' => $user->id, 'email' => $user->email] : null,
-            'auth_working' => !is_null($user)
-        ]);
-    });
 
     Route::get('/restaurant/fee-settings', [RestaurantController::class, 'getFeeSettings']);
     Route::put('/restaurant/update-fee', [RestaurantController::class, 'updateFeeSettings']);
@@ -232,23 +166,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/restaurant/renew-premium', [RestaurantController::class, 'renewPremium']);
 
     Route::put('/restaurant/promo', [RestaurantController::class, 'updatePromoText']);
-
-    Route::get('/debug-reservations-test', [ReservationController::class, 'index']);
-
-    Route::get('/debug/restaurant-owner', function () {
-        $user = Auth::user();
-        return response()->json([
-            'user_id' => $user->id,
-            'user_type' => $user->user_type,
-            'email' => $user->email,
-            'restaurant' => \App\Models\Restaurant::where('owner_id', $user->id)->first(),
-            'has_restaurant' => \App\Models\Restaurant::where('owner_id', $user->id)->exists(),
-            'total_reservations' => \App\Models\Reservation::count(),
-            'pending_holds_for_restaurant_14' => \App\Models\Reservation::where('restaurant_id', 14)
-                ->where('status', 'pending_hold')
-                ->count()
-        ]);
-    });
 
     // ========== RESTAURANT MANAGEMENT ROUTES (OUTSIDE FILTER GROUP) ==========
     Route::get('/restaurant/my', [RestaurantController::class, 'getMyRestaurant']);
@@ -359,53 +276,39 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/subscription/can-apply-featured', [SubscriptionController::class, 'canApplyForFeatured']);
 
     // ========== DEBUG ROUTES ==========
+    if (app()->environment('local')) {
+    Route::get('/debug-protected', function () {
+        $user = auth()->user();
+        return response()->json([
+            'message'      => 'Protected route works',
+            'user'         => $user ? ['id' => $user->id, 'email' => $user->email] : null,
+            'auth_working' => !is_null($user),
+        ]);
+    });
+
+    Route::get('/debug-reservations-test', [ReservationController::class, 'index']);
+
+    Route::get('/debug/restaurant-owner', function () {
+        $user = Auth::user();
+        return response()->json([
+            'user_id'      => $user->id,
+            'user_type'    => $user->user_type,
+            'email'        => $user->email,
+            'has_restaurant' => \App\Models\Restaurant::where('owner_id', $user->id)->exists(),
+        ]);
+    });
+
     Route::post('/debug-save', function (Request $request) {
-        try {
-            $user = Auth::user();
-            if (!$user) return response()->json(['error' => 'Not authenticated'], 401);
-
-            $receivedValue = $request->input('current_occupancy');
-            $restaurant = \App\Models\Restaurant::create([
-                'owner_id' => $user->id,
-                'name' => 'Debug Test ' . time(),
-                'cuisine_type' => 'Debug',
-                'address' => 'Debug',
-                'phone' => '123',
-                'hours' => '9-5',
-                'max_capacity' => 100,
-                'current_occupancy' => 88,
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'debug_info' => [
-                    'received_current_occupancy' => $receivedValue,
-                    'type_of_received' => gettype($receivedValue),
-                    'hardcoded_saved_value' => 88,
-                    'actual_saved_value' => $restaurant->current_occupancy,
-                    'all_attributes' => $restaurant->getAttributes()
-                ]
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine()
-            ], 500);
-        }
+        return response()->json(['message' => 'Debug route — local only']);
     });
 
     Route::post('/debug-simple', function (Request $request) {
-        $receivedValue = $request->input('current_occupancy');
         return response()->json([
-            'success' => true,
-            'received_current_occupancy' => $receivedValue,
-            'type_of_value' => gettype($receivedValue),
-            'all_request_data' => $request->all(),
-            'raw_post_data' => file_get_contents('php://input'),
-            'server_time' => now()
+            'received'  => $request->all(),
+            'server_time' => now(),
         ]);
     });
+}
 
     // ========== ADMIN BAD WORD MANAGEMENT ROUTES ==========
     Route::middleware('admin')->prefix('admin')->group(function () {

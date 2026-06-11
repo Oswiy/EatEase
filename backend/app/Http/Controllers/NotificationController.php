@@ -59,7 +59,6 @@ class NotificationController extends Controller
                 'success' => true,
                 'message' => $message,
                 'isBookmarked' => $isBookmarked,
-                'bookmarkCount' => Bookmark::where('restaurant_id', $restaurant_id)->count()
             ]);
         } catch (\Exception $e) {
             Log::error('Toggle bookmark error: ' . $e->getMessage());
@@ -78,105 +77,94 @@ class NotificationController extends Controller
     {
         try {
             $user = Auth::user();
-
             if (!$user) {
                 return response()->json(['message' => 'User not authenticated'], 401);
             }
 
-            // Get bookmarks with restaurant data - handle missing restaurants
-            $bookmarks = Bookmark::where('user_id', $user->id)
-                ->orderBy('created_at', 'desc')
+            // Single query with left join — no per-bookmark restaurant lookup
+            $bookmarks = Bookmark::where('bookmarks.user_id', $user->id)
+                ->leftJoin('restaurants', 'bookmarks.restaurant_id', '=', 'restaurants.id')
+                ->select(
+                    'bookmarks.id',
+                    'bookmarks.restaurant_id',
+                    'bookmarks.created_at',
+                    'restaurants.name as restaurant_name',
+                    'restaurants.cuisine_type',
+                    'restaurants.address',
+                    'restaurants.phone',
+                    'restaurants.hours',
+                    'restaurants.profile_image',
+                    'restaurants.banner_image',
+                    'restaurants.crowd_status',
+                    'restaurants.current_occupancy',
+                    'restaurants.max_capacity'
+                )
+                ->orderBy('bookmarks.created_at', 'desc')
                 ->get()
-                ->map(function ($bookmark) {
-                    // Manually load restaurant - it might be null if restaurant was deleted
-                    $restaurant = Restaurant::select(
-                        'id',
-                        'name',
-                        'cuisine_type',
-                        'address',
-                        'phone',
-                        'hours',
-                        'profile_image',
-                        'banner_image',
-                        'crowd_status',
-                        'current_occupancy',
-                        'max_capacity'
-                    )->find($bookmark->restaurant_id);
+                ->map(function ($row) {
+                    $isDeleted = is_null($row->restaurant_name);
 
-                    // If restaurant doesn't exist, return minimal data
-                    if (!$restaurant) {
+                    if ($isDeleted) {
                         return [
-                            'id' => $bookmark->id,
-                            'restaurant_id' => $bookmark->restaurant_id,
+                            'id'              => $row->id,
+                            'restaurant_id'   => $row->restaurant_id,
                             'restaurant_name' => 'Restaurant no longer available',
-                            'cuisine' => 'Unknown',
-                            'address' => 'Not available',
-                            'phone' => null,
-                            'hours' => null,
-                            'profile_image' => null,
-                            'banner_image' => null,
-                            'is_deleted' => true, // Flag for frontend
-                            'created_at' => $bookmark->created_at
+                            'cuisine'         => 'Unknown',
+                            'address'         => 'Not available',
+                            'phone'           => null,
+                            'hours'           => null,
+                            'profile_image'   => null,
+                            'banner_image'    => null,
+                            'is_deleted'      => true,
+                            'created_at'      => $row->created_at,
                         ];
                     }
 
-                    // Get image URLs if restaurant exists
-                    $profileImageUrl = null;
-                    $bannerImageUrl = null;
+                    $profileImageUrl = $row->profile_image
+                        ? (filter_var($row->profile_image, FILTER_VALIDATE_URL)
+                            ? $row->profile_image
+                            : asset('storage/' . $row->profile_image))
+                        : null;
 
-                    if ($restaurant->profile_image) {
-                        $profileImageUrl = filter_var($restaurant->profile_image, FILTER_VALIDATE_URL)
-                            ? $restaurant->profile_image
-                            : asset('storage/' . $restaurant->profile_image);
-                    }
+                    $bannerImageUrl = $row->banner_image
+                        ? (filter_var($row->banner_image, FILTER_VALIDATE_URL)
+                            ? $row->banner_image
+                            : asset('storage/' . $row->banner_image))
+                        : null;
 
-                    if ($restaurant->banner_image) {
-                        $bannerImageUrl = filter_var($restaurant->banner_image, FILTER_VALIDATE_URL)
-                            ? $restaurant->banner_image
-                            : asset('storage/' . $restaurant->banner_image);
-                    }
-
-                    // Calculate occupancy percentage
-                    $occupancyPercentage = 0;
-                    if ($restaurant->max_capacity > 0) {
-                        $occupancyPercentage = round(($restaurant->current_occupancy / $restaurant->max_capacity) * 100);
-                    }
-
-                    // Determine crowd status
-                    $crowdStatus = $restaurant->crowd_status ?? 'green';
+                    $occupancyPercentage = $row->max_capacity > 0
+                        ? round(($row->current_occupancy / $row->max_capacity) * 100)
+                        : 0;
 
                     return [
-                        'id' => $bookmark->id,
-                        'restaurant_id' => $bookmark->restaurant_id,
-                        'restaurant_name' => $restaurant->name,
-                        'cuisine' => $restaurant->cuisine_type,
-                        'address' => $restaurant->address,
-                        'phone' => $restaurant->phone,
-                        'hours' => $restaurant->hours,
-                        'profile_image' => $profileImageUrl,
-                        'banner_image' => $bannerImageUrl,
-                        'crowd_status' => $crowdStatus,
+                        'id'                   => $row->id,
+                        'restaurant_id'        => $row->restaurant_id,
+                        'restaurant_name'      => $row->restaurant_name,
+                        'cuisine'              => $row->cuisine_type,
+                        'address'              => $row->address,
+                        'phone'                => $row->phone,
+                        'hours'                => $row->hours,
+                        'profile_image'        => $profileImageUrl,
+                        'banner_image'         => $bannerImageUrl,
+                        'crowd_status'         => $row->crowd_status ?? 'green',
                         'occupancy_percentage' => $occupancyPercentage,
-                        'is_deleted' => false,
-                        'created_at' => $bookmark->created_at
+                        'is_deleted'           => false,
+                        'created_at'           => $row->created_at,
                     ];
                 })
-                ->values(); // Reset array keys
+                ->values();
 
             return response()->json([
-                'success' => true,
-                'bookmarks' => $bookmarks,
-                'count' => $bookmarks->count(),
-                'active_bookmarks' => $bookmarks->where('is_deleted', false)->count()
+                'success'          => true,
+                'bookmarks'        => $bookmarks,
+                'count'            => $bookmarks->count(),
+                'active_bookmarks' => $bookmarks->where('is_deleted', false)->count(),
             ]);
         } catch (\Exception $e) {
             Log::error('Get bookmarks error: ' . $e->getMessage());
-            Log::error('Stack trace: ' . $e->getTraceAsString());
-
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch bookmarks',
-                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -186,34 +174,26 @@ class NotificationController extends Controller
     {
         try {
             $user = Auth::user();
-
             if (!$user) {
                 return response()->json(['message' => 'User not authenticated'], 401);
             }
 
-            // Find bookmarks where restaurant doesn't exist
-            $orphanedBookmarks = Bookmark::where('user_id', $user->id)
+            $deletedCount = Bookmark::where('user_id', $user->id)
                 ->whereNotIn('restaurant_id', function ($query) {
                     $query->select('id')->from('restaurants');
                 })
-                ->get();
-
-            $deletedCount = 0;
-            foreach ($orphanedBookmarks as $bookmark) {
-                $bookmark->delete();
-                $deletedCount++;
-            }
+                ->delete();
 
             return response()->json([
-                'success' => true,
-                'message' => "Cleaned up {$deletedCount} orphaned bookmarks",
-                'deleted_count' => $deletedCount
+                'success'       => true,
+                'message'       => "Cleaned up {$deletedCount} orphaned bookmarks",
+                'deleted_count' => $deletedCount,
             ]);
         } catch (\Exception $e) {
             Log::error('Cleanup orphaned bookmarks error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to cleanup bookmarks'
+                'message' => 'Failed to cleanup bookmarks',
             ], 500);
         }
     }
@@ -336,7 +316,6 @@ class NotificationController extends Controller
                 'success' => true,
                 'notifications' => $notifications,
                 'count' => $notifications->count(),
-                'cached' => Cache::has("user_notifications_{$user->id}") // Optional: show if cached
             ]);
         } catch (\Exception $e) {
             Log::error('Get notifications error: ' . $e->getMessage());
