@@ -24,12 +24,6 @@ class ReservationController extends Controller
                 ->where('expires_at', '<', now())
                 ->get();
 
-            foreach ($expiredHolds as $hold) {
-                $hold->status = 'cancelled';
-                $hold->hold_status = 'rejected';
-                $hold->saveQuietly();
-            }
-
             // Now get non-hidden reservations
             $reservations = Reservation::with(['restaurant' => function ($query) {
                 $query->select('id', 'name', 'address', 'profile_image');
@@ -446,95 +440,52 @@ class ReservationController extends Controller
      */
     public function checkAvailability(Request $request, $restaurantId)
     {
-        Log::info('🔍 checkAvailability called', [
-            'restaurantId' => $restaurantId,
-            'date' => $request->date,
-            'party_size' => $request->party_size,
-            'fullUrl' => $request->fullUrl()
+        $validator = Validator::make($request->all(), [
+            'date'       => 'required|date|after_or_equal:today',
+            'party_size' => 'required|integer|min:1|max:30'
         ]);
 
-        try {
-            $validator = Validator::make($request->all(), [
-                'date' => 'required|date|after_or_equal:today',
-                'party_size' => 'required|integer|min:1|max:30'
-            ]);
-
-            if ($validator->fails()) {
-                Log::error('Validation failed', $validator->errors()->toArray());
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validation error',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-
-            $restaurant = Restaurant::findOrFail($restaurantId);
-
-            Log::info('Restaurant found', [
-                'id' => $restaurant->id,
-                'name' => $restaurant->name,
-                'max_capacity' => $restaurant->max_capacity
-            ]);
-
-            // Generate time slots (5 PM to 10 PM, every 30 minutes)
-            $timeSlots = [];
-            $startTime = '17:00';
-            $endTime = '22:00';
-
-            $current = strtotime($startTime);
-            $end = strtotime($endTime);
-
-            while ($current <= $end) {
-                $time = date('H:i', $current);
-
-                // Check capacity for this time slot
-                $existingReservations = Reservation::where('restaurant_id', $restaurantId)
-                    ->where('reservation_date', $request->date)
-                    ->where('reservation_time', $time)
-                    ->whereIn('status', ['pending', 'confirmed'])
-                    ->sum('party_size');
-
-                $availableCapacity = $restaurant->max_capacity - $existingReservations;
-                $isAvailable = $availableCapacity >= $request->party_size;
-
-                $timeSlots[] = [
-                    'time' => $time,
-                    'available' => $isAvailable,
-                    'available_capacity' => $availableCapacity,
-                    'formatted_time' => date('g:i A', $current)
-                ];
-
-                $current = strtotime('+30 minutes', $current);
-            }
-
-            Log::info('Availability calculated', [
-                'time_slots_count' => count($timeSlots),
-                'has_availability' => collect($timeSlots)->where('available', true)->count() > 0
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'restaurant' => [
-                    'id' => $restaurant->id,
-                    'name' => $restaurant->name,
-                    'max_capacity' => $restaurant->max_capacity
-                ],
-                'date' => $request->date,
-                'party_size' => $request->party_size,
-                'time_slots' => $timeSlots,
-                'has_availability' => collect($timeSlots)->where('available', true)->count() > 0
-            ]);
-        } catch (\Exception $e) {
-            Log::error('checkAvailability failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to check availability: ' . $e->getMessage()
-            ], 500);
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
+
+        $restaurant = Restaurant::findOrFail($restaurantId);
+
+        // Single query — get all booked party sizes grouped by time slot
+        $booked = Reservation::where('restaurant_id', $restaurantId)
+            ->where('reservation_date', $request->date)
+            ->whereIn('status', ['pending', 'confirmed'])
+            ->selectRaw('reservation_time, SUM(party_size) as booked')
+            ->groupBy('reservation_time')
+            ->pluck('booked', 'reservation_time');
+
+        $timeSlots = [];
+        $current   = strtotime('17:00');
+        $end       = strtotime('22:00');
+
+        while ($current <= $end) {
+            $time              = date('H:i', $current);
+            $existingBooked    = (int) ($booked[$time] ?? $booked[$time . ':00'] ?? 0);
+            $availableCapacity = $restaurant->max_capacity - $existingBooked;
+
+            $timeSlots[] = [
+                'time'              => $time,
+                'available'         => $availableCapacity >= $request->party_size,
+                'available_capacity' => $availableCapacity,
+                'formatted_time'    => date('g:i A', $current)
+            ];
+
+            $current = strtotime('+30 minutes', $current);
+        }
+
+        return response()->json([
+            'success'          => true,
+            'restaurant'       => ['id' => $restaurant->id, 'name' => $restaurant->name, 'max_capacity' => $restaurant->max_capacity],
+            'date'             => $request->date,
+            'party_size'       => $request->party_size,
+            'time_slots'       => $timeSlots,
+            'has_availability' => collect($timeSlots)->where('available', true)->isNotEmpty()
+        ]);
     }
 
     public function getRestaurantSpotHolds(Request $request)
@@ -640,26 +591,16 @@ class ReservationController extends Controller
 
             Log::info('========== REQUEST COMPLETED SUCCESSFULLY ==========');
 
-            return response()->json([
-                'success' => true,
-                'restaurant' => [
-                    'id' => $restaurant->id,
-                    'name' => $restaurant->name,
-                    'max_capacity' => $restaurant->max_capacity,
-                    'current_occupancy' => $restaurant->current_occupancy
-                ],
-                'spot_holds' => $reservations,
-                'counts' => [
-                    'active_holds' => $reservations->count(),
-                    'expired_holds' => Reservation::where('restaurant_id', $restaurant->id)
-                        ->where('status', 'pending_hold')
-                        ->where('expires_at', '<=', now())
-                        ->count(),
-                    'total_confirmed' => Reservation::where('restaurant_id', $restaurant->id)
-                        ->where('status', 'confirmed')
-                        ->count(),
-                ]
-            ]);
+        return response()->json([
+            'success'    => true,
+            'restaurant' => [
+                'id'               => $restaurant->id,
+                'name'             => $restaurant->name,
+                'max_capacity'     => $restaurant->max_capacity,
+                'current_occupancy' => $restaurant->current_occupancy
+            ],
+            'spot_holds' => $reservations,
+        ]);
         } catch (\Exception $e) {
             Log::error('Error in getRestaurantSpotHolds: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()

@@ -361,8 +361,9 @@ class RestaurantController extends Controller
                 curl_setopt($ch, CURLOPT_URL, "https://api.cloudinary.com/v1_1/{$cloudName}/image/upload");
                 curl_setopt($ch, CURLOPT_POST, true);
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // THIS IS THE KEY!
-                curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false); // THIS TOO!
+                $isLocal = app()->environment('local');
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, !$isLocal);
+                curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, $isLocal ? 0 : 2);
                 
                 // Prepare the multipart form data
                 $postFields = [
@@ -532,18 +533,22 @@ class RestaurantController extends Controller
     public function getRestaurantStats($id)
     {
         $restaurant = Restaurant::find($id);
-
         if (!$restaurant) {
             return response()->json(['error' => 'Restaurant not found'], 404);
         }
 
-        // For now, return placeholder stats
+        $reviewStats = \App\Models\Review::where('restaurant_id', $id)
+            ->selectRaw('COUNT(*) as total, AVG(rating) as average')
+            ->first();
+
+        $photosCount = \App\Models\RestaurantPhoto::where('restaurant_id', $id)->count();
+
         return response()->json([
-            'average_rating' => 0,
-            'total_reviews' => 0,
-            'rating_breakdown' => [],
-            'menu_items_count' => 0,
-            'photos_count' => 0,
+            'average_rating'    => $reviewStats->average ? round((float)$reviewStats->average, 1) : 0,
+            'total_reviews'     => (int)$reviewStats->total,
+            'rating_breakdown'  => [],
+            'menu_items_count'  => 0,
+            'photos_count'      => $photosCount,
         ]);
     }
 
@@ -902,15 +907,14 @@ class RestaurantController extends Controller
                 ->unique()
                 ->values()
                 ->toArray();
-
             return response()->json([
-                'restaurants' => $transformedRestaurants,
-                'count' => $transformedRestaurants->count(),
-                'premium_count' => $premiumCount,
-                'featured_count' => $featuredCount,
-                'filters' => [
-                    'available_cuisines' => $availableCuisines,
-                    'applied_filters' => $request->all()
+                'restaurants'    => $transformedRestaurants,
+                'count'          => $transformedRestaurants->count(),
+                'premium_count'  => $restaurants->where('subscription_tier', 'premium')->count(),
+                'featured_count' => $restaurants->where('is_featured', true)->count(),
+                'filters'        => [
+                    'available_cuisines' => $restaurants->pluck('cuisine_type')->filter()->unique()->values()->toArray(),
+                    'applied_filters'    => $request->only(['cuisine', 'crowd_status', 'min_rating', 'tier', 'featured'])
                 ]
             ]);
         } catch (\Exception $e) {
@@ -1083,58 +1087,22 @@ class RestaurantController extends Controller
     private function createNotificationRecord($user, $restaurant, $status)
     {
         try {
-            // Check if notification_logs table exists
-            if (!Schema::hasTable('notification_logs')) {
-                // Create the table if it doesn't exist
-                $this->createNotificationLogsTable();
-            }
-
-            // Create notification log
             DB::table('notification_logs')->insert([
-                'user_id' => $user->id,
-                'restaurant_id' => $restaurant->id,
+                'user_id'           => $user->id,
+                'restaurant_id'     => $restaurant->id,
                 'notification_type' => 'crowd_alert',
-                'title' => 'Crowd Level Alert',
-                'message' => $restaurant->name . ' has reached ' . $this->getCrowdLevelText($status) . ' crowd level',
-                'status' => $status,
-                'is_read' => false,
-                'sent_at' => now(),
-                'created_at' => now(),
-                'updated_at' => now()
+                'title'             => 'Crowd Level Alert',
+                'message'           => $restaurant->name . ' has reached ' . $this->getCrowdLevelText($status) . ' crowd level',
+                'status'            => $status,
+                'is_read'           => false,
+                'sent_at'           => now(),
+                'created_at'        => now(),
+                'updated_at'        => now()
             ]);
         } catch (\Exception $e) {
             Log::error('Create notification record error: ' . $e->getMessage());
         }
     }
-
-    private function createNotificationLogsTable()
-    {
-        try {
-            DB::statement("
-                CREATE TABLE IF NOT EXISTS notification_logs (
-                    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                    user_id BIGINT UNSIGNED NOT NULL,
-                    restaurant_id BIGINT UNSIGNED NOT NULL,
-                    notification_type VARCHAR(50) NOT NULL,
-                    title VARCHAR(255) NOT NULL,
-                    message TEXT NOT NULL,
-                    status ENUM('green', 'yellow', 'orange', 'red') NULL,
-                    `read` BOOLEAN DEFAULT FALSE,
-                    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    created_at TIMESTAMP NULL DEFAULT NULL,
-                    updated_at TIMESTAMP NULL DEFAULT NULL,
-                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                    FOREIGN KEY (restaurant_id) REFERENCES restaurants(id) ON DELETE CASCADE,
-                    INDEX idx_user_read (user_id, `read`, sent_at)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-            ");
-
-            Log::info('Created notification_logs table');
-        } catch (\Exception $e) {
-            Log::error('Failed to create notification_logs table: ' . $e->getMessage());
-        }
-    }
-
 
     public function requestVerification(Request $request)
     {

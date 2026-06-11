@@ -396,36 +396,9 @@ class NotificationController extends Controller
                     ];
                 });
 
-            // Mark as read after fetching (optional)
-            DB::table('notification_logs')
-                ->where('user_id', $user->id)
-                ->where('is_read', 0)
-                ->update(['is_read' => 1]);
-
-            // Also get notification preferences (optional - for comparison)
-            $preferences = UserNotification::with(['restaurant' => function ($query) {
-                $query->select('id', 'name', 'cuisine_type', 'address');
-            }])
-                ->where('user_id', $user->id)
-                ->where('is_active', true)
-                ->get()
-                ->map(function ($preference) {
-                    return [
-                        'id' => $preference->id,
-                        'restaurant_id' => $preference->restaurant_id,
-                        'restaurant_name' => $preference->restaurant ? $preference->restaurant->name : 'Unknown Restaurant',
-                        'cuisine' => $preference->restaurant ? $preference->restaurant->cuisine_type : 'Unknown',
-                        'address' => $preference->restaurant ? $preference->restaurant->address : 'Address not available',
-                        'notify_when_status' => $preference->notify_when_status,
-                        'status_text' => $this->getStatusText($preference->notify_when_status),
-                        'created_at' => $preference->created_at
-                    ];
-                });
-
             return response()->json([
                 'success' => true,
                 'notifications' => $notifications,
-                'preferences' => $preferences,
                 'unread_count' => collect($notifications)->where('is_read', false)->count()
             ]);
         } catch (\Exception $e) {

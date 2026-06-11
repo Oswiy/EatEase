@@ -164,7 +164,9 @@ class IoTController extends Controller
     public function updateOccupancy(Request $request)
     {
         // Log immediately
-        Log::info('📡 ESP32 Request:', $request->all());
+        if (app()->environment('local')) {
+            Log::info('📡 ESP32 Request:', $request->all());
+        }
 
         // Quick minimal validation
         $data = $request->all();
@@ -205,14 +207,17 @@ class IoTController extends Controller
         Log::info('✅ Updated restaurant ' . $restaurant->id . ' to ' . $restaurant->current_occupancy);
 
         // Also create an occupancy log
- // Also create an occupancy log with all analytics‑required fields
-        $oldOccupancy = $restaurant->getOriginal('current_occupancy');
-        $newOccupancy = $restaurant->current_occupancy;
-        $maxCap = $restaurant->max_capacity;
-        $percentage = $maxCap > 0 ? round(($newOccupancy / $maxCap) * 100, 1) : 0;
+        // Also create an occupancy log with all analytics‑required fields
+        $newOccupancy = max(0, min((int)($data['current_count'] ?? 0), $restaurant->max_capacity));
+        $oldOccupancy = $restaurant->current_occupancy; // ← capture BEFORE update
+
+        $restaurant->update(['current_occupancy' => $newOccupancy]);
+
+        $maxCap      = $restaurant->max_capacity;
+        $percentage  = $maxCap > 0 ? round(($newOccupancy / $maxCap) * 100, 1) : 0;
         $crowdStatus = $newOccupancy >= $maxCap * 0.9 ? 'red'
-                     : ($newOccupancy >= $maxCap * 0.7 ? 'orange'
-                     : ($newOccupancy >= $maxCap * 0.4 ? 'yellow' : 'green'));
+                    : ($newOccupancy >= $maxCap * 0.7 ? 'orange'
+                    : ($newOccupancy >= $maxCap * 0.4 ? 'yellow' : 'green'));
 
         OccupancyLog::create([
             'restaurant_id'        => $restaurant->id,
