@@ -9,6 +9,7 @@ const OwnerOverviewTab = ({
   onUpdateOccupancy,
   tier,
   handleUpgrade,
+  onRenewSuccess,
 }) => {
   const { showToast } = useToast();
 
@@ -137,7 +138,7 @@ const OwnerOverviewTab = ({
       const data = await response.json();
       if (data.success) {
         showToast(`Premium renewed! New expiry: ${data.expires_at}`, "success");
-        if (window.location.reload) window.location.reload();
+        if (onRenewSuccess) onRenewSuccess();
       } else {
         showToast(data.message || "Renewal failed", "error");
       }
@@ -193,15 +194,7 @@ const OwnerOverviewTab = ({
                             {remainingDays <= 7 && remainingDays > 0 && (
                               <button
                                 className="renew-now-btn"
-                                onClick={() => {
-                                  if (
-                                    window.confirm(
-                                      "Renew your premium subscription for 30 days?\n\nYou'll keep all premium features for another month.",
-                                    )
-                                  ) {
-                                    handleRenewSubscription();
-                                  }
-                                }}
+                                onClick={handleRenewSubscription}
                               >
                                 <svg
                                   xmlns="http://www.w3.org/2000/svg"
@@ -221,15 +214,7 @@ const OwnerOverviewTab = ({
                             <span className="days-left expired">Expired</span>
                             <button
                               className="renew-now-btn"
-                              onClick={() => {
-                                if (
-                                  window.confirm(
-                                    "Your premium subscription has expired. Renew for 30 days to restore premium features?",
-                                  )
-                                ) {
-                                  handleRenewSubscription();
-                                }
-                              }}
+                              onClick={handleRenewSubscription}
                             >
                               <svg
                                 xmlns="http://www.w3.org/2000/svg"

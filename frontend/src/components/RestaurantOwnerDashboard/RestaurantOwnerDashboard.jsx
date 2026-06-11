@@ -305,7 +305,6 @@ function RestaurantOwnerDashboard({ user }) {
   };
 
   const handleUpgrade = async () => {
-
     try {
       const token = localStorage.getItem("auth_token");
       const response = await fetch(`${BASE_URL}/api/subscription/upgrade`, {
@@ -1007,6 +1006,7 @@ function RestaurantOwnerDashboard({ user }) {
                       current_occupancy: newOccupancy,
                     }));
                   }}
+                  onRenewSuccess={fetchRestaurant}
                 />
               </div>
               <div style={{ display: activeTab === "menu" ? "block" : "none" }}>
