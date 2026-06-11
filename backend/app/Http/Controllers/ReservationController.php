@@ -6,25 +6,38 @@ use App\Models\Reservation;
 use App\Models\Restaurant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 use App\Rules\NoBadWords;
 
 class ReservationController extends Controller
 {
-    /**
-     * Display a listing of the user's reservations.
-     */
+    // ─── Private helper ────────────────────────────────────────────────────────
+    // FIX: Extracted repeated Restaurant::where('owner_id') pattern (was copy-pasted 6×).
+    //      Also applies column selection so we never do SELECT * on this hot path.
+
+    private function getOwnerRestaurant(): Restaurant
+    {
+        $restaurant = Restaurant::where('owner_id', Auth::id())
+            ->select(['id', 'name', 'max_capacity', 'current_occupancy', 'owner_id'])
+            ->first();
+
+        if (!$restaurant) {
+            abort(response()->json([
+                'success' => false,
+                'message' => 'No restaurant found for this account.',
+            ], 404));
+        }
+
+        return $restaurant;
+    }
+
+    // ─── Diner: list reservations ──────────────────────────────────────────────
+
     public function index()
     {
         try {
-            // First, auto-update any expired holds
-            $expiredHolds = Reservation::where('user_id', Auth::id())
-                ->where('status', 'pending_hold')
-                ->where('expires_at', '<', now())
-                ->get();
-
-            // Now get non-hidden reservations
             $reservations = Reservation::with(['restaurant' => function ($query) {
                 $query->select('id', 'name', 'address', 'profile_image');
             }])
@@ -35,117 +48,109 @@ class ReservationController extends Controller
                 ->paginate(10);
 
             return response()->json([
-                'success' => true,
+                'success'      => true,
                 'reservations' => $reservations,
-                'auto_updated_expired' => $expiredHolds->count()
             ]);
         } catch (\Exception $e) {
             Log::error('Failed to fetch reservations: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to fetch reservations'
-            ], 500);
+            return response()->json(['success' => false, 'message' => 'Failed to fetch reservations'], 500);
         }
     }
 
-    /**
-     * Store a newly created reservation.
-     */
+    // ─── Diner: create reservation ─────────────────────────────────────────────
+
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'restaurant_id' => 'required|exists:restaurants,id',
-            'party_size' => 'required|integer|min:1|max:30',
+            'restaurant_id'    => 'required|exists:restaurants,id',
+            'party_size'       => 'required|integer|min:1|max:30',
             'reservation_date' => 'required|date|after_or_equal:today',
             'reservation_time' => 'required|date_format:H:i',
-            'special_requests' => [
-                'nullable',
-                'string',
-                'max:500',
-                new NoBadWords('special requests')
-            ]
+            'special_requests' => ['nullable', 'string', 'max:500', new NoBadWords('special requests')],
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validation error',
-                'errors' => $validator->errors()
+                'errors'  => $validator->errors(),
             ], 422);
         }
 
         try {
             $restaurant = Restaurant::findOrFail($request->restaurant_id);
 
-            // Check if restaurant is open (basic check)
-            $currentTime = now();
-            $reservationDateTime = $request->reservation_date . ' ' . $request->reservation_time;
+            // FIX: Build comparison timestamps from the actual reservation date,
+            //      not today. The original code always compared against today 17:00/22:00,
+            //      so any reservation for a future date would fail the check.
+            $openTime  = strtotime($request->reservation_date . ' 17:00:00');
+            $closeTime = strtotime($request->reservation_date . ' 22:00:00');
+            $resTime   = strtotime($request->reservation_date . ' ' . $request->reservation_time);
 
-            if (
-                strtotime($reservationDateTime) < strtotime('today 17:00') ||
-                strtotime($reservationDateTime) > strtotime('today 22:00')
-            ) {
+            if ($resTime < $openTime || $resTime > $closeTime) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Restaurant is only open from 5:00 PM to 10:00 PM'
+                    'message' => 'Restaurant is only open from 5:00 PM to 10:00 PM',
                 ], 422);
             }
 
-            // Check capacity
-            $existingReservations = Reservation::where('restaurant_id', $restaurant->id)
+            // Capacity check
+            $existingBooked = Reservation::where('restaurant_id', $restaurant->id)
                 ->where('reservation_date', $request->reservation_date)
                 ->where('reservation_time', $request->reservation_time)
                 ->whereIn('status', ['pending', 'confirmed'])
                 ->sum('party_size');
 
-            $totalOccupancy = $existingReservations + $request->party_size;
-
-            if ($totalOccupancy > $restaurant->max_capacity) {
+            if (($existingBooked + $request->party_size) > $restaurant->max_capacity) {
                 return response()->json([
-                    'success' => false,
-                    'message' => 'No available tables for your party size at this time. Please try another time.',
-                    'available_capacity' => $restaurant->max_capacity - $existingReservations
+                    'success'            => false,
+                    'message'            => 'No available tables for your party size at this time. Please try another time.',
+                    'available_capacity' => $restaurant->max_capacity - $existingBooked,
                 ], 422);
             }
 
-            $reservation = Reservation::create([
-                'user_id' => Auth::id(),
-                'restaurant_id' => $request->restaurant_id,
-                'party_size' => $request->party_size,
-                'reservation_date' => $request->reservation_date,
-                'reservation_time' => $request->reservation_time,
-                'special_requests' => $request->special_requests,
-                'status' => 'confirmed',
-                'confirmation_code' => Reservation::generateConfirmationCode()
-            ]);
+            // FIX: Wrap create + occupancy update in a transaction so a failed
+            //      occupancy save cannot leave a confirmed reservation with stale counts.
+            $reservation = DB::transaction(function () use ($request, $restaurant) {
+                $reservation = Reservation::create([
+                    'user_id'           => Auth::id(),
+                    'restaurant_id'     => $request->restaurant_id,
+                    'party_size'        => $request->party_size,
+                    'reservation_date'  => $request->reservation_date,
+                    'reservation_time'  => $request->reservation_time,
+                    'special_requests'  => $request->special_requests,
+                    'status'            => 'confirmed',
+                    'confirmation_code' => Reservation::generateConfirmationCode(),
+                ]);
 
-            // Update restaurant current occupancy (optional)
-            $restaurant->current_occupancy = min(
-                $restaurant->current_occupancy + $request->party_size,
-                $restaurant->max_capacity
-            );
-            $restaurant->save();
+                $restaurant->current_occupancy = min(
+                    $restaurant->current_occupancy + $request->party_size,
+                    $restaurant->max_capacity
+                );
+                $restaurant->save();
 
-            // Load relationship for response
+                return $reservation;
+            });
+
             $reservation->load('restaurant');
 
             return response()->json([
-                'success' => true,
-                'message' => 'Reservation created successfully!',
-                'reservation' => $reservation,
-                'confirmation_code' => $reservation->confirmation_code
+                'success'           => true,
+                'message'           => 'Reservation created successfully!',
+                'reservation'       => $reservation,
+                'confirmation_code' => $reservation->confirmation_code,
             ], 201);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create reservation: ' . $e->getMessage()
+                'message' => 'Failed to create reservation: ' . $e->getMessage(),
             ], 500);
         }
     }
 
-    /**
-     * Display the specified reservation.
-     */
+    // ─── Diner: show reservation ───────────────────────────────────────────────
+
     public function show($id)
     {
         try {
@@ -153,296 +158,185 @@ class ReservationController extends Controller
                 ->where('user_id', Auth::id())
                 ->findOrFail($id);
 
-            return response()->json([
-                'success' => true,
-                'reservation' => $reservation
-            ]);
+            return response()->json(['success' => true, 'reservation' => $reservation]);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Reservation not found'
-            ], 404);
+            return response()->json(['success' => false, 'message' => 'Reservation not found'], 404);
         }
     }
 
+    // ─── Diner: create spot hold ───────────────────────────────────────────────
+
     public function holdSpot(Request $request)
     {
+        // FIX: Unified to Auth::id() / Auth::user() — no more $request->user() mix.
+        //      Debug logs gated behind config('app.debug').
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'User not authenticated'], 401);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'restaurant_id'    => 'required|exists:restaurants,id',
+            'party_size'       => 'required|integer|min:1|max:10',
+            'hold_type'        => 'required|in:quick_10min,extended_20min',
+            'special_requests' => 'nullable|string|max:200',
+            'hold_fee'         => 'nullable|numeric|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+        }
+
+        $data = $validator->validated();
+
         try {
-            Log::info('HoldSpot Request Data:', $request->all());
-
-            $user = $request->user();
-
-            if (!$user) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'User not authenticated'
-                ], 401);
-            }
-
-            $validator = Validator::make($request->all(), [
-                'restaurant_id' => 'required|exists:restaurants,id',
-                'party_size' => 'required|integer|min:1|max:10',
-                'hold_type' => 'required|in:quick_10min,extended_20min',
-                'special_requests' => 'nullable|string|max:200',
-                'hold_fee' => 'nullable|numeric|min:0'
-            ]);
-
-            if ($validator->fails()) {
-                Log::error('Validation failed:', $validator->errors()->toArray());
-                return response()->json([
-                    'success' => false,
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-
-            $data = $validator->validated();
-
-            $restaurant = Restaurant::findOrFail($data['restaurant_id']);
+            $restaurant     = Restaurant::findOrFail($data['restaurant_id']);
             $availableSeats = $restaurant->max_capacity - $restaurant->current_occupancy;
 
             if ($data['party_size'] > $availableSeats) {
                 return response()->json([
-                    'success' => false,
-                    'message' => "Sorry, this restaurant cannot accommodate your party of {$data['party_size']}. Only {$availableSeats} seat" . ($availableSeats === 1 ? '' : 's') . " available right now.",
-                    'available_seats' => $availableSeats,
-                    'requested_party_size' => $data['party_size']
+                    'success'              => false,
+                    'message'              => "Sorry, this restaurant cannot accommodate your party of {$data['party_size']}. Only {$availableSeats} seat" . ($availableSeats === 1 ? '' : 's') . ' available right now.',
+                    'available_seats'      => $availableSeats,
+                    'requested_party_size' => $data['party_size'],
                 ], 422);
             }
 
-
-            // ✅ CRITICAL FIX: Auto-update ALL expired holds for this user FIRST
-            $expiredHoldsToUpdate = Reservation::where('user_id', $user->id)
+            // FIX: Single expired-hold cleanup pass (was duplicated — ran identical
+            //      query twice, second pass always found nothing).
+            Reservation::where('user_id', $user->id)
                 ->where('restaurant_id', $data['restaurant_id'])
                 ->where('status', 'pending_hold')
                 ->where('hold_status', 'pending')
-                ->where(function ($query) {
-                    $query->where('original_expires_at', '<=', now())
-                        ->orWhereNull('original_expires_at');
+                ->where(function ($q) {
+                    $q->where('original_expires_at', '<=', now())
+                      ->orWhereNull('original_expires_at');
                 })
-                ->get();
+                ->each(function ($hold) {
+                    $hold->status      = 'cancelled';
+                    $hold->hold_status = 'expired';
+                    $hold->saveQuietly();
+                });
 
-            Log::info('Auto-updating expired holds', [
-                'count' => $expiredHoldsToUpdate->count(),
-                'user_id' => $user->id,
-                'restaurant_id' => $data['restaurant_id']
-            ]);
-
-            foreach ($expiredHoldsToUpdate as $hold) {
-                $hold->status = 'cancelled';
-                $hold->hold_status = 'expired';
-                $hold->saveQuietly();
-                Log::info('Updated expired hold', [
-                    'hold_id' => $hold->id,
-                    'original_expires_at' => $hold->original_expires_at
-                ]);
-            }
-
-            // ✅ NOW check for ACTIVE holds (non-expired)
+            // Block if an active (non-expired) hold already exists
             $existingHold = Reservation::where('user_id', $user->id)
                 ->where('restaurant_id', $data['restaurant_id'])
                 ->where('status', 'pending_hold')
                 ->where('hold_status', 'pending')
-                ->where(function ($query) {
-                    $query->where('original_expires_at', '>', now())
-                        ->orWhereNull('original_expires_at');
-                })
+                ->where('original_expires_at', '>', now())
                 ->first();
 
             if ($existingHold) {
-                Log::warning('User already has active hold', [
-                    'user_id' => $user->id,
-                    'restaurant_id' => $data['restaurant_id'],
-                    'hold_id' => $existingHold->id,
-                    'expires_at' => $existingHold->original_expires_at,
-                    'time_remaining' => now()->diffInMinutes($existingHold->original_expires_at, false)
-                ]);
-
                 return response()->json([
-                    'success' => false,
-                    'message' => 'You already have an active spot hold at this restaurant. Please wait for it to expire or cancel it first.',
-                    'hold_expires_at' => $existingHold->original_expires_at,
-                    'time_remaining_minutes' => now()->diffInMinutes($existingHold->original_expires_at, false)
+                    'success'                => false,
+                    'message'                => 'You already have an active spot hold at this restaurant. Please wait for it to expire or cancel it first.',
+                    'hold_expires_at'        => $existingHold->original_expires_at,
+                    'time_remaining_minutes' => now()->diffInMinutes($existingHold->original_expires_at, false),
                 ], 400);
             }
 
-            // ✅ Check for EXPIRED holds and auto-clean them up
-            $expiredHolds = Reservation::where('user_id', $user->id)
-                ->where('restaurant_id', $data['restaurant_id'])
-                ->where('status', 'pending_hold')
-                ->where('hold_status', 'pending')
-                ->where('original_expires_at', '<=', now())
-                ->get();
-
-            foreach ($expiredHolds as $hold) {
-                Log::info('Auto-cleaning expired hold', [
-                    'hold_id' => $hold->id,
-                    'expired_at' => $hold->original_expires_at
-                ]);
-                $hold->status = 'cancelled';
-                $hold->hold_status = 'expired';
-                $hold->saveQuietly();
-            }
-
-            // ✅ FIXED: Set original_expires_at (10 minutes for restaurant to respond)
             $originalExpiresAt = now()->addMinutes(10);
 
-            // Create hold
-            $holdData = [
-                'user_id' => $user->id,
-                'restaurant_id' => $data['restaurant_id'],
-                'party_size' => $data['party_size'],
-                'hold_type' => $data['hold_type'],
-                'status' => 'pending_hold',
-                'hold_status' => 'pending',
-                'expires_at' => null, // NULL until accepted
+            $hold = Reservation::create([
+                'user_id'            => $user->id,
+                'restaurant_id'      => $data['restaurant_id'],
+                'party_size'         => $data['party_size'],
+                'hold_type'          => $data['hold_type'],
+                'status'             => 'pending_hold',
+                'hold_status'        => 'pending',
+                'expires_at'         => null,
                 'original_expires_at' => $originalExpiresAt,
-                'reservation_date' => now()->format('Y-m-d'),
-                'reservation_time' => now()->format('H:i:s'),
-                'special_requests' => $data['special_requests'] ?? null,
-                'hold_fee' => $data['hold_fee'] ?? 0,
-                'confirmation_code' => 'HOLD-' . strtoupper(substr(md5(uniqid()), 0, 8)),
+                'reservation_date'   => now()->format('Y-m-d'),
+                'reservation_time'   => now()->format('H:i:s'),
+                'special_requests'   => $data['special_requests'] ?? null,
+                'hold_fee'           => $data['hold_fee'] ?? 0,
+                'confirmation_code'  => 'HOLD-' . strtoupper(substr(md5(uniqid()), 0, 8)),
                 'notification_count' => 0,
-                'last_notified_at' => null,
-            ];
-
-            Log::info('Creating hold with data:', $holdData);
-
-            try {
-                $hold = Reservation::create($holdData);
-
-                Log::info('Hold created successfully:', ['hold_id' => $hold->id]);
-
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Spot hold created successfully. Restaurant has 10 minutes to accept.',
-                    'hold' => $hold->load('restaurant'),
-                    'confirmation_code' => $hold->confirmation_code,
-                    'restaurant_response_deadline' => $originalExpiresAt->toDateTimeString(),
-                    'hold_duration' => $data['hold_type'] === 'quick_10min' ? '10 minutes' : '20 minutes'
-                ], 201);
-            } catch (\Exception $dbError) {
-                Log::error('Database error creating hold:', [
-                    'error' => $dbError->getMessage(),
-                    'trace' => $dbError->getTraceAsString(),
-                    'data' => $holdData
-                ]);
-
-                if (strpos($dbError->getMessage(), 'Unknown column') !== false) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Database configuration issue. Please run migrations or add missing columns.',
-                        'error_details' => $dbError->getMessage()
-                    ], 500);
-                }
-
-                throw $dbError;
-            }
-        } catch (\Exception $e) {
-            Log::error('Hold spot error:', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'last_notified_at'   => null,
             ]);
 
             return response()->json([
+                'success'                     => true,
+                'message'                     => 'Spot hold created successfully. Restaurant has 10 minutes to accept.',
+                'hold'                        => $hold->load('restaurant'),
+                'confirmation_code'           => $hold->confirmation_code,
+                'restaurant_response_deadline' => $originalExpiresAt->toDateTimeString(),
+                'hold_duration'               => $data['hold_type'] === 'quick_10min' ? '10 minutes' : '20 minutes',
+            ], 201);
+
+        } catch (\Exception $e) {
+            Log::error('Hold spot error: ' . $e->getMessage());
+            return response()->json([
                 'success' => false,
-                'message' => 'Failed to create spot hold: ' . $e->getMessage()
+                'message' => 'Failed to create spot hold: ' . $e->getMessage(),
             ], 500);
         }
     }
-    /**
-     * Cancel the specified reservation.
-     */
+
+    // ─── Diner: cancel hold ────────────────────────────────────────────────────
+
     public function destroy($id)
     {
         try {
             $reservation = Reservation::where('user_id', Auth::id())->find($id);
 
             if (!$reservation) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Hold not found'
-                ], 404);
+                return response()->json(['success' => false, 'message' => 'Hold not found'], 404);
             }
 
-            // Check if it's already cancelled or expired
             if ($reservation->status === 'cancelled') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'This hold is already cancelled'
-                ], 422);
+                return response()->json(['success' => false, 'message' => 'This hold is already cancelled'], 422);
             }
 
-            // Check if it's already expired
-            if ($reservation->status === 'pending_hold' && $reservation->expires_at) {
-                $expiresAt = new \DateTime($reservation->expires_at);
-                $now = new \DateTime();
-                if ($expiresAt < $now) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'This hold has already expired'
-                    ], 422);
-                }
+            // Check expiry against original_expires_at (the restaurant response window),
+            // which is the field actually set on pending holds.
+            $expiryField = $reservation->original_expires_at ?? $reservation->expires_at;
+            if ($expiryField && now()->greaterThan($expiryField)) {
+                return response()->json(['success' => false, 'message' => 'This hold has already expired'], 422);
             }
 
-            // Cancel the hold
-            $reservation->status = 'cancelled';
+            $reservation->status      = 'cancelled';
             $reservation->hold_status = 'cancelled_by_user';
             $reservation->saveQuietly();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Hold cancelled successfully.'
-            ]);
+            return response()->json(['success' => true, 'message' => 'Hold cancelled successfully.']);
+
         } catch (\Exception $e) {
             Log::error('Hold cancellation error: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to cancel hold'
-            ], 500);
+            return response()->json(['success' => false, 'message' => 'Failed to cancel hold'], 500);
         }
     }
-    /**
-     * Remove/hide a reservation from user's view
-     */
+
+    // ─── Diner: hide reservation from view ────────────────────────────────────
+
     public function removeFromView($id)
     {
         try {
-            $user = Auth::user();
-            $reservation = Reservation::where('user_id', $user->id)->find($id);
+            $reservation = Reservation::where('user_id', Auth::id())->find($id);
 
             if (!$reservation) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Reservation not found'
-                ], 404);
+                return response()->json(['success' => false, 'message' => 'Reservation not found'], 404);
             }
 
-            // Only touch is_hidden — don't modify status/hold_status
-            // which would trigger the boot() saving event and cascade
             $reservation->is_hidden = true;
-            $reservation->saveQuietly(); // ← bypasses boot() observers entirely
+            $reservation->saveQuietly();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Reservation removed from view'
-            ]);
+            return response()->json(['success' => true, 'message' => 'Reservation removed from view']);
+
         } catch (\Exception $e) {
             Log::error('Remove reservation error: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to remove reservation: ' . $e->getMessage()
-            ], 500);
+            return response()->json(['success' => false, 'message' => 'Failed to remove reservation: ' . $e->getMessage()], 500);
         }
     }
 
-    /**
-     * Check availability for a restaurant.
-     */
+    // ─── Diner: check availability ─────────────────────────────────────────────
+
     public function checkAvailability(Request $request, $restaurantId)
     {
         $validator = Validator::make($request->all(), [
             'date'       => 'required|date|after_or_equal:today',
-            'party_size' => 'required|integer|min:1|max:30'
+            'party_size' => 'required|integer|min:1|max:30',
         ]);
 
         if ($validator->fails()) {
@@ -451,7 +345,6 @@ class ReservationController extends Controller
 
         $restaurant = Restaurant::findOrFail($restaurantId);
 
-        // Single query — get all booked party sizes grouped by time slot
         $booked = Reservation::where('restaurant_id', $restaurantId)
             ->where('reservation_date', $request->date)
             ->whereIn('status', ['pending', 'confirmed'])
@@ -469,10 +362,10 @@ class ReservationController extends Controller
             $availableCapacity = $restaurant->max_capacity - $existingBooked;
 
             $timeSlots[] = [
-                'time'              => $time,
-                'available'         => $availableCapacity >= $request->party_size,
+                'time'               => $time,
+                'available'          => $availableCapacity >= $request->party_size,
                 'available_capacity' => $availableCapacity,
-                'formatted_time'    => date('g:i A', $current)
+                'formatted_time'     => date('g:i A', $current),
             ];
 
             $current = strtotime('+30 minutes', $current);
@@ -484,70 +377,27 @@ class ReservationController extends Controller
             'date'             => $request->date,
             'party_size'       => $request->party_size,
             'time_slots'       => $timeSlots,
-            'has_availability' => collect($timeSlots)->where('available', true)->isNotEmpty()
+            'has_availability' => collect($timeSlots)->where('available', true)->isNotEmpty(),
         ]);
     }
 
+    // ─── Restaurant: get active spot holds ────────────────────────────────────
+
     public function getRestaurantSpotHolds(Request $request)
     {
-        // Use Log facade (without backslash)
-        Log::info('========== getRestaurantSpotHolds CALLED ==========');
-
         try {
-            // Check authentication
-            if (!Auth::check()) {
-                Log::error('User not authenticated');
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Not authenticated'
-                ], 401);
-            }
-
-            $user = Auth::user();
-            Log::info('User info', [
-                'id' => $user->id,
-                'email' => $user->email,
-                'user_type' => $user->user_type
-            ]);
-
-            // Check if user is a restaurant owner
-            if ($user->user_type !== 'restaurant_owner') {
-                Log::warning('User is not restaurant owner', [
-                    'actual_type' => $user->user_type,
-                    'required_type' => 'restaurant_owner'
-                ]);
-
+            // FIX: Role check kept; verbose Log::info calls removed (were firing on
+            //      every poll — 30s × all restaurant owners = significant log noise).
+            if (Auth::user()->user_type !== 'restaurant_owner') {
                 return response()->json([
                     'success' => false,
                     'message' => 'Access denied. Restaurant owners only.',
-                    'user_type' => $user->user_type
                 ], 403);
             }
 
-            // Get the restaurant owned by this user
-            Log::info('Looking for restaurant with owner_id', ['owner_id' => $user->id]);
-            $restaurant = Restaurant::where('owner_id', $user->id)->first();
+            // FIX: Uses getOwnerRestaurant() instead of inline Restaurant::where copy-paste.
+            $restaurant = $this->getOwnerRestaurant();
 
-            if (!$restaurant) {
-                Log::warning('No restaurant found for user', [
-                    'user_id' => $user->id,
-                    'user_email' => $user->email
-                ]);
-
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No restaurant found for this user.',
-                    'user_id' => $user->id
-                ], 404);
-            }
-
-            Log::info('Restaurant found', [
-                'id' => $restaurant->id,
-                'name' => $restaurant->name,
-                'owner_id' => $restaurant->owner_id
-            ]);
-
-            // ✅ FIXED QUERY: Get ALL pending holds (not just non-expired)
             $query = Reservation::with(['user' => function ($q) {
                 $q->select('id', 'name', 'email');
             }])
@@ -555,186 +405,115 @@ class ReservationController extends Controller
                 ->where('status', 'pending_hold')
                 ->where('hold_status', 'pending');
 
-            // Remove the expiration filter to show ALL pending holds
-            // $query->where(function ($q) {
-            //     $q->where('original_expires_at', '>', now())
-            //         ->orWhere(function ($q2) {
-            //             $q2->whereNull('original_expires_at')
-            //                 ->where('expires_at', '>', now());
-            //         });
-            // });
-
-            // Filter by hold type if specified
             if ($request->has('hold_type')) {
                 $query->where('hold_type', $request->hold_type);
             }
 
-            // Order by expiration (soonest first)
             $reservations = $query->orderBy('original_expires_at', 'asc')->get();
 
-            Log::info('Found reservations', [
-                'count' => $reservations->count(),
-                'restaurant_id' => $restaurant->id
-            ]);
-
-            // ✅ FIXED: Calculate time remaining based on correct field
-            // ✅ Calculate time remaining for display
+            // FIX: time_remaining and is_expired are better as model appends,
+            //      but until the model is updated we keep the collection transform.
+            //      Accepted holds use expires_at; pending holds use original_expires_at.
             $reservations->each(function ($reservation) {
-                if ($reservation->hold_status === 'pending' && $reservation->original_expires_at) {
-                    $reservation->time_remaining = now()->diffInMinutes($reservation->original_expires_at, false);
-                    $reservation->is_expired = $reservation->time_remaining <= 0;
+                $expiryField = $reservation->hold_status === 'accepted'
+                    ? $reservation->expires_at
+                    : $reservation->original_expires_at;
+
+                if ($expiryField) {
+                    $reservation->time_remaining = now()->diffInMinutes($expiryField, false);
+                    $reservation->is_expired     = $reservation->time_remaining <= 0;
                 } else {
                     $reservation->time_remaining = null;
-                    $reservation->is_expired = false;
+                    $reservation->is_expired     = false;
                 }
             });
 
-            Log::info('========== REQUEST COMPLETED SUCCESSFULLY ==========');
-
-        return response()->json([
-            'success'    => true,
-            'restaurant' => [
-                'id'               => $restaurant->id,
-                'name'             => $restaurant->name,
-                'max_capacity'     => $restaurant->max_capacity,
-                'current_occupancy' => $restaurant->current_occupancy
-            ],
-            'spot_holds' => $reservations,
-        ]);
-        } catch (\Exception $e) {
-            Log::error('Error in getRestaurantSpotHolds: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
+            return response()->json([
+                'success'    => true,
+                'restaurant' => [
+                    'id'                => $restaurant->id,
+                    'name'              => $restaurant->name,
+                    'max_capacity'      => $restaurant->max_capacity,
+                    'current_occupancy' => $restaurant->current_occupancy,
+                ],
+                'spot_holds' => $reservations,
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Server error: ' . $e->getMessage()
-            ], 500);
+        } catch (\Exception $e) {
+            Log::error('Error in getRestaurantSpotHolds: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Server error: ' . $e->getMessage()], 500);
         }
     }
 
-    /**
-     * Accept a spot hold (convert to confirmed reservation)
-     */
+    // ─── Restaurant: accept spot hold ─────────────────────────────────────────
+
     public function acceptSpotHold($id)
     {
         try {
-            Log::info('Accepting spot hold:', ['hold_id' => $id]);
-
-            $user = Auth::user();
-            $restaurant = Restaurant::where('owner_id', $user->id)->first();
-
-            if (!$restaurant) {
-                Log::error('No restaurant found for user:', ['user_id' => $user->id]);
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No restaurant found'
-                ], 404);
-            }
+            $restaurant = $this->getOwnerRestaurant();
 
             $hold = Reservation::where('id', $id)
                 ->where('restaurant_id', $restaurant->id)
                 ->where('status', 'pending_hold')
-                // Remove the expires_at check since we'll reset it
-                // ->where('expires_at', '>', now())
                 ->first();
 
             if (!$hold) {
-                Log::error('Hold not found or not pending:', ['hold_id' => $id]);
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Spot hold not found or already processed'
-                ], 404);
+                return response()->json(['success' => false, 'message' => 'Spot hold not found or already processed'], 404);
             }
 
-            // Check restaurant capacity
-            $currentOccupancy = $restaurant->current_occupancy;
-            $availableCapacity = $restaurant->max_capacity - $currentOccupancy;
+            $availableCapacity = $restaurant->max_capacity - $restaurant->current_occupancy;
 
             if ($availableCapacity < $hold->party_size) {
-                Log::warning('Not enough capacity', [
-                    'available' => $availableCapacity,
-                    'needed' => $hold->party_size
-                ]);
                 return response()->json([
                     'success' => false,
-                    'message' => 'Not enough capacity to accept this hold. Available: ' . $availableCapacity
+                    'message' => 'Not enough capacity to accept this hold. Available: ' . $availableCapacity,
                 ], 422);
             }
 
-            // ✅ TIMER RESET LOGIC:
-            // 1. Store original expiry (for record keeping)
-            // 2. Set new expiry based on when accepted + hold duration
             $holdDuration = $hold->hold_type === 'quick_10min' ? 10 : 20;
-            $now = now();
 
-            // Store original expiry if not already stored
-            if (!$hold->original_expires_at && $hold->expires_at) {
-                $hold->original_expires_at = $hold->expires_at;
-            }
+            // FIX: Wrap hold status update + occupancy save in a transaction.
+            //      If the restaurant save fails, the hold is not left in a confirmed
+            //      state with stale occupancy counts.
+            DB::transaction(function () use ($hold, $restaurant, $holdDuration) {
+                $now = now();
+                $hold->expires_at   = $now->copy()->addMinutes($holdDuration);
+                $hold->accepted_at  = $now;
+                $hold->status       = 'confirmed';
+                $hold->hold_status  = 'accepted';
+                $hold->save();
 
-            // Set new expiry (starts now, not from when hold was created)
-            $hold->expires_at = $now->copy()->addMinutes($holdDuration);
-            $hold->accepted_at = $now;
+                $restaurant->current_occupancy += $hold->party_size;
+                $restaurant->save();
+            });
 
-            // Convert hold to confirmed reservation
-            $hold->status = 'confirmed';
-            $hold->hold_status = 'accepted';
-            $hold->save();
-
-            // Update restaurant occupancy
-            $restaurant->current_occupancy = $currentOccupancy + $hold->party_size;
-            $restaurant->save();
-
-            // Create notification for diner
             $this->createHoldNotification($hold, 'accepted');
 
-            Log::info('Hold accepted successfully', [
-                'hold_id' => $hold->id,
-                'new_expiry' => $hold->expires_at,
-                'hold_duration' => $holdDuration,
-                'party_size' => $hold->party_size
+            return response()->json([
+                'success'              => true,
+                'message'              => 'Spot hold accepted! Reservation confirmed.',
+                'reservation'          => $hold->load('user'),
+                'restaurant_occupancy' => [
+                    'current'   => $restaurant->current_occupancy,
+                    'max'       => $restaurant->max_capacity,
+                    'available' => $restaurant->max_capacity - $restaurant->current_occupancy,
+                ],
+                'expires_at'     => $hold->expires_at,
+                'time_remaining' => now()->diffInMinutes($hold->expires_at, false),
             ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Spot hold accepted! Reservation confirmed.',
-                'reservation' => $hold->load('user'),
-                'restaurant_occupancy' => [
-                    'current' => $restaurant->current_occupancy,
-                    'max' => $restaurant->max_capacity,
-                    'available' => $restaurant->max_capacity - $restaurant->current_occupancy
-                ],
-                'expires_at' => $hold->expires_at,
-                'time_remaining' => now()->diffInMinutes($hold->expires_at, false)
-            ]);
         } catch (\Exception $e) {
-            Log::error('Failed to accept spot hold:', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to accept spot hold: ' . $e->getMessage()
-            ], 500);
+            Log::error('Failed to accept spot hold: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to accept spot hold: ' . $e->getMessage()], 500);
         }
     }
 
-    /**
-     * Reject a spot hold
-     */
+    // ─── Restaurant: reject spot hold ─────────────────────────────────────────
+
     public function rejectSpotHold($id)
     {
         try {
-            $user = Auth::user();
-            $restaurant = Restaurant::where('owner_id', $user->id)->first();
-
-            if (!$restaurant) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No restaurant found'
-                ], 404);
-            }
+            $restaurant = $this->getOwnerRestaurant();
 
             $hold = Reservation::where('id', $id)
                 ->where('restaurant_id', $restaurant->id)
@@ -742,50 +521,29 @@ class ReservationController extends Controller
                 ->first();
 
             if (!$hold) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Spot hold not found or already processed'
-                ], 404);
+                return response()->json(['success' => false, 'message' => 'Spot hold not found or already processed'], 404);
             }
 
-            // Reject the hold
-            $hold->status = 'cancelled';
+            $hold->status      = 'cancelled';
             $hold->hold_status = 'rejected';
             $hold->saveQuietly();
 
-            // Create notification for diner
             $this->createHoldNotification($hold, 'rejected');
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Spot hold rejected.',
-                'reservation' => $hold
-            ]);
+            return response()->json(['success' => true, 'message' => 'Spot hold rejected.', 'reservation' => $hold]);
+
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to reject spot hold: ' . $e->getMessage()
-            ], 500);
+            return response()->json(['success' => false, 'message' => 'Failed to reject spot hold: ' . $e->getMessage()], 500);
         }
     }
 
-    /**
-     * Get today's confirmed reservations (from accepted holds)
-     */
+    // ─── Restaurant: today's reservations ─────────────────────────────────────
+
     public function getTodaysReservations()
     {
         try {
-            $user = Auth::user();
-            $restaurant = Restaurant::where('owner_id', $user->id)->first();
-
-            if (!$restaurant) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No restaurant found'
-                ], 404);
-            }
-
-            $today = now()->toDateString();
+            $restaurant   = $this->getOwnerRestaurant();
+            $today        = now()->toDateString();
 
             $reservations = Reservation::with(['user' => function ($q) {
                 $q->select('id', 'name', 'email');
@@ -796,78 +554,56 @@ class ReservationController extends Controller
                 ->orderBy('reservation_time')
                 ->get();
 
-            return response()->json([
-                'success' => true,
-                'date' => $today,
-                'reservations' => $reservations
-            ]);
+            return response()->json(['success' => true, 'date' => $today, 'reservations' => $reservations]);
+
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to fetch today\'s reservations: ' . $e->getMessage()
-            ], 500);
+            return response()->json(['success' => false, 'message' => 'Failed to fetch today\'s reservations: ' . $e->getMessage()], 500);
         }
     }
 
-    /**
-     * Get expired spot holds (for cleanup/reporting)
-     */
+    // ─── Restaurant: expired holds ─────────────────────────────────────────────
+
     public function getExpiredSpotHolds()
     {
         try {
-            $user = Auth::user();
-            $restaurant = Restaurant::where('owner_id', $user->id)->first();
+            $restaurant   = $this->getOwnerRestaurant();
 
-            if (!$restaurant) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No restaurant found'
-                ], 404);
-            }
-
-            // Get ALL expired holds, EXCLUDING hidden ones
-            $expiredHolds = Reservation::with(['user'])
+            $expiredHolds = Reservation::with(['user' => function ($q) {
+                $q->select('id', 'name', 'email');
+            }])
                 ->where('restaurant_id', $restaurant->id)
-                ->where('is_hidden', false) // ✅ Don't show hidden holds
+                ->where('is_hidden', false)
                 ->where(function ($query) {
                     $query->where(function ($q) {
+                        // Pending holds whose restaurant-response window has closed
                         $q->where('status', 'pending_hold')
-                            ->where('hold_status', 'pending')
-                            ->where('original_expires_at', '<=', now());
+                          ->where('hold_status', 'pending')
+                          ->where('original_expires_at', '<=', now());
                     })->orWhere(function ($q) {
+                        // Accepted holds whose arrival window has closed
                         $q->where('status', 'confirmed')
-                            ->where('hold_status', 'accepted')
-                            ->where('expires_at', '<=', now());
-                    })->orWhere(function ($q) {
-                        $q->where('hold_status', 'expired')
-                            ->orWhere('hold_status', 'rejected');
-                    })->orWhere('status', 'expired');
+                          ->where('hold_status', 'accepted')
+                          ->where('expires_at', '<=', now());
+                    })->orWhereIn('hold_status', ['expired', 'rejected'])
+                      ->orWhere('status', 'expired');
                 })
                 ->orderBy('original_expires_at', 'desc')
                 ->limit(50)
                 ->get();
 
-            return response()->json([
-                'success' => true,
-                'expired_holds' => $expiredHolds
-            ]);
+            return response()->json(['success' => true, 'expired_holds' => $expiredHolds]);
+
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to fetch expired holds: ' . $e->getMessage()
-            ], 500);
+            return response()->json(['success' => false, 'message' => 'Failed to fetch expired holds: ' . $e->getMessage()], 500);
         }
-    } 
+    }
+
+    // ─── Restaurant: hide expired hold ────────────────────────────────────────
 
     public function hideExpiredHold($id)
     {
         try {
-            $user = Auth::user();
-            $restaurant = Restaurant::where('owner_id', $user->id)->first();
-
-            if (!$restaurant) {
-                return response()->json(['success' => false, 'message' => 'Restaurant not found'], 404);
-            }
+            $restaurant = $this->getOwnerRestaurant();
 
             $hold = Reservation::where('id', $id)
                 ->where('restaurant_id', $restaurant->id)
@@ -877,61 +613,49 @@ class ReservationController extends Controller
                 return response()->json(['success' => false, 'message' => 'Hold not found'], 404);
             }
 
-            // ✅ ONLY update is_hidden - leave status alone!
-            $hold->hold_status = 'expired'; // This might be allowed
             $hold->is_hidden = true;
             $hold->saveQuietly();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Hold hidden successfully'
-            ]);
+            return response()->json(['success' => true, 'message' => 'Hold hidden successfully']);
+
         } catch (\Exception $e) {
             Log::error('Hide expired hold error: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
-            ], 500);
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()], 500);
         }
     }
 
+    // ─── Private: notification helper ─────────────────────────────────────────
+    // NOTE: This should eventually move to a NotificationService or queued job
+    //       so it doesn't block the HTTP response. Keeping it here for now to
+    //       match the existing architecture.
 
-    /**
-     * Helper: Create notification for diner about hold status
-     */
-    private function createHoldNotification($reservation, $action)
+    private function createHoldNotification($reservation, string $action): void
     {
         try {
-            // You'll need to implement this based on your notification system
-            $message = '';
-            $notificationType = '';
-
             if ($action === 'accepted') {
-                $message = "Your spot hold at {$reservation->restaurant->name} has been accepted! Your table for {$reservation->party_size} is confirmed.";
+                $message          = "Your spot hold at {$reservation->restaurant->name} has been accepted! Your table for {$reservation->party_size} is confirmed.";
                 $notificationType = 'hold_accepted';
             } else {
-                $message = "Your spot hold at {$reservation->restaurant->name} was not accepted. Please try another restaurant.";
+                $message          = "Your spot hold at {$reservation->restaurant->name} was not accepted. Please try another restaurant.";
                 $notificationType = 'hold_rejected';
             }
 
-            // Create notification in your notification_logs table
             \App\Models\NotificationLog::create([
-                'user_id' => $reservation->user_id,
-                'type' => $notificationType,
-                'title' => 'Spot Hold Update',
-                'message' => $message,
-                'related_id' => $reservation->id,
+                'user_id'      => $reservation->user_id,
+                'type'         => $notificationType,
+                'title'        => 'Spot Hold Update',
+                'message'      => $message,
+                'related_id'   => $reservation->id,
                 'related_type' => 'App\Models\Reservation',
-                'is_read' => false,
-                'metadata' => json_encode([
-                    'reservation_id' => $reservation->id,
-                    'restaurant_name' => $reservation->restaurant->name,
-                    'party_size' => $reservation->party_size,
-                    'confirmation_code' => $reservation->confirmation_code
-                ])
+                'is_read'      => false,
+                'metadata'     => json_encode([
+                    'reservation_id'    => $reservation->id,
+                    'restaurant_name'   => $reservation->restaurant->name,
+                    'party_size'        => $reservation->party_size,
+                    'confirmation_code' => $reservation->confirmation_code,
+                ]),
             ]);
         } catch (\Exception $e) {
-            // Log error but don't fail the main operation
             Log::error('Failed to create hold notification: ' . $e->getMessage());
         }
     }

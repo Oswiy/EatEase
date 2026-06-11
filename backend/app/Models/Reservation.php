@@ -5,155 +5,164 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Models\User; // ✅ ADD THIS
-use App\Models\Restaurant; // ✅ ADD THIS
-use Illuminate\Support\Facades\Log;
 
 class Reservation extends Model
 {
     use HasFactory;
 
+    // ─── Mass-assignable fields ────────────────────────────────────────────────
+
     protected $fillable = [
-    'user_id',
-    'restaurant_id',
-    'party_size',
-    'reservation_date',
-    'reservation_time',
-    'status',
-    'special_requests',
-    'confirmation_code',
-    'notification_count',
-    'last_notified_at',
-    'hold_type',          // ← MAKE SURE THIS EXISTS
-    'expires_at',         // ← MAKE SURE THIS EXISTS  
-    'hold_status',        // ← MAKE SURE THIS EXISTS
-    'original_expires_at', // ← ADD THIS NEW FIELD
-    'accepted_at',        // ← ADD THIS NEW FIELD
-    'is_hidden',
-    'hold_fee',           // ← ADD THIS FOR FEE SUPPORT
-    'cancelled_at'        // ← ADD THIS FOR CANCELLATION TRACKING
-];
-
-    protected $casts = [
-        'reservation_date' => 'date',
-        'last_notified_at' => 'datetime',
-        'party_size' => 'integer',
-        'expires_at' => 'datetime', // ← ADD THIS
-        'is_hidden' => 'boolean' // ✅ ADD THIS LINE
-
+        'user_id',
+        'restaurant_id',
+        'party_size',
+        'reservation_date',
+        'reservation_time',
+        'status',
+        'special_requests',
+        'confirmation_code',
+        'notification_count',
+        'last_notified_at',
+        'hold_type',
+        'expires_at',
+        'hold_status',
+        'original_expires_at',
+        'accepted_at',
+        'is_hidden',
+        'hold_fee',
+        'cancelled_at',
     ];
 
-    /**
-     * Get the user who made the reservation
-     */
+    // ─── Casts ─────────────────────────────────────────────────────────────────
+    // FIX: Added missing casts so Carbon comparisons work correctly throughout
+    //      the app without manual `new \DateTime()` construction.
+
+    protected $casts = [
+        'reservation_date'   => 'date',
+        'expires_at'         => 'datetime',
+        'original_expires_at' => 'datetime',
+        'accepted_at'        => 'datetime',
+        'cancelled_at'       => 'datetime',
+        'last_notified_at'   => 'datetime',
+        'party_size'         => 'integer',
+        'notification_count' => 'integer',
+        'hold_fee'           => 'float',
+        'is_hidden'          => 'boolean',
+    ];
+
+    // ─── Appended computed attributes ─────────────────────────────────────────
+    // FIX: time_remaining and is_expired were calculated ad-hoc in both the
+    //      controller (getRestaurantSpotHolds) and the frontend. Defining them
+    //      as appends means every query result carries them automatically,
+    //      removing the need for the each() transform in the controller.
+
+    protected $appends = ['time_remaining', 'is_expired'];
+
+    public function getTimeRemainingAttribute(): ?int
+    {
+        // Accepted holds count down against expires_at (arrival window).
+        // Pending holds count down against original_expires_at (restaurant response window).
+        if ($this->hold_status === 'accepted' && $this->expires_at) {
+            return now()->diffInMinutes($this->expires_at, false);
+        }
+
+        if ($this->hold_status === 'pending' && $this->original_expires_at) {
+            return now()->diffInMinutes($this->original_expires_at, false);
+        }
+
+        return null;
+    }
+
+    public function getIsExpiredAttribute(): bool
+    {
+        $remaining = $this->getTimeRemainingAttribute();
+        return $remaining !== null && $remaining <= 0;
+    }
+
+    // ─── Relationships ─────────────────────────────────────────────────────────
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    /**
-     * Get the restaurant for this reservation
-     */
     public function restaurant(): BelongsTo
     {
         return $this->belongsTo(Restaurant::class);
     }
 
-    public function isExpired(): bool
-    {
-        if ($this->status !== 'pending_hold') {
-            return false;
-        }
+    // ─── Boot hook ─────────────────────────────────────────────────────────────
+    // The boot() saving observer auto-transitions expired holds to cancelled.
+    // IMPORTANT: All cancel-only operations (removeFromView, hideExpiredHold,
+    // rejectSpotHold, destroy) use saveQuietly() to bypass this hook entirely,
+    // so cancelled_at is only set when a hold expires naturally through save().
 
-        if (!$this->expires_at) {
-            return false;
-        }
-
-        $expiresAt = new \DateTime($this->expires_at);
-        $now = new \DateTime();
-        return $expiresAt < $now;
-    }
-
-    /**
-     * Auto-update status if hold is expired
-     */
-    /**
-     * Auto-update status if hold is expired
-     */
-    public static function boot()
+    public static function boot(): void
     {
         parent::boot();
 
-        static::saving(function ($reservation) {
-            // Auto-update expired holds based on original_expires_at (restaurant response)
+        static::saving(function (Reservation $reservation) {
+            // Auto-expire pending holds whose restaurant-response window has closed.
             if (
                 $reservation->status === 'pending_hold' &&
                 $reservation->hold_status === 'pending' &&
-                $reservation->original_expires_at
+                $reservation->original_expires_at &&
+                now()->greaterThan($reservation->original_expires_at)
             ) {
-
-                $expiresAt = new \DateTime($reservation->original_expires_at);
-                $now = new \DateTime();
-
-                if ($expiresAt < $now) {
-                    $reservation->status = 'cancelled';
-                    $reservation->hold_status = 'expired';
-                    $reservation->cancelled_at = now();
-                }
+                $reservation->status       = 'cancelled';
+                $reservation->hold_status  = 'expired';
+                $reservation->cancelled_at = now();
+                return; // No need to check the second condition
             }
 
-            // Also check expires_at for accepted holds
+            // Auto-expire accepted holds whose arrival window has closed.
             if (
                 $reservation->status === 'confirmed' &&
                 $reservation->hold_status === 'accepted' &&
-                $reservation->expires_at
+                $reservation->expires_at &&
+                now()->greaterThan($reservation->expires_at)
             ) {
-
-                $expiresAt = new \DateTime($reservation->expires_at);
-                $now = new \DateTime();
-
-                if ($expiresAt < $now) {
-                    $reservation->status = 'cancelled';
-                    $reservation->hold_status = 'expired';
-                    $reservation->cancelled_at = now();
-                }
+                $reservation->status       = 'cancelled';
+                $reservation->hold_status  = 'expired';
+                $reservation->cancelled_at = now();
             }
         });
     }
 
-    /**
-     * Check if reservation can be cancelled
-     */
-    // Option 1: Remove it completely and handle logic in controller
-    // Option 2: Keep it simple
+    // ─── Helper methods ────────────────────────────────────────────────────────
+
+    public function isExpired(): bool
+    {
+        return $this->getIsExpiredAttribute();
+    }
+
     public function canBeCancelled(): bool
     {
-        // Only pending holds can be cancelled
         if ($this->status !== 'pending_hold') {
             return false;
         }
 
-        // Check if already expired
-        if ($this->expires_at) {
-            $expiresAt = new \DateTime($this->expires_at);
-            $now = new \DateTime();
-            return $expiresAt > $now; // Can cancel if not expired
+        // FIX: Original checked expires_at, but pending holds have expires_at = null
+        //      until accepted. The correct field for the restaurant-response window
+        //      is original_expires_at.
+        $expiryField = $this->original_expires_at ?? $this->expires_at;
+
+        if ($expiryField) {
+            return now()->lessThan($expiryField);
         }
 
         return true;
     }
 
-    /**
-     * Generate a confirmation code
-     */
+    // ─── Static helpers ────────────────────────────────────────────────────────
+
     public static function generateConfirmationCode(): string
     {
         return 'RES-' . strtoupper(substr(md5(uniqid()), 0, 8)) . '-' . date('md');
     }
 
-    /**
-     * Scope for upcoming reservations
-     */
+    // ─── Query scopes ──────────────────────────────────────────────────────────
+
     public function scopeUpcoming($query)
     {
         return $query->where('reservation_date', '>=', now()->toDateString())
@@ -162,17 +171,14 @@ class Reservation extends Model
             ->orderBy('reservation_time');
     }
 
-    /**
-     * Scope for past reservations
-     */
     public function scopePast($query)
     {
         return $query->where(function ($q) {
             $q->where('reservation_date', '<', now()->toDateString())
-                ->orWhere(function ($q2) {
-                    $q2->where('reservation_date', '=', now()->toDateString())
-                        ->where('reservation_time', '<', now()->format('H:i'));
-                });
+              ->orWhere(function ($q2) {
+                  $q2->where('reservation_date', '=', now()->toDateString())
+                     ->where('reservation_time', '<', now()->format('H:i'));
+              });
         })
             ->orderBy('reservation_date', 'desc')
             ->orderBy('reservation_time', 'desc');
