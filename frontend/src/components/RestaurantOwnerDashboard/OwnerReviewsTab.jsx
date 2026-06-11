@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./OwnerReviewsTab.css";
+import { useToast } from "../../context/ToastContext";
 import { BASE_URL } from "../../config";
 
 const OwnerReviewsTab = ({ restaurantId, restaurantName }) => {
@@ -15,6 +16,7 @@ const OwnerReviewsTab = ({ restaurantId, restaurantName }) => {
     averageRating: 0,
   });
   const [filter, setFilter] = useState("all"); // 'all', 'recent', '5', '4', etc.
+  const { showToast } = useToast();
 
   useEffect(() => {
     // console.log(
@@ -69,23 +71,12 @@ const OwnerReviewsTab = ({ restaurantId, restaurantName }) => {
   };
 
   const handleSendResponse = async (reviewId) => {
-    // TODO: Implement backend API for responses
-    // console.log("Sending response to review:", reviewId, responseText);
-
-    // For now, just show success message
-    alert("Response sent! (Backend integration needed)");
+    showToast("Response sent! (Backend integration needed)", "info", 3000);
     setRespondingTo(null);
     setResponseText("");
   };
 
   const deleteReview = async (reviewId) => {
-    if (
-      !confirm(
-        "Are you sure you want to delete this review? This cannot be undone.",
-      )
-    )
-      return;
-
     const token = localStorage.getItem("auth_token");
     try {
       const response = await fetch(`${BASE_URL}/api/reviews/${reviewId}`, {
@@ -99,13 +90,13 @@ const OwnerReviewsTab = ({ restaurantId, restaurantName }) => {
       const data = await response.json();
       if (data.success) {
         await fetchReviews();
-        alert("Review deleted successfully");
+        showToast("Review deleted successfully", "success", 3000);
       } else {
-        alert(data.error || "Failed to delete review");
+        showToast(data.error || "Failed to delete review", "error", 3000);
       }
     } catch (error) {
       console.error("Error deleting review:", error);
-      alert("Error deleting review");
+      showToast("Error deleting review", "error", 3000);
     }
   };
 

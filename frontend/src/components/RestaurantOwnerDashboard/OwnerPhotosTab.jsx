@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./OwnerPhotosTab.css";
 import { BASE_URL } from "../../config";
+import { useToast } from "../../context/ToastContext";
 
 const OwnerPhotosTab = ({ restaurant }) => {
   // Extract restaurantId from restaurant object
@@ -14,6 +15,7 @@ const OwnerPhotosTab = ({ restaurant }) => {
   const [captions, setCaptions] = useState({});
   const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
+  const { showToast } = useToast();
 
   useEffect(() => {
     // console.log("OwnerPhotosTab mounted with restaurant:", restaurant);
@@ -77,14 +79,12 @@ const OwnerPhotosTab = ({ restaurant }) => {
       const isValidSize = file.size <= 5 * 1024 * 1024; // 5MB
 
       if (!isValidType) {
-        alert(
-          `${file.name} is not a valid image type (JPEG, PNG, GIF, WebP allowed)`,
-        );
+        showToast(`${file.name} is not a valid image type`, "warning", 3000);
         return false;
       }
 
       if (!isValidSize) {
-        alert(`${file.name} is too large (max 5MB)`);
+        showToast(`${file.name} exceeds the 5MB limit`, "warning", 3000);
         return false;
       }
 
@@ -161,17 +161,21 @@ const OwnerPhotosTab = ({ restaurant }) => {
       // console.log("Response data:", data);
 
       if (data.success) {
-        alert(data.message);
+        showToast(
+          data.message || "Photos uploaded successfully!",
+          "success",
+          3000,
+        );
         setShowUploadModal(false);
         setSelectedFiles([]);
         setCaptions({});
         fetchPhotos();
       } else {
-        alert(data.message || "Upload failed");
+        showToast(data.message || "Upload failed", "error", 3000);
       }
     } catch (error) {
       console.error("Upload error:", error);
-      alert("Error uploading photos");
+      showToast("Error uploading photos", "error", 3000);
     } finally {
       setUploading(false);
     }
@@ -202,21 +206,18 @@ const OwnerPhotosTab = ({ restaurant }) => {
             is_primary: photo.id === photoId,
           })),
         );
-        alert("Primary photo updated!");
+        showToast("Primary photo updated!", "success", 3000);
       } else {
-        alert(data.message || "Failed to set primary");
+        showToast(data.message || "Failed to set primary", "error", 3000);
       }
     } catch (error) {
       console.error("Set primary error:", error);
-      alert("Error setting primary photo");
+      showToast("Error setting primary photo", "error", 3000);
     }
   };
 
   const handleDeletePhoto = async (photoId) => {
-    if (!window.confirm("Are you sure you want to delete this photo?")) {
-      return;
-    }
-
+    // Remove window.confirm() — use optimistic delete instead
     try {
       const token = localStorage.getItem("auth_token");
       const response = await fetch(
@@ -231,17 +232,15 @@ const OwnerPhotosTab = ({ restaurant }) => {
       );
 
       const data = await response.json();
-
       if (data.success) {
-        // Remove from local state
         setPhotos((prev) => prev.filter((photo) => photo.id !== photoId));
-        alert("Photo deleted!");
+        showToast("Photo deleted", "success", 3000);
       } else {
-        alert(data.message || "Failed to delete");
+        showToast(data.message || "Failed to delete", "error", 3000);
       }
     } catch (error) {
       console.error("Delete error:", error);
-      alert("Error deleting photo");
+      showToast("Error deleting photo", "error", 3000);
     }
   };
 
@@ -271,7 +270,7 @@ const OwnerPhotosTab = ({ restaurant }) => {
           ),
         );
       } else {
-        alert(data.message || "Failed to update caption");
+        showToast(data.message || "Failed to update caption", "error", 3000);
       }
     } catch (error) {
       console.error("Update caption error:", error);
