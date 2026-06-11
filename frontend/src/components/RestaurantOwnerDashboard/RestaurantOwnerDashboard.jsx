@@ -110,26 +110,34 @@ function RestaurantOwnerDashboard({ user }) {
 
       const data = await response.json();
       if (data.success) {
-        alert("  Premium subscription renewed for 30 days!");
+        showToast("Premium subscription renewed for 30 days!", "success", 3000);
         setShowRenewModal(false);
         fetchRestaurant(); // Refresh restaurant data
       } else {
-        alert("Failed to renew: " + data.message);
+        showToast("Failed to renew: " + data.message, "error", 3000);
       }
     } catch (error) {
       console.error("Renew error:", error);
-      alert("Failed to renew subscription. Please try again.");
+      showToast(
+        "Failed to renew subscription. Please try again.",
+        "error",
+        3000,
+      );
     }
   };
 
   const handleSavePromo = async () => {
     if (!restaurant?.is_featured) {
-      alert("Only featured restaurants can add promo text");
+      showToast(
+        "Only featured restaurants can add promo text",
+        "warning",
+        3000,
+      );
       return;
     }
 
     if (promoText.length > 100) {
-      alert("Promo text must be 100 characters or less");
+      showToast("Promo text must be 100 characters or less", "warning", 3000);
       return;
     }
 
@@ -150,15 +158,15 @@ function RestaurantOwnerDashboard({ user }) {
 
       const data = await response.json();
       if (data.success) {
-        alert("  Promo text saved!");
+        showToast("Promo text saved!", "success", 3000);
         fetchRestaurant(); // Refresh restaurant data
         if (showPromoModal) setShowPromoModal(false); // Close modal if open
       } else {
-        alert("Failed to save promo: " + data.message);
+        showToast("Failed to save promo: " + data.message, "error", 3000);
       }
     } catch (error) {
       console.error("Error saving promo:", error);
-      alert("Error saving promo text");
+      showToast("Error saving promo text", "error", 3000);
     }
   };
 
@@ -210,33 +218,24 @@ function RestaurantOwnerDashboard({ user }) {
     // Check if already featured
     if (restaurant.is_featured) {
       // Ask if they want to unfeature
-      if (
-        confirm(
-          "Your restaurant is currently featured. Remove from featured section?",
-        )
-      ) {
-        await unfeatureRestaurant();
-      }
+      await unfeatureRestaurant();
       return;
     }
 
     // Not featured yet - check requirements
     if (!restaurant.banner_image) {
       // No banner - ask to upload one
-      if (confirm("To be featured, you need a banner image. Upload one now?")) {
-        setEditingImageType("banner");
-      }
+      showToast(
+        "To be featured, please upload a banner image first.",
+        "warning",
+        4000,
+      );
+      setEditingImageType("banner");
       return;
     }
 
     // Has banner - confirm featuring
-    if (
-      confirm(
-        "Feature your restaurant in the main carousel? This will make it visible to all diners.",
-      )
-    ) {
-      await featureRestaurant();
-    }
+    await featureRestaurant();
   };
 
   const featureRestaurant = async () => {
@@ -253,16 +252,22 @@ function RestaurantOwnerDashboard({ user }) {
 
       const data = await response.json();
       if (data.success) {
-        alert(
-          "  Your restaurant is now featured! It will appear in the featured carousel.",
-        );
+        showToast("Your restaurant is now featured!", "success", 3000);
         fetchRestaurant(); // Refresh restaurant data
       } else {
-        alert("Failed to feature: " + (data.message || "Unknown error"));
+        showToast(
+          "Failed to feature: " + (data.message || "Unknown error"),
+          "error",
+          3000,
+        );
       }
     } catch (error) {
       console.error("Feature error:", error);
-      alert("Failed to feature restaurant. Please try again.");
+      showToast(
+        "Failed to feature restaurant. Please try again.",
+        "error",
+        3000,
+      );
     }
   };
 
@@ -280,25 +285,26 @@ function RestaurantOwnerDashboard({ user }) {
 
       const data = await response.json();
       if (data.success) {
-        alert("  Your restaurant is no longer featured.");
+        showToast("Your restaurant is no longer featured.", "info", 3000);
         fetchRestaurant(); // Refresh restaurant data
       } else {
-        alert("Failed to unfeature: " + (data.message || "Unknown error"));
+        showToast(
+          "Failed to unfeature: " + (data.message || "Unknown error"),
+          "error",
+          3000,
+        );
       }
     } catch (error) {
       console.error("Unfeature error:", error);
-      alert("Failed to unfeature restaurant. Please try again.");
+      showToast(
+        "Failed to unfeature restaurant. Please try again.",
+        "error",
+        3000,
+      );
     }
   };
 
   const handleUpgrade = async () => {
-    if (
-      !confirm(
-        "Upgrade to Premium tier? This will unlock all features including the ability to apply for featured status.",
-      )
-    ) {
-      return;
-    }
 
     try {
       const token = localStorage.getItem("auth_token");
@@ -313,15 +319,15 @@ function RestaurantOwnerDashboard({ user }) {
 
       const data = await response.json();
       if (data.success) {
-        alert("Successfully upgraded to Premium tier!");
+        showToast("Successfully upgraded to Premium tier!", "success", 3000);
         setTier("premium");
         setCanBeFeatured(true);
       } else {
-        alert("Upgrade failed: " + data.message);
+        showToast("Upgrade failed: " + data.message, "error", 3000);
       }
     } catch (error) {
       console.error("Error upgrading tier:", error);
-      alert("Error upgrading tier");
+      showToast("Error upgrading tier", "error", 3000);
     }
   };
 
@@ -331,10 +337,6 @@ function RestaurantOwnerDashboard({ user }) {
       setShowPromo(restaurant.show_promo || false);
     }
   }, [restaurant]);
-
-  useEffect(() => {
-    fetchRestaurant();
-  }, []);
 
   const saveMenuText = async () => {
     await fetch(`${BASE_URL}/api/restaurants/${restaurantId}/menu-text`, {
@@ -353,7 +355,11 @@ function RestaurantOwnerDashboard({ user }) {
     const token = localStorage.getItem("auth_token");
 
     if (!featuredDescription.trim()) {
-      alert("Please enter a description for your featured listing!");
+      showToast(
+        "Please enter a description for your featured listing!",
+        "warning",
+        3000,
+      );
       return;
     }
 
@@ -375,16 +381,24 @@ function RestaurantOwnerDashboard({ user }) {
 
       const data = await response.json();
       if (response.ok) {
-        alert("  Feature request submitted! Our team will review it shortly.");
+        showToast(
+          "Feature request submitted! Our team will review it shortly.",
+          "success",
+          3000,
+        );
         setShowFeatureModal(false);
         setFeaturedDescription("");
         fetchRestaurant();
       } else {
-        alert("Failed to submit request: " + (data.message || "Unknown error"));
+        showToast(
+          "Failed to submit request: " + (data.message || "Unknown error"),
+          "error",
+          3000,
+        );
       }
     } catch (error) {
       console.error("Feature request error:", error);
-      alert("Failed to submit request. Please try again.");
+      showToast("Failed to submit request. Please try again.", "error", 3000);
     }
   };
 
@@ -444,19 +458,27 @@ function RestaurantOwnerDashboard({ user }) {
       ? formData.phone.replace(/^\+63/, "")
       : "";
     if (phoneDigits.length !== 10) {
-      alert("Please enter a valid 10-digit phone number after +63");
+      showToast(
+        "Please enter a valid 10-digit phone number after +63",
+        "warning",
+        3000,
+      );
       setSaving(false);
       return;
     }
     if (!formData.openHour || !formData.closeHour) {
-      alert("Please enter valid opening and closing hours");
+      showToast(
+        "Please enter valid opening and closing hours",
+        "warning",
+        3000,
+      );
       setSaving(false);
       return;
     }
     const open = parseInt(formData.openHour);
     const close = parseInt(formData.closeHour);
     if (open < 1 || open > 12 || close < 1 || close > 12) {
-      alert("Hours must be between 1 and 12");
+      showToast("Hours must be between 1 and 12", "warning", 3000);
       setSaving(false);
       return;
     }
@@ -511,122 +533,6 @@ function RestaurantOwnerDashboard({ user }) {
     }
   };
 
-  // Render tab content based on active tab
-  const renderTabContent = () => {
-    if (!restaurant) return null;
-
-    switch (activeTab) {
-      case "overview":
-        return (
-          <OwnerOverviewTab
-            restaurant={restaurant}
-            tier={tier} // Add this prop
-            handleUpgrade={handleUpgrade}
-            onEdit={() => {
-              const hoursVal = restaurant.hours || "";
-              let openHour = "8",
-                openAmPm = "AM",
-                closeHour = "10",
-                closeAmPm = "PM";
-              if (hoursVal !== "24/7") {
-                const match = hoursVal.match(/^(\d+)(AM|PM)-(\d+)(AM|PM)$/i);
-                if (match) {
-                  openHour = match[1];
-                  openAmPm = match[2].toUpperCase();
-                  closeHour = match[3];
-                  closeAmPm = match[4].toUpperCase();
-                }
-              }
-              setFormData({
-                name: restaurant.name,
-                cuisine_type: Array.isArray(restaurant.cuisine_type)
-                  ? restaurant.cuisine_type
-                  : restaurant.cuisine_type
-                    ? restaurant.cuisine_type.split(", ").filter(Boolean)
-                    : [],
-                address: restaurant.address,
-                phone: restaurant.phone,
-                hours: "",
-                openHour,
-                openAmPm,
-                closeHour,
-                closeAmPm,
-                max_capacity: restaurant.max_capacity,
-                current_occupancy: restaurant.current_occupancy,
-                features: restaurant.features || [],
-              });
-              setIsEditing(true);
-            }}
-            onUpdateOccupancy={(newOccupancy) => {
-              // Update local state when occupancy changes
-              setRestaurant((prev) => ({
-                ...prev,
-                current_occupancy: newOccupancy,
-              }));
-            }}
-          />
-        );
-      case "menu":
-        return <OwnerMenuTab restaurantId={restaurant.id} />;
-      case "reviews":
-        return <OwnerReviewsTab restaurantId={restaurant.id} />;
-      case "photos":
-        // console.log("Photos tab - restaurant object:", restaurant);
-        return <OwnerPhotosTab restaurant={restaurant} />;
-      // ADD THIS NEW CASE
-      case "reservations":
-        return <SpotHoldManagement restaurant={restaurant} />;
-      case "analytics":
-        return (
-          <AnalyticsTab
-            restaurantId={restaurant.id}
-            isPremium={tier === "premium"}
-          />
-        );
-
-      default:
-        return (
-          <OwnerOverviewTab
-            restaurant={restaurant}
-            onEdit={() => {
-              const hoursVal = restaurant.hours || "";
-              let openHour = "8",
-                openAmPm = "AM",
-                closeHour = "10",
-                closeAmPm = "PM";
-              if (hoursVal !== "24/7") {
-                const match = hoursVal.match(/^(\d+)(AM|PM)-(\d+)(AM|PM)$/i);
-                if (match) {
-                  openHour = match[1];
-                  openAmPm = match[2].toUpperCase();
-                  closeHour = match[3];
-                  closeAmPm = match[4].toUpperCase();
-                }
-              }
-              setFormData({
-                name: restaurant.name,
-                cuisine_type: Array.isArray(restaurant.cuisine_type)
-                  ? restaurant.cuisine_type
-                  : restaurant.cuisine_type
-                    ? restaurant.cuisine_type.split(", ").filter(Boolean)
-                    : [],
-                address: restaurant.address,
-                phone: restaurant.phone,
-                hours: "",
-                openHour,
-                openAmPm,
-                closeHour,
-                closeAmPm,
-                max_capacity: restaurant.max_capacity,
-                current_occupancy: restaurant.current_occupancy,
-                features: restaurant.features || [],
-              });
-              setIsEditing(true);
-            }}
-          />
-        );
-    }
-  };
   if (loading) {
     return (
       <div className="restaurant-owner-dashboard">
@@ -1049,7 +955,91 @@ function RestaurantOwnerDashboard({ user }) {
             </div>
 
             {/* Tab Content */}
-            <div className="owner-tab-content">{renderTabContent()}</div>
+            {/* Tab Content — all tabs stay mounted, hidden when inactive */}
+            <div className="owner-tab-content">
+              <div
+                style={{ display: activeTab === "overview" ? "block" : "none" }}
+              >
+                <OwnerOverviewTab
+                  restaurant={restaurant}
+                  tier={tier}
+                  handleUpgrade={handleUpgrade}
+                  onEdit={() => {
+                    const hoursVal = restaurant.hours || "";
+                    let openHour = "8",
+                      openAmPm = "AM",
+                      closeHour = "10",
+                      closeAmPm = "PM";
+                    if (hoursVal !== "24/7") {
+                      const match = hoursVal.match(
+                        /^(\d+)(AM|PM)-(\d+)(AM|PM)$/i,
+                      );
+                      if (match) {
+                        openHour = match[1];
+                        openAmPm = match[2].toUpperCase();
+                        closeHour = match[3];
+                        closeAmPm = match[4].toUpperCase();
+                      }
+                    }
+                    setFormData({
+                      name: restaurant.name,
+                      cuisine_type: Array.isArray(restaurant.cuisine_type)
+                        ? restaurant.cuisine_type
+                        : restaurant.cuisine_type
+                          ? restaurant.cuisine_type.split(", ").filter(Boolean)
+                          : [],
+                      address: restaurant.address,
+                      phone: restaurant.phone,
+                      hours: "",
+                      openHour,
+                      openAmPm,
+                      closeHour,
+                      closeAmPm,
+                      max_capacity: restaurant.max_capacity,
+                      current_occupancy: restaurant.current_occupancy,
+                      features: restaurant.features || [],
+                    });
+                    setIsEditing(true);
+                  }}
+                  onUpdateOccupancy={(newOccupancy) => {
+                    setRestaurant((prev) => ({
+                      ...prev,
+                      current_occupancy: newOccupancy,
+                    }));
+                  }}
+                />
+              </div>
+              <div style={{ display: activeTab === "menu" ? "block" : "none" }}>
+                <OwnerMenuTab restaurantId={restaurant.id} />
+              </div>
+              <div
+                style={{ display: activeTab === "reviews" ? "block" : "none" }}
+              >
+                <OwnerReviewsTab restaurantId={restaurant.id} />
+              </div>
+              <div
+                style={{ display: activeTab === "photos" ? "block" : "none" }}
+              >
+                <OwnerPhotosTab restaurant={restaurant} />
+              </div>
+              <div
+                style={{
+                  display: activeTab === "reservations" ? "block" : "none",
+                }}
+              >
+                <SpotHoldManagement restaurant={restaurant} />
+              </div>
+              <div
+                style={{
+                  display: activeTab === "analytics" ? "block" : "none",
+                }}
+              >
+                <AnalyticsTab
+                  restaurantId={restaurant.id}
+                  isPremium={tier === "premium"}
+                />
+              </div>
+            </div>
           </div>
         </div>
       )}
