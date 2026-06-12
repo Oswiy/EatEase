@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from "react";
 import "./Filters.css";
 import API_CONFIG from "../../config";
 import React, { useState, useEffect, useRef } from "react";
