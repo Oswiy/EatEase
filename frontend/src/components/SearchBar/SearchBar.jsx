@@ -21,7 +21,19 @@ function SearchBar({ searchQuery, setSearchQuery }) {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="search-input"
+          aria-label="Search restaurants"
         />
+        {searchQuery && (
+          <button
+            className="search-clear-btn"
+            onClick={() => setSearchQuery("")}
+            aria-label="Clear search"
+          >
+            <svg width="16" height="16" viewBox="0 -960 960 960" fill="currentColor">
+              <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z" />
+            </svg>
+          </button>
+        )}
       </div>
     </div>
   );

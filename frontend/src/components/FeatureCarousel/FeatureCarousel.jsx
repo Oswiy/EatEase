@@ -1,68 +1,19 @@
 import React, { useState, useEffect } from "react";
 import "./FeatureCarousel.css";
-import pollingService from "../../services/pollingService";
 import API_CONFIG from "../../config";
 
 function FeatureCarousel({ restaurants, onRestaurantClick }) {
   const [featuredRestaurants, setFeaturedRestaurants] = useState([]);
   const [loadedImages, setLoadedImages] = useState({});
-  const [updatedRestaurants, setUpdatedRestaurants] = useState({});
 
   // Set featured restaurants WITHOUT randomizing
   useEffect(() => {
     if (!restaurants || restaurants.length === 0) return;
-    
-    // Filter featured restaurants only - keep original order
     const featured = restaurants.filter(
-      (restaurant) =>
-        restaurant.is_featured === true || restaurant.isFeatured === true,
+      (r) => r.is_featured === true || r.isFeatured === true,
     );
-    
-    // Keep the original order from the API
     setFeaturedRestaurants(featured);
-    
-    // Initialize updated restaurants with initial data
-    const initialUpdates = {};
-    featured.forEach(restaurant => {
-      initialUpdates[restaurant.id] = {
-        crowd_status: restaurant.crowd_status || restaurant.status,
-        occupancy_percentage: restaurant.occupancy_percentage || 0
-      };
-    });
-    setUpdatedRestaurants(initialUpdates);
   }, [restaurants]);
-
-  // Set up polling for all featured restaurants
-  useEffect(() => {
-    if (featuredRestaurants.length === 0) return;
-
-    const unsubscribeCallbacks = [];
-
-    // Subscribe each restaurant to polling
-    featuredRestaurants.forEach(restaurant => {
-      const unsubscribe = pollingService.subscribe(
-        restaurant.id,
-        (updatedData) => {          
-          // Update the specific restaurant's data
-          setUpdatedRestaurants(prev => ({
-            ...prev,
-            [restaurant.id]: {
-              crowd_status: updatedData.crowd_status,
-              occupancy_percentage: updatedData.occupancy_percentage,
-              updated_at: updatedData.updated_at
-            }
-          }));
-        }
-      );
-      
-      unsubscribeCallbacks.push(unsubscribe);
-    });
-
-    // Cleanup: unsubscribe from all when component unmounts
-    return () => {
-      unsubscribeCallbacks.forEach(unsubscribe => unsubscribe());
-    };
-  }, [featuredRestaurants]);
 
   const handleRestaurantClick = (restaurant) => {
     if (onRestaurantClick) {
@@ -110,7 +61,7 @@ function FeatureCarousel({ restaurants, onRestaurantClick }) {
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
 
-    if (imagePath.startsWith('http')) {
+    if (imagePath.startsWith("http")) {
       return imagePath;
     }
 
@@ -122,17 +73,7 @@ function FeatureCarousel({ restaurants, onRestaurantClick }) {
   };
 
   const handleImageError = (restaurantId, url) => {
-    console.error(`Image failed to load for restaurant ${restaurantId}:`, url);
     setLoadedImages((prev) => ({ ...prev, [restaurantId]: false }));
-  };
-
-  const getCurrentRestaurantData = (restaurant) => {
-    const updatedData = updatedRestaurants[restaurant.id];
-    return {
-      ...restaurant,
-      crowd_status: updatedData?.crowd_status || restaurant.crowd_status || restaurant.status,
-      occupancy_percentage: updatedData?.occupancy_percentage || restaurant.occupancy_percentage
-    };
   };
 
   // Empty state - no featured restaurants
@@ -171,10 +112,10 @@ function FeatureCarousel({ restaurants, onRestaurantClick }) {
               {/* Crowd Status Indicator with polling updates */}
               <div className="crowd-status-indicator">
                 <div
-                  className={`status-dot ${getStatusClass(currentData.crowd_status)}`}
+                  className={`status-dot ${getStatusClass(restaurant.crowd_status || restaurant.status)}`}
                 ></div>
                 <span>
-                  {getStatusLabel(currentData.crowd_status)}
+                  {getStatusLabel(restaurant.crowd_status || restaurant.status)}
                 </span>
               </div>
 
@@ -192,7 +133,7 @@ function FeatureCarousel({ restaurants, onRestaurantClick }) {
                       transition: "opacity 0.3s ease",
                     }}
                     onLoad={() => handleImageLoad(restaurant.id)}
-                    onError={() => handleImageError(restaurant.id, imageUrl)}
+                    onError={() => handleImageError(restaurant.id)}
                   />
                 )}
 

@@ -16,26 +16,24 @@ function Login({ onLogin, onSwitchToSignup }) {
 
   // Check for stored login attempts - CLEAR THEM ON MOUNT
   useEffect(() => {
-    // Check if there's a timestamp, if it's older than 5 minutes, clear attempts
-    const lastAttempt = localStorage.getItem("last_login_attempt");
-    if (lastAttempt) {
-      const timeSinceLastAttempt = Date.now() - parseInt(lastAttempt);
-      if (timeSinceLastAttempt > 300000) {
-        // More than 5 minutes
-        // Clear old attempts
+    try {
+      const lastAttempt = parseInt(
+        localStorage.getItem("last_login_attempt") || "0",
+        10,
+      );
+      const attempts = parseInt(
+        localStorage.getItem("login_attempts") || "0",
+        10,
+      );
+
+      if (lastAttempt && Date.now() - lastAttempt > 300_000) {
         localStorage.removeItem("login_attempts");
         localStorage.removeItem("last_login_attempt");
-        setLoginAttempts(0);
-      } else {
-        const attempts = localStorage.getItem("login_attempts");
-        if (attempts) {
-          setLoginAttempts(parseInt(attempts));
-        }
+      } else if (attempts > 0) {
+        setLoginAttempts(attempts);
       }
-    } else {
-      // No last attempt, clear any stale data
-      localStorage.removeItem("login_attempts");
-      setLoginAttempts(0);
+    } catch {
+      // localStorage unavailable
     }
   }, []);
 
@@ -141,7 +139,6 @@ function Login({ onLogin, onSwitchToSignup }) {
         incrementLoginAttempts();
       }
     } catch (err) {
-      console.error("LOGIN ERROR:", err);
       setError("Network error. Please check your connection.");
       incrementLoginAttempts();
     } finally {
@@ -152,8 +149,12 @@ function Login({ onLogin, onSwitchToSignup }) {
   const incrementLoginAttempts = () => {
     const newAttempts = loginAttempts + 1;
     setLoginAttempts(newAttempts);
-    localStorage.setItem("login_attempts", newAttempts.toString());
-    localStorage.setItem("last_login_attempt", Date.now().toString());
+    try {
+      localStorage.setItem("login_attempts", String(newAttempts));
+      localStorage.setItem("last_login_attempt", String(Date.now()));
+    } catch {
+      // localStorage unavailable — silently continue
+    }
   };
 
   const togglePasswordVisibility = () => {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./Filters.css";
 import API_CONFIG from "../../config";
+import React, { useState, useEffect, useRef } from "react";
 
 function Filters({
   filters = {},
@@ -18,9 +19,14 @@ function Filters({
     tier: "all",
     featured: false,
   });
+  const [cuisinesLoading, setCuisinesLoading] = useState(false);
+  const hasFetchedCuisines = useRef(false);
 
   useEffect(() => {
-    fetchCuisines();
+    if (!hasFetchedCuisines.current) {
+      hasFetchedCuisines.current = true;
+      fetchCuisines();
+    }
   }, []);
 
   useEffect(() => {
@@ -30,6 +36,7 @@ function Filters({
   }, [filters]);
 
   const fetchCuisines = async () => {
+    setCuisinesLoading(true);
     try {
       const response = await fetch(
         `${API_CONFIG.BASE_URL}/api/restaurants/cuisines`,
@@ -41,12 +48,13 @@ function Filters({
           const expanded = cuisines
             .flatMap((c) => c.split(",").map((s) => s.trim()))
             .filter(Boolean);
-          const unique = [...new Set(expanded)];
-          setAvailableCuisines(unique);
+          setAvailableCuisines([...new Set(expanded)]);
         }
       }
     } catch (error) {
       console.error("Error fetching cuisines:", error);
+    } finally {
+      setCuisinesLoading(false);
     }
   };
 
@@ -199,44 +207,55 @@ function Filters({
                   />
                   <span>All</span>
                 </label>
-                {getDisplayCuisines().map((cuisine) => (
-                  <label key={cuisine} className="cuisine-option">
-                    <input
-                      type="radio"
-                      name="cuisine"
-                      value={cuisine}
-                      checked={localFilters.cuisine === cuisine}
-                      onChange={handleCuisineChange}
-                    />
-                    <span>{cuisine}</span>
-                  </label>
-                ))}
-                {shouldShowMoreButton && (
-                  <button
-                    className="cuisine-show-more-btn"
-                    onClick={() => setShowAllCuisines(!showAllCuisines)}
-                  >
-                    <span>
-                      {showAllCuisines
-                        ? "Show Less"
-                        : `+${availableCuisines.length - 3} More`}
-                    </span>
-                    <svg
-                      className={`cuisine-show-more-icon ${showAllCuisines ? "rotated" : ""}`}
-                      width="12"
-                      height="12"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </button>
+
+                {cuisinesLoading ? (
+                  <div className="cuisine-skeleton">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="cuisine-skeleton-item" />
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    {getDisplayCuisines().map((cuisine) => (
+                      <label key={cuisine} className="cuisine-option">
+                        <input
+                          type="radio"
+                          name="cuisine"
+                          value={cuisine}
+                          checked={localFilters.cuisine === cuisine}
+                          onChange={handleCuisineChange}
+                        />
+                        <span>{cuisine}</span>
+                      </label>
+                    ))}
+                    {shouldShowMoreButton && (
+                      <button
+                        className="cuisine-show-more-btn"
+                        onClick={() => setShowAllCuisines(!showAllCuisines)}
+                      >
+                        <span>
+                          {showAllCuisines
+                            ? "Show Less"
+                            : `+${availableCuisines.length - 3} More`}
+                        </span>
+                        <svg
+                          className={`cuisine-show-more-icon ${showAllCuisines ? "rotated" : ""}`}
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             </div>
