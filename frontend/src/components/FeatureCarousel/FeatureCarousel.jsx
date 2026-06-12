@@ -99,7 +99,6 @@ function FeatureCarousel({ restaurants, onRestaurantClick }) {
 
       <div className="carousel-container">
         {featuredRestaurants.map((restaurant) => {
-          const currentData = getCurrentRestaurantData(restaurant);
           const imageUrl = getImageUrl(restaurant.banner_image);
           const hasLoaded = loadedImages[restaurant.id];
 
