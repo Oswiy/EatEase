@@ -2,49 +2,81 @@ import React, { useState, useEffect } from "react";
 import "./AnalyticsTab.css";
 import { BASE_URL } from "../../config";
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-// Labels match exactly what the backend builds:
-//   week  → last 7 days  (Mon … Sun ordered by date)
-//   month → last 4 weeks (Wk 1 … Wk 4)
-//   year  → last 12 months (Jan … Dec)
+// ── Date helpers ─────────────────────────────────────────────────────────────
+function formatShortDate(d) {
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function formatFullDate(d) {
+  return d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function formatMonthYear(d) {
+  return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+}
+
+// week → last 7 days, each labeled with weekday + exact date (e.g. "Mon 7/6")
 function buildDayLabels() {
-  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const labels = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-    labels.push(days[d.getDay()]);
+    labels.push(`${dayNames[d.getDay()]} ${d.getMonth() + 1}/${d.getDate()}`);
   }
   return labels;
 }
 
+// month → last 4 weeks, each labeled with its actual date range (e.g. "Jun 30–Jul 6")
+function buildWeekRangeLabels() {
+  const labels = [];
+  for (let i = 3; i >= 0; i--) {
+    const end = new Date();
+    end.setDate(end.getDate() - i * 7);
+    const start = new Date(end);
+    start.setDate(start.getDate() - 6);
+    labels.push(`${formatShortDate(start)}–${formatShortDate(end)}`);
+  }
+  return labels;
+}
+
+// year → last 12 months, each labeled with month + 2-digit year (e.g. "Jul '25")
 function buildMonthLabels() {
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
   const labels = [];
   for (let i = 11; i >= 0; i--) {
     const d = new Date();
     d.setMonth(d.getMonth() - i);
-    labels.push(months[d.getMonth()]);
+    const month = d.toLocaleDateString("en-US", { month: "short" });
+    labels.push(`${month} '${String(d.getFullYear()).slice(-2)}`);
   }
   return labels;
 }
 
-const WEEK_LABELS = buildDayLabels(); // 7 actual day names ending today
-const MONTH_LABELS = ["Wk 1", "Wk 2", "Wk 3", "Wk 4"];
-const YEAR_LABELS = buildMonthLabels(); // 12 month names ending this month
+// Exact date range shown in the header subtitle + chart tag for the active tab
+function getRangeSubtitle(range) {
+  const today = new Date();
+  if (range === "week") {
+    const start = new Date(today);
+    start.setDate(start.getDate() - 6);
+    return `${formatFullDate(start)} – ${formatFullDate(today)}`;
+  }
+  if (range === "month") {
+    const start = new Date(today);
+    start.setDate(start.getDate() - 27);
+    return `${formatFullDate(start)} – ${formatFullDate(today)}`;
+  }
+  const start = new Date(today);
+  start.setMonth(start.getMonth() - 11);
+  return `${formatMonthYear(start)} – ${formatMonthYear(today)}`;
+}
+
+const WEEK_LABELS = buildDayLabels();
+const MONTH_LABELS = buildWeekRangeLabels();
+const YEAR_LABELS = buildMonthLabels();
 
 function formatTime(ts) {
   if (!ts) return "–";
@@ -87,33 +119,61 @@ function KpiGrid({ occ, reviews, sensorCount }) {
   );
 }
 
-function OccupancyChart({ data, labels, range }) {
-  const max = Math.max(...data, 1);
+// Occupancy is always 0–100%, so the y-axis is fixed rather than scaled to
+// the data's max — otherwise a 40% peak day would visually read as "full".
+const OCCUPANCY_GRIDLINES = [0, 25, 50, 75, 100];
+
+function OccupancyChart({ data, labels, rangeLabel, axisTitle }) {
   return (
     <div className="chart-card">
       <div className="chart-card-header">
         <h3>Occupancy Trend</h3>
-        <span className="chart-tag">{range.toUpperCase()}</span>
+        <span className="chart-tag">{rangeLabel}</span>
       </div>
       {data.every((v) => v === 0) ? (
         <div className="no-chart-data">
           <p>No occupancy data for this period</p>
         </div>
       ) : (
-        <div className="simple-chart">
-          {data.map((v, i) => (
-            <div className="chart-bar" key={i}>
-              <div
-                className="bar-fill"
-                style={{
-                  height: `${Math.max((v / max) * 100, v > 0 ? 3 : 0)}%`,
-                }}
-                title={`${labels[i]}: ${v}%`}
-              />
-              <span className="bar-label">{labels[i]}</span>
+        <>
+          <div className="chart-with-axes">
+            <div className="y-axis">
+              {OCCUPANCY_GRIDLINES.slice()
+                .reverse()
+                .map((g) => (
+                  <span key={g} className="y-axis-label">
+                    {g}%
+                  </span>
+                ))}
             </div>
-          ))}
-        </div>
+            <div className="chart-plot-area">
+              <div className="grid-lines">
+                {OCCUPANCY_GRIDLINES.map((g) => (
+                  <div
+                    key={g}
+                    className="grid-line"
+                    style={{ bottom: `${g}%` }}
+                  />
+                ))}
+              </div>
+              <div className="simple-chart">
+                {data.map((v, i) => (
+                  <div className="chart-bar" key={i}>
+                    <div
+                      className="bar-fill"
+                      style={{
+                        height: `${Math.max(v, v > 0 ? 3 : 0)}%`,
+                      }}
+                      title={`${labels[i]}: ${v}%`}
+                    />
+                    <span className="bar-label">{labels[i]}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="axis-title-x">{axisTitle}</div>
+        </>
       )}
     </div>
   );
@@ -279,7 +339,6 @@ const AnalyticsTab = ({ restaurantId, isPremium }) => {
     );
   }
 
-  // ── Locked ───────────────────────────────────────────────────────────────
   if (!isPremium) {
     return (
       <div className="analytics-premium-locked">
@@ -314,7 +373,6 @@ const AnalyticsTab = ({ restaurantId, isPremium }) => {
     );
   }
 
-  // ── Loading ──────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="loading-spinner-container">
@@ -323,7 +381,6 @@ const AnalyticsTab = ({ restaurantId, isPremium }) => {
     );
   }
 
-  // ── No Data ──────────────────────────────────────────────────────────────
   if (!data?.occupancy?.has_data) {
     return (
       <div className="analytics-empty-state">
@@ -351,10 +408,6 @@ const AnalyticsTab = ({ restaurantId, isPremium }) => {
     );
   }
 
-  // ── Pick chart data + labels based on selected range ─────────────────────
-  // Backend returns the correctly-sized array under 'daily' for week,
-  // 'weekly' for month, 'monthly' for year — each pre-filled with zeros
-  // for slots that have no data.
   const occ = data.occupancy || {};
   const peaks = data.peakHours || [];
   const reviews = data.reviews || {};
@@ -376,16 +429,24 @@ const AnalyticsTab = ({ restaurantId, isPremium }) => {
         ? MONTH_LABELS
         : YEAR_LABELS;
 
+  const axisTitle =
+    range === "week" ? "Day" : range === "month" ? "Week" : "Month";
+
+  const rangeSubtitle = getRangeSubtitle(range);
+
   return (
     <div className="analytics-tab">
-      {/* Header */}
       <div className="analytics-header">
-        <h2>Restaurant Analytics</h2>
+        <div>
+          <h2>Restaurant Analytics</h2>
+          <p className="analytics-subtitle">{rangeSubtitle}</p>
+        </div>
         <div className="time-range-selector">
           {["week", "month", "year"].map((r) => (
             <button
               key={r}
               className={`time-btn ${range === r ? "active" : ""}`}
+              title={getRangeSubtitle(r)}
               onClick={() => setRange(r)}
             >
               {r.charAt(0).toUpperCase() + r.slice(1)}
@@ -394,16 +455,18 @@ const AnalyticsTab = ({ restaurantId, isPremium }) => {
         </div>
       </div>
 
-      {/* KPIs */}
       <KpiGrid occ={occ} reviews={reviews} sensorCount={sensorCount} />
 
-      {/* Occupancy trend + Peak hours */}
       <div className="charts-section">
-        <OccupancyChart data={chartData} labels={chartLabels} range={range} />
+        <OccupancyChart
+          data={chartData}
+          labels={chartLabels}
+          rangeLabel={rangeSubtitle}
+          axisTitle={axisTitle}
+        />
         <PeakHours peaks={peaks} />
       </div>
 
-      {/* Crowd breakdown + Recent activity */}
       <div className="charts-section charts-section--equal">
         <CrowdBreakdown breakdown={breakdown} />
         <RecentActivity logs={recentLogs} />
