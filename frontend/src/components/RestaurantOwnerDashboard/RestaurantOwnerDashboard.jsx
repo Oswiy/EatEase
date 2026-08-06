@@ -838,7 +838,7 @@ function RestaurantOwnerDashboard({ user }) {
                         <span>Log Out</span>
                       </button>
 
-                      <div className="dropdown-item">
+                      <div className="dropdown-restaurant-id">
                         Restaurant ID: {restaurant.id}
                       </div>
                     </div>

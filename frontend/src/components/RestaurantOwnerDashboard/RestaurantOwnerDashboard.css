@@ -356,6 +356,12 @@
   margin-bottom: 8px;
 }
 
+.dropdown-restaurant-id {
+  color: white;
+  padding: 5px;
+  font-size: 12px;
+}
+
 .owner-stat-value.status-green {
   color: #51cf66;
 }
